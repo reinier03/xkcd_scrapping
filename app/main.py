@@ -361,7 +361,7 @@ def call_notificar(c):
 #--------------------------------------------------------------------------------------
 
 
-@bot.message_handler(commands=["publicar"], func=lambda m: not m.from_user.id == scrapper.cola["uso"])
+@bot.message_handler(commands=["publicar"])
 def get_work(m: telebot.types.Message):
     global scrapper
 
@@ -557,7 +557,7 @@ def get_work_foto(m: telebot.types.Message):
 
 
     #arreglar a futuro    
-    threading.Thread(name="Hilo usuario: {}".format(m.from_user.id), target=start_publish, args=(scrapper,)).start()
+    threading.Thread(name="Hilo usuario: {}".format(m.from_user.id), target=start_publish).start()
 
     # start_publish()
 
