@@ -1002,7 +1002,7 @@ def publicacion(scrapper: s, bot:telebot.TeleBot, user, load_url=True, contador 
         
         #si ya recorrimos todos los elementos de la lista de grupos el contador tendrá un valor mayor a la cantidad de grupos de la lista ya que en cada vuelta de bucle aumenta (le sumo 1 porque el índice de los grupos comienza en 0)
 
-        breakpoint()
+        
         while len(scrapper.temp_dict[user]["publicacion"]["lista_grupos"]) < (contador + 1):
 
             
