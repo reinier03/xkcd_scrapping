@@ -514,10 +514,10 @@ def get_work_foto(m: telebot.types.Message):
                 
             except:
                 try:
-                    with open(os.path.join(user_folder(m.from_user.id), "error_" + str(m.from_user.id) + ".txt"), "w") as file:
+                    with open(os.path.join(user_folder(m.from_user.id), "error_" + str(m.from_user.id) + ".txt"), "w", encoding="utf-8") as file:
                         file.write("Ha ocurrido un error inesperado!\nID del usuario: {}\n\n{}".format(m.from_user.id, scrapper.temp_dict[m.from_user.id]["res"]))
                         
-                    with open(os.path.join(user_folder(m.from_user.id), "error_" + str(m.from_user.id) + ".txt"), "r") as file:
+                    with open(os.path.join(user_folder(m.from_user.id), "error_" + str(m.from_user.id) + ".txt"), "r", encoding="utf-8") as file:
                         bot.send_document(m.from_user.id, telebot.types.InputFile(file, file_name="error_" + str(m.from_user.id) + ".txt"))
                         
                     os.remove(os.path.join(user_folder(m.from_user.id), "error_" + str(m.from_user.id) + ".txt"))
@@ -542,7 +542,7 @@ def get_work_foto(m: telebot.types.Message):
             with open(os.path.join(user_folder(m.from_user.id), "tiempo_publicacion_" + str(m.from_user.id) + ".txt"), "w", encoding="utf-8") as file:
                 file.write("Log de publicación\nID del usuario: {}\n\n{}".format(m.from_user.id, scrapper.temp_dict[m.from_user.id]["res"]))
                 
-            with open(os.path.join(user_folder(m.from_user.id), "tiempo_publicacion_" + str(m.from_user.id) + ".txt"), "r") as file:
+            with open(os.path.join(user_folder(m.from_user.id), "tiempo_publicacion_" + str(m.from_user.id) + ".txt"), "r", encoding="utf-8") as file:
                 bot.send_document(m.from_user.id, telebot.types.InputFile(file, file_name="tiempo_publicacion_" + str(m.from_user.id) + ".txt"))
 
         

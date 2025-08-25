@@ -1353,8 +1353,6 @@ def publicacion(scrapper: s, bot:telebot.TeleBot, user, load_url=True, contador 
 
                         time.sleep(2)
                     
-                        continue
-                    
 
             
 
