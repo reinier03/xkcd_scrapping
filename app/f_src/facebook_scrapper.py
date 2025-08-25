@@ -1232,8 +1232,9 @@ def publicacion(scrapper: s, bot:telebot.TeleBot, user, load_url=True, contador 
                 else:
                     time.sleep(2)
         
-
-        scrapper.wait.until(ec.any_of(lambda driver, scrapper=scrapper, user=user: driver.find_element(By.XPATH, '//*[contains(text(), "{}")]'.format(scrapper.temp_dict[user]["texto_r"]))))
+        #comprobar que el texto se insertó adecuadamente
+        scrapper.driver.send_keys(Keys.PAGE_UP)
+        scrapper.wait.until(ec.visibility_of_element_located((By.XPATH, '//*[contains(text(), "{}")]'.format(scrapper.temp_dict[user]["texto_p"].splitlines()[-1]))))
 
         scrapper.temp_dict[user]["tiempo_debug"].append(get_time_debug(scrapper, user, "introducir el texto dentro del formulario de publicación en el grupo #{} linea {}".format(contador + 1, traceback.extract_stack()[-1].lineno)))
 

@@ -579,7 +579,8 @@ def cmd_panel(m: telebot.types.Message):
         reply_markup=InlineKeyboardMarkup([
             [InlineKeyboardButton("⌛ Cambiar la espera entre publicación", callback_data="c/d")],
             [InlineKeyboardButton("⛔ Administrar Entrada (contraseña)", callback_data="c/pass")],
-            [InlineKeyboardButton(" 👀 Ver información", callback_data="c/w")]
+            [InlineKeyboardButton("👀 Ver información", callback_data="c/w")]
+            [InlineKeyboardButton("♻ Reiniciar Bot", callback_data="c/reload")]
             # [InlineKeyboardButton("👥 Administrar Usuarios", callback_data="c/u")]
         ]))
 
@@ -591,6 +592,7 @@ def call_ver(c):
     bot.send_message(c.from_user.id, "Qué deseas saber?", reply_markup=InlineKeyboardMarkup(
         [
             [InlineKeyboardButton("Ver Usuarios", callback_data="c/w/user")]
+            [InlineKeyboardButton("Ver variables", callback_data= "c/w/vars")]
         ]
     ))
 
@@ -629,6 +631,16 @@ def watch(c):
                 bot.send_message(c.from_user.id, m_texto("<b>Actualmente cualquiera puede usarme...</b>\nUsuario usandome actualmente:\n\n▶ <b>ID</b>: <code>{}</code> <b>username</b>: {}".format(scrapper.cola["uso"], "@" + str(bot.get_chat(scrapper.cola["uso"]).username) if bot.get_chat(scrapper.cola["uso"]).username else "None")))
 
         return
+
+
+    elif c.data == "c/w/vars":
+        #el limite de envio de mensajes en telegram es de 4000 caracteres
+        if len("\n".join(globals())) > 4000:
+            for i in range(round(len("\n".join(globals())) / 4000)):
+                bot.send_message(c.from_user.id, "\n".join(globals())[i*4000 : (i+1) * 4000])
+        else:
+            bot.send_message(c.from_user.id, str(globals()))
+
 
 @bot.callback_query_handler(func=lambda c: c.data == "c/pass")
 def cmd_delay(c):
@@ -748,7 +760,25 @@ def cancelar(c):
 
     bot.delete_message(c.message.chat.id, c.message.message_id)
 
-    bot.send_message(c.message.chat.id,"Muy Bien, la operación ha sido exitosamente cancelada")
+    bot.send_message(c.message.chat.id, "Muy Bien, la operación ha sido exitosamente cancelada")
+    return
+
+
+@bot.callback_query_handler(func=lambda c: c.data == "c/reload")
+def cmd_reload(c):
+
+    bot.send_message(c.from_user.id, "Estás seguro de que deseas continuar?, Esta acción no se puede deshacer e interrumpirá todos los procesos activos", reply_markup=InlineKeyboardMarkup(
+        [
+            [InlineKeyboardButton("Si, Deseo reiniciar", callback_data="c/reload/s")],
+            [InlineKeyboardButton("No, Cancela", callback_data="cancel")]
+        ]
+    , row_width=1))
+
+    bot.register_callback_query_handler(reboot, lambda c: c.data == "c/reload/s")
+
+def reboot(c):
+
+    os.execv(os.execv(sys.executable, [sys.executable, '"' + __file__ + '"']))
     return
 
 

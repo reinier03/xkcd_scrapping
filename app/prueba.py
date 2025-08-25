@@ -1,18 +1,14 @@
-from threading import Thread
-lo = "Juan"
+import sys
+import os
 
 
 
-def hilo():
-    global lo
+res = input("Pon algo: ")
 
-    def cambiar():
-        lo = "Pedro"
+if res == ".":
+    os.system("cls")
+    os.execv(sys.executable, [sys.executable, '"' + str(__file__) + '"'])
 
-    cambiar()
-
-
-Thread(target=hilo, name="hilo_secundario").start()
 
 breakpoint()
 

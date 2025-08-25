@@ -568,6 +568,8 @@ def handlers(bot, user , msg ,info, diccionario: dict , **kwargs):
             bot.register_next_step_handler(temp_dict[user]["msg"], bot_handlers.repetir_bucle, bot,user, info, temp_dict)
             
     while True:
+        diccionario[user]["if_cancelar"]()
+
         if not temp_dict[user]["completed"]:
             time.sleep(2)
             

@@ -30,11 +30,29 @@ class scrapper:
     password = True
     admin = None
     usuarios_permitidos = []
-    pestanas = {"maximo": 2, }
     
 
-    def print(self, user):
+    def show(self, user):
         pprint.pprint(self.temp_dict[user], sort_dicts=False)
+
+    def __str__(self):
+        return """
+dict cola: {}
+dict temp_dict: {}
+var delay: {}
+var password: {}
+var admin: {}
+list usuarios_permitidos: {}
+""".format(
+
+    "Usuario actual: <code>" + str(self.cola["uso"]) + "</code> | Usuarios en espera: " + ", ".join(["<code>" + str(i) + "</code>" for i in self.cola["cola_usuarios"]]) if self.cola["cola_usuarios"] else "Usuario actual <code>" + str(self.cola["uso"]) + "</code> | " + "Actualmente no hay usuarios en cola",
+    "\n".join(self.temp_dict), 
+    self.delay,
+    self.password,
+    self.admin,
+    self.usuarios_permitidos
+
+    )
 
 
 
