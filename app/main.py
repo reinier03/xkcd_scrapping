@@ -579,7 +579,7 @@ def cmd_panel(m: telebot.types.Message):
         reply_markup=InlineKeyboardMarkup([
             [InlineKeyboardButton("⌛ Cambiar la espera entre publicación", callback_data="c/d")],
             [InlineKeyboardButton("⛔ Administrar Entrada (contraseña)", callback_data="c/pass")],
-            [InlineKeyboardButton("👀 Ver información", callback_data="c/w")]
+            [InlineKeyboardButton("👀 Ver información", callback_data="c/w")],
             [InlineKeyboardButton("♻ Reiniciar Bot", callback_data="c/reload")]
             # [InlineKeyboardButton("👥 Administrar Usuarios", callback_data="c/u")]
         ]))
@@ -591,7 +591,7 @@ def call_ver(c):
 
     bot.send_message(c.from_user.id, "Qué deseas saber?", reply_markup=InlineKeyboardMarkup(
         [
-            [InlineKeyboardButton("Ver Usuarios", callback_data="c/w/user")]
+            [InlineKeyboardButton("Ver Usuarios", callback_data="c/w/user")],
             [InlineKeyboardButton("Ver variables", callback_data= "c/w/vars")]
         ]
     ))
@@ -639,7 +639,7 @@ def watch(c):
             for i in range(round(len("\n".join(globals())) / 4000)):
                 bot.send_message(c.from_user.id, "\n".join(globals())[i*4000 : (i+1) * 4000])
         else:
-            bot.send_message(c.from_user.id, str(globals()))
+            bot.send_message(c.from_user.id, "\n".join(globals()))
 
 
 @bot.callback_query_handler(func=lambda c: c.data == "c/pass")
