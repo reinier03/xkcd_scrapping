@@ -965,8 +965,8 @@ def publicacion(scrapper: s, bot:telebot.TeleBot, user, load_url=True, contador 
     else:
         scrapper.temp_dict[user]["publicacion"] = kwargs.get("info_publicacion")
 
-    if not scrapper.temp_dict[user].get("repetir"):
-        load(scrapper, "https://m.facebook.com/groups/")
+
+    load(scrapper, "https://m.facebook.com/groups/")
     
     
     #bucle para publicar por los grupos
