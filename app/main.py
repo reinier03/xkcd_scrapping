@@ -642,7 +642,7 @@ def watch(c):
         #el limite de envio de mensajes en telegram es de 4000 caracteres
 
         for i in range(round(len("\n".join(globals())) / 4000)):
-            bot.send_message(c.from_user.id, "\n".join(["{}: {}".format(k,v) for k,v in globals()])[i*4000 : (i+1) * 4000])
+            bot.send_message(c.from_user.id, "\n".join(["{}: {}".format(k,v) for k,v in globals().items()])[i*4000 : (i+1) * 4000])
 
 
 
