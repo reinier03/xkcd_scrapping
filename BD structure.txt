@@ -1,0 +1,4 @@
+this is a Mongo DB Database
+
+#for each user
+{"id_": random, "telegram_id": 1747104645, "user" : "example@gmail.com", cookies : cookies_dict}

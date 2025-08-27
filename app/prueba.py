@@ -4,6 +4,7 @@ import os
 
 
 res = input("Pon algo: ")
+dict = {"hol": 123456}
 
 if res == ".":
     os.system("cls")

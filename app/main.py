@@ -429,8 +429,8 @@ def get_work_texto(m: telebot.types.Message):
     global scrapper
         
     if m.text == "Cancelar Operacion":
-        liberar_cola(scrapper, m.from_user.id, bot)
         bot.send_message(m.chat.id, m_texto("Operación Cancelada :("), reply_markup = telebot.types.ReplyKeyboardRemove())
+        liberar_cola(scrapper, m.from_user.id, bot)
 
         return
 
@@ -455,8 +455,8 @@ def get_work_foto(m: telebot.types.Message):
     global scrapper
 
     if m.text == "Cancelar Operacion":
-        liberar_cola(scrapper, m.from_user.id, bot)
         bot.send_message(m.chat.id, m_texto("Operación Cancelada :("), reply_markup = telebot.types.ReplyKeyboardRemove())
+        liberar_cola(scrapper, m.from_user.id, bot)
         return
 
     elif m.text == "Omitir Foto":
@@ -488,7 +488,7 @@ def get_work_foto(m: telebot.types.Message):
             except Exception as err:
                 scrapper.temp_dict[m.from_user.id]["res"] = str(format_exc())
 
-                                    
+                
 
                 if "no" == str(err.args[0]):
                     pass
@@ -502,6 +502,8 @@ def get_work_foto(m: telebot.types.Message):
                     bot.send_message(m.chat.id, m_texto("Ha ocurrido un error inesperado...Le notificaré al administrador. <b>Tu operación ha sido cancelada</b> debido a esto, lamentamos las molestias\n👇Igualmente si tienes alguna duda, contacta con él👇\n\n@{}".format(bot.get_chat(admin).username)))
 
                     bot.send_message(admin, "Ha ocurrido un error inesperado! ID usuario: {}\n\n<blockquote expandable>".format(m.from_user.id) + str(scrapper.temp_dict[m.from_user.id]["res"]) + "</blockquote>")
+
+                    pass
             
             
                 
@@ -518,15 +520,18 @@ def get_work_foto(m: telebot.types.Message):
                         file.write("Ha ocurrido un error inesperado!\nID del usuario: {}\n\n{}".format(m.from_user.id, scrapper.temp_dict[m.from_user.id]["res"]))
                         
                     with open(os.path.join(user_folder(m.from_user.id), "error_" + str(m.from_user.id) + ".txt"), "r", encoding="utf-8") as file:
-                        bot.send_document(m.from_user.id, telebot.types.InputFile(file, file_name="error_" + str(m.from_user.id) + ".txt"))
+                        bot.send_document(admin, telebot.types.InputFile(file, file_name="error_" + str(m.from_user.id) + ".txt"))
                         
                     os.remove(os.path.join(user_folder(m.from_user.id), "error_" + str(m.from_user.id) + ".txt"))
                     
                 except Exception as e:
                     try:
-                        bot.send_message(m.chat.id, "Ha ocurrido un error fatal, ID del usuario: {} <blockquote expandable>".format(m.from_user.id) + scrapper.temp_dict[m.from_user.id]["res"] + "</blockquote>")
+                        bot.send_message(admin, "Ha ocurrido un error fatal, ID del usuario: {} <blockquote expandable>".format(m.from_user.id) + scrapper.temp_dict[m.from_user.id]["res"] + "</blockquote>")
                     except:
                         print("ERROR FATAL:\nHe perdido la conexion a telegram :(")
+
+
+                pass
                         
                     
             
@@ -548,7 +553,7 @@ def get_work_foto(m: telebot.types.Message):
         
 
         
-        os.remove(os.path.join(user_folder(m.from_user.id), "tiempo_publicacion_" + str(m.from_user.id) + ".txt"))
+            os.remove(os.path.join(user_folder(m.from_user.id), "tiempo_publicacion_" + str(m.from_user.id) + ".txt"))
 
 
         liberar_cola(scrapper, m.from_user.id, bot)
@@ -635,11 +640,10 @@ def watch(c):
 
     elif c.data == "c/w/vars":
         #el limite de envio de mensajes en telegram es de 4000 caracteres
-        if len("\n".join(globals())) > 4000:
-            for i in range(round(len("\n".join(globals())) / 4000)):
-                bot.send_message(c.from_user.id, "\n".join(globals())[i*4000 : (i+1) * 4000])
-        else:
-            bot.send_message(c.from_user.id, "\n".join(globals()))
+
+        for i in range(round(len("\n".join(globals())) / 4000)):
+            bot.send_message(c.from_user.id, "\n".join(["{}: {}".format(k,v) for k,v in globals()])[i*4000 : (i+1) * 4000])
+
 
 
 @bot.callback_query_handler(func=lambda c: c.data == "c/pass")

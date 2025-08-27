@@ -149,7 +149,7 @@ def uc_driver(mobile=False):
             log_level=3,
             keep_alive=True,
             
-            driver_executable_path=r'C:\Users\Reima\AppData\Local\Programs\Python\Python312\Lib\site-packages\seleniumbase\drivers\chromedriver.exe'
+            # driver_executable_path=r'D:\Programacion\Proyectos personales\webscrapping\chromedriver.exe'
         )
 
     

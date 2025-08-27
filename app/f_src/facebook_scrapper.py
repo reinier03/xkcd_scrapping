@@ -1233,7 +1233,7 @@ def publicacion(scrapper: s, bot:telebot.TeleBot, user, load_url=True, contador 
                     time.sleep(2)
         
         #comprobar que el texto se insertó adecuadamente
-        scrapper.wait.until(ec.visibility_of_element_located((By.XPATH, '//*[contains(text(), "{}")]'.format(scrapper.temp_dict[user]["texto_p"].splitlines()[-1]))))
+        # scrapper.wait.until(ec.visibility_of_element_located((By.XPATH, '//*[contains(text(), "{}")]'.format(scrapper.temp_dict[user]["texto_p"].splitlines()[-1]))))
 
         scrapper.temp_dict[user]["tiempo_debug"].append(get_time_debug(scrapper, user, "introducir el texto dentro del formulario de publicación en el grupo #{} linea {}".format(contador + 1, traceback.extract_stack()[-1].lineno)))
 
@@ -1296,10 +1296,6 @@ def publicacion(scrapper: s, bot:telebot.TeleBot, user, load_url=True, contador 
                         """
                         try:  
                             #este revisa la primera publicación del grupo
-                            # WebDriverWait(scrapper.driver, espera).until(ec.any_of(lambda driver, scrapper=scrapper, user=user: driver.find_elements(By.CSS_SELECTOR, 'div[data-mcomponent="MContainer"][data-tti-phase="-1"][data-type="container"][class="m"]')[38].find_element(By.XPATH, '//*[contains(text(), "{}")]'.format(str(scrapper.temp_dict[user]["perfil_actual"]).strip())) and driver.find_element(By.XPATH, '//*[contains(text(), "{}")]'.format(re.search(r"[a-zA-Z0-9, ]+", scrapper.temp_dict[user]["texto_p"].splitlines()[0].strip()).group().strip()[:90]))))
-
-                            # re.search(r"[^\w\s\b].+", "texto de prueba💔💔").group()
-
                             WebDriverWait(scrapper.driver, espera).until(ec.any_of(lambda driver, scrapper=scrapper, user=user: driver.find_element(By.XPATH, '//*[contains(text(), "{}")]'.format(str(scrapper.temp_dict[user]["perfil_actual"]).strip())) and driver.find_element(By.XPATH, '//*[contains(text(), "{}")]'.format(scrapper.temp_dict[user]["texto_r"]))))
 
                             
@@ -1349,7 +1345,10 @@ def publicacion(scrapper: s, bot:telebot.TeleBot, user, load_url=True, contador 
                     else:
                         scrapper.driver.refresh()
 
-                        scrapper.temp_dict[user]["a"].scroll_by_amount(0, round(scrapper.driver.find_element(By.XPATH, '//*[@id="screen-root"]/div/div[3]/div[11]').size["height"] * (i + 0.50))).perform()
+                        try:
+                            scrapper.temp_dict[user]["a"].scroll_by_amount(0, round(scrapper.driver.find_element(By.XPATH, '//*[@id="screen-root"]/div/div[3]/div[11]').size["height"] * (i + 0.50))).perform()
+                        except:
+                            pass
 
                         time.sleep(2)
                     
