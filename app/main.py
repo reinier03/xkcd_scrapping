@@ -640,9 +640,15 @@ def watch(c):
 
     elif c.data == "c/w/vars":
         #el limite de envio de mensajes en telegram es de 4000 caracteres
+        variables = []
+        for k,v in globals().items():
+            try:
+                variables.append("{}: {}".format(k,v))
+            except:
+                pass
 
-        for i in range(round(len("\n".join(globals())) / 4000)):
-            bot.send_message(c.from_user.id, "\n".join(["{}: {}".format(k,v) for k,v in globals().items()])[i*4000 : (i+1) * 4000])
+        for i in range(round(len("\n".join(variables)) / 4000)):
+            bot.send_message(c.from_user.id, "\n".join(variables)[i*4000 : (i+1) * 4000])
 
 
 

@@ -8,7 +8,8 @@ import os
 
 def anadir_opciones(o, container=False, mobile=False):
     
-    
+    o.add_argument("--accept-lang=en-UK")
+    o.add_argument("--lang=en-UK")
     o.add_argument("--disable-web-security")
     o.add_argument("--disable-extensions")
     o.add_argument("--disable-notifications")
@@ -22,7 +23,7 @@ def anadir_opciones(o, container=False, mobile=False):
     o.add_argument("--disable-infobars")
     o.add_argument("--disable-blink-features=AutomationControlled")
     o.add_argument("--disable-features=ChromeWhatsNewUI")
-    o.add_argument("--lang=en-UK")
+    
 
     # o.add_argument("--single-process")
     # o.add_argument("--disable-dev-shm-usage")
@@ -148,8 +149,8 @@ def uc_driver(mobile=False):
             options=o,
             log_level=3,
             keep_alive=True,
-            
-            # driver_executable_path=r'D:\Programacion\Proyectos personales\webscrapping\chromedriver.exe'
+            driver_executable_path=r'D:\Programacion\Proyectos personales\webscrapping\chromedriver-win64\chromedriver.exe',
+            desired_capabilities={}
         )
 
     
@@ -157,6 +158,7 @@ def uc_driver(mobile=False):
         driver.set_window_rect(height=851, width=450)
         driver.set_window_position(x=0, y=0)
 
+    
     
     return driver
 
