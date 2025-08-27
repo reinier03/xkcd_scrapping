@@ -4,6 +4,7 @@ import os
 import threading
 import pprint
 import sys
+from pymongo import MongoClient
 
 sys.path.append(os.path.dirname(os.path.dirname(__file__)))
 
@@ -30,6 +31,26 @@ class scrapper:
     password = True
     admin = None
     usuarios_permitidos = []
+    
+    #----------------------database------------------------------------
+
+    if not "MONGO_URL" in os.environ:
+        MONGO_URL = "mongodb://localhost:27017"
+    else:
+        MONGO_URL = os.environ["MONGO_URL"]
+
+    cliente = MongoClient(MONGO_URL)
+    db = cliente["face"]
+
+
+    collection = db["usuarios"] #Esta BD guardará la informacion tanto de los usuarios como del bot 
+    
+    #Para tener mas detalles de la estructura de la base de datos consulte el archivo: "../BD structure.txt"
+
+    #----------------------------------------------------------------
+
+    
+    
     
 
     def show(self, user):

@@ -1,4 +1,24 @@
-this is a Mongo DB Database
+Esto es un Mongo DB 
 
-#for each user
-{"id_": random, "telegram_id": 1747104645, "user" : "example@gmail.com", cookies : cookies_dict}
+#por cada usuario
+
+estructura db["usuarios"]:
+{"id_": random, "telegram_id": 1747104645, "user" : "example@gmail.com", "password": "juanito123", "cookies" : cookies.pkl}
+
+Explicacion:
+    "id_" : se genera con time.time()
+    "telegram_id" : el id de telegram del usuario
+    "user" : usuario de la cuenta de facebook
+    "password": contraseña de facebook
+    "cookies" : archivo cifrado de las cookies del usuario en el navegador
+
+Nota:
+Hay un dato en la coleccion que almacena el estado del bot, este tiene el "telegram_id" del bot y es para poder recuperar el estado del bot en caso de una ruptura en el host:
+
+estructura del bot en db["usuarios"]:
+{"id_": "telegram_bot", "telegram_id": id_del_bot, "cookies": bot_cookies.pkl}
+
+Para indicar que es el bot dejare en el campo de "id_" el valor de "telegram_bot"
+
+
+

@@ -11,7 +11,7 @@ from traceback import format_exc
 import threading
 from flask import Flask, request
 import subprocess
-from pymongo import MongoClient
+
 from f_src import facebook_scrapper
 from tb_src.usefull_functions import *
 from tb_src.main_classes import scrapper as s
@@ -42,20 +42,14 @@ Para dudas o sugerencias contactarme a https://t.me/mistakedelalaif
 
 admin = int(os.environ["admin"])
 
-if not "MONGO_URL" in os.environ:
-    MONGO_URL = "mongodb://localhost:27017"
-else:
-    MONGO_URL = os.environ["MONGO_URL"]
 
-cliente = MongoClient(MONGO_URL)
-db = cliente["face"]
-collection = db["usuarios"]
 scrapper = s()
+
 scrapper.admin = admin
 
 telebot.apihelper.ENABLE_MIDDLEWARE = True
 
-bot = telebot.TeleBot(os.environ["token"], "html")
+bot = telebot.TeleBot(os.environ["token"], "html", disable_web_page_preview=True)
 
 bot.set_my_commands([
     BotCommand("/start", "Información sobre el bot"),
@@ -163,7 +157,7 @@ def cmd_cancelar(m):
 def cmd_delete(m):
     global scrapper
 
-    if not collection.find_one({"telegram_id": m.from_user.id}):
+    if not scrapper.collection.find_one({"telegram_id": m.from_user.id}):
         bot.send_message(m.chat.id, m_texto("Ni siquiera me has usado aún!\n\nNo tengo datos tuyos los cuales restablecer\nEnviame /info para comenzar a usarme :D"))
         return
     
@@ -182,7 +176,7 @@ def borrar_question(m):
         scrapper.driver.delete_all_cookies()
         
         try:
-            collection.delete_one({"telegram_id": m.from_user.id})
+            scrapper.collection.delete_one({"telegram_id": m.from_user.id})
         except:
             pass
         try:
@@ -215,10 +209,10 @@ def obtener_cookies(m):
     with open(os.path.join(user_folder(m.from_user.id), "cookies.pkl"), "wb") as file:
         file.write(bot.download_file(bot.get_file(m.document.file_id).file_path))
         
-    if not collection.find({"telegram_id": m.from_user.id}):
+    if not scrapper.collection.find({"telegram_id": m.from_user.id}):
         
         with open(os.path.join(user_folder(m.from_user.id), "cookies.pkl"), "rb") as file:
-            collection.insert_one({"id_": time.time(), "telegram_id": m.from_user.id, "cookies" : dill.load(file)["cookies"]})
+            scrapper.collection.insert_one({"id_": time.time(), "telegram_id": m.from_user.id, "cookies" : dill.load(file)["cookies"]})
     
     bot.send_message(m.chat.id, "Cookies capturadas :)")
     
@@ -479,95 +473,95 @@ def get_work_foto(m: telebot.types.Message):
         return
 
     
-    def start_publish():
-        global scrapper
-
-        try:
-            try:
-                facebook_scrapper.main(scrapper, bot, m.from_user.id)
-            except Exception as err:
-                scrapper.temp_dict[m.from_user.id]["res"] = str(format_exc())
-
-                
-
-                if "no" == str(err.args[0]):
-                    pass
-            
-                
-                else:
-                    print("Ha ocurrido un error! Revisa el bot, te dará más detalles")
-
-                    bot.send_photo(admin, telebot.types.InputFile(make_screenshoot(scrapper.driver, m.from_user.id)), caption="Captura de error del usuario: <code>{}</code>".format(m.from_user.id))
-
-                    bot.send_message(m.chat.id, m_texto("Ha ocurrido un error inesperado...Le notificaré al administrador. <b>Tu operación ha sido cancelada</b> debido a esto, lamentamos las molestias\n👇Igualmente si tienes alguna duda, contacta con él👇\n\n@{}".format(bot.get_chat(admin).username)))
-
-                    bot.send_message(admin, "Ha ocurrido un error inesperado! ID usuario: {}\n\n<blockquote expandable>".format(m.from_user.id) + str(scrapper.temp_dict[m.from_user.id]["res"]) + "</blockquote>")
-
-                    pass
-            
-            
-                
-            
-                
-                
-        except:
-            try:
-                bot.send_message(admin, "Ha ocurrido un error inesperado! ID usuario: {}\n\n<blockquote expandable>".format(m.from_user.id) + scrapper.temp_dict[m.from_user.id]["res"] + "</blockquote>")
-                
-            except:
-                try:
-                    with open(os.path.join(user_folder(m.from_user.id), "error_" + str(m.from_user.id) + ".txt"), "w", encoding="utf-8") as file:
-                        file.write("Ha ocurrido un error inesperado!\nID del usuario: {}\n\n{}".format(m.from_user.id, scrapper.temp_dict[m.from_user.id]["res"]))
-                        
-                    with open(os.path.join(user_folder(m.from_user.id), "error_" + str(m.from_user.id) + ".txt"), "r", encoding="utf-8") as file:
-                        bot.send_document(admin, telebot.types.InputFile(file, file_name="error_" + str(m.from_user.id) + ".txt"))
-                        
-                    os.remove(os.path.join(user_folder(m.from_user.id), "error_" + str(m.from_user.id) + ".txt"))
-                    
-                except Exception as e:
-                    try:
-                        bot.send_message(admin, "Ha ocurrido un error fatal, ID del usuario: {} <blockquote expandable>".format(m.from_user.id) + scrapper.temp_dict[m.from_user.id]["res"] + "</blockquote>")
-                    except:
-                        print("ERROR FATAL:\nHe perdido la conexion a telegram :(")
-
-
-                pass
-                        
-                    
-            
-        if not scrapper.temp_dict[m.from_user.id].get("cancelar"):
-            bot.send_message(m.chat.id, m_texto("La Operación ha finalizado"))
-
-        
-
-        if scrapper.temp_dict[m.from_user.id].get("mostrar_tiempo_debug"):
-            
-            scrapper.temp_dict[m.from_user.id]["res"] = "\n".join(scrapper.temp_dict[m.from_user.id]["tiempo_debug"])
-
-            with open(os.path.join(user_folder(m.from_user.id), "tiempo_publicacion_" + str(m.from_user.id) + ".txt"), "w", encoding="utf-8") as file:
-                file.write("Log de publicación\nID del usuario: {}\n\n{}".format(m.from_user.id, scrapper.temp_dict[m.from_user.id]["res"]))
-                
-            with open(os.path.join(user_folder(m.from_user.id), "tiempo_publicacion_" + str(m.from_user.id) + ".txt"), "r", encoding="utf-8") as file:
-                bot.send_document(m.from_user.id, telebot.types.InputFile(file, file_name="tiempo_publicacion_" + str(m.from_user.id) + ".txt"))
-
-        
-
-        
-            os.remove(os.path.join(user_folder(m.from_user.id), "tiempo_publicacion_" + str(m.from_user.id) + ".txt"))
-
-
-        liberar_cola(scrapper, m.from_user.id, bot)
-
-        return
+    
 
 
     #arreglar a futuro    
-    threading.Thread(name="Hilo usuario: {}".format(m.from_user.id), target=start_publish).start()
-
-    # start_publish()
+    threading.Thread(name="Hilo usuario: {}".format(m.from_user.id), target=start_publish, args=(bot, m.from_user.id)).start()
 
     return
 
+
+def start_publish(bot, user):
+    global scrapper
+
+    try:
+        try:
+            facebook_scrapper.main(scrapper, bot, user)
+        except Exception as err:
+            scrapper.temp_dict[user]["res"] = str(format_exc())
+
+            
+
+            if "no" == str(err.args[0]):
+                pass
+        
+            
+            else:
+                print("Ha ocurrido un error! Revisa el bot, te dará más detalles")
+
+                bot.send_photo(admin, telebot.types.InputFile(make_screenshoot(scrapper.driver, user)), caption="Captura de error del usuario: <code>{}</code>".format(user))
+
+                bot.send_message(m.chat.id, m_texto("Ha ocurrido un error inesperado...Le notificaré al administrador. <b>Tu operación ha sido cancelada</b> debido a esto, lamentamos las molestias\n👇Igualmente si tienes alguna duda, contacta con él👇\n\n@{}".format(bot.get_chat(admin).username)))
+
+                bot.send_message(admin, "Ha ocurrido un error inesperado! ID usuario: {}\n\n<blockquote expandable>".format(user) + str(scrapper.temp_dict[user]["res"]) + "</blockquote>")
+
+                pass
+        
+        
+            
+        
+            
+            
+    except:
+        try:
+            bot.send_message(admin, "Ha ocurrido un error inesperado! ID usuario: {}\n\n<blockquote expandable>".format(user) + scrapper.temp_dict[user]["res"] + "</blockquote>")
+            
+        except:
+            try:
+                with open(os.path.join(user_folder(user), "error_" + str(user) + ".txt"), "w", encoding="utf-8") as file:
+                    file.write("Ha ocurrido un error inesperado!\nID del usuario: {}\n\n{}".format(user, scrapper.temp_dict[user]["res"]))
+                    
+                with open(os.path.join(user_folder(user), "error_" + str(user) + ".txt"), "r", encoding="utf-8") as file:
+                    bot.send_document(admin, telebot.types.InputFile(file, file_name="error_" + str(user) + ".txt"))
+                    
+                os.remove(os.path.join(user_folder(user), "error_" + str(user) + ".txt"))
+                
+            except Exception as e:
+                try:
+                    bot.send_message(admin, "Ha ocurrido un error fatal, ID del usuario: {} <blockquote expandable>".format(user) + scrapper.temp_dict[user]["res"] + "</blockquote>")
+                except:
+                    print("ERROR FATAL:\nHe perdido la conexion a telegram :(")
+
+
+            pass
+                    
+                
+        
+    if not scrapper.temp_dict[user].get("cancelar"):
+        bot.send_message(user, m_texto("La Operación ha finalizado"))
+
+    
+
+    if scrapper.temp_dict[user].get("mostrar_tiempo_debug"):
+        
+        scrapper.temp_dict[user]["res"] = "\n".join(scrapper.temp_dict[user]["tiempo_debug"])
+
+        with open(os.path.join(user_folder(user), "tiempo_publicacion_" + str(user) + ".txt"), "w", encoding="utf-8") as file:
+            file.write("Log de publicación\nID del usuario: {}\n\n{}".format(user, scrapper.temp_dict[user]["res"]))
+            
+        with open(os.path.join(user_folder(user), "tiempo_publicacion_" + str(user) + ".txt"), "r", encoding="utf-8") as file:
+            bot.send_document(user, telebot.types.InputFile(file, file_name="tiempo_publicacion_" + str(user) + ".txt"))
+
+    
+
+    
+        os.remove(os.path.join(user_folder(user), "tiempo_publicacion_" + str(user) + ".txt"))
+
+
+    liberar_cola(scrapper, user, bot)
+
+    return
 
 @bot.message_handler(commands=["panel"])
 def cmd_panel(m: telebot.types.Message):
@@ -597,7 +591,8 @@ def call_ver(c):
     bot.send_message(c.from_user.id, "Qué deseas saber?", reply_markup=InlineKeyboardMarkup(
         [
             [InlineKeyboardButton("Ver Usuarios", callback_data="c/w/user")],
-            [InlineKeyboardButton("Ver variables", callback_data= "c/w/vars")]
+            [InlineKeyboardButton("Ver Variables principales", callback_data="c/w/main_vars")]
+            [InlineKeyboardButton("Ver TODAS las Variables", callback_data= "c/w/vars")]
         ]
     ))
 
@@ -637,18 +632,31 @@ def watch(c):
 
         return
 
-
-    elif c.data == "c/w/vars":
-        #el limite de envio de mensajes en telegram es de 4000 caracteres
+    elif c.data == "c/w/main_vars":
         variables = []
-        for k,v in globals().items():
-            try:
-                variables.append("{}: {}".format(k,v))
-            except:
-                pass
+
+        for i in {"clase scrapper": scrapper, "admin": admin, "scrapper.MONGO_URL" : scrapper.MONGO_URL, "clase BD": scrapper.collection, "url_host" : os.environ.get("webhook_url")}.items():
+
+            variables.append("<b>{}</b>  :  {}\n".format(k,v))
 
         for i in range(round(len("\n".join(variables)) / 4000)):
             bot.send_message(c.from_user.id, "\n".join(variables)[i*4000 : (i+1) * 4000])
+
+    elif c.data == "c/w/vars":
+        
+        #el limite de envio de mensajes en telegram es de 4000 caracteres
+        variables = []
+        
+        for k,v in globals().items():
+            try:
+                variables.append("{}  :  {}\n".format(k,v))
+            except:
+                pass
+        
+        for i in range(round(len("\n".join(variables)) / 4000)):
+            bot.send_message(c.from_user.id, "\n".join(variables)[i*4000 : (i+1) * 4000], parse_mode=False)
+
+    return
 
 
 
@@ -805,7 +813,20 @@ def cmd_any(m):
         
 
     return
-    
+
+#comprobar si habia un proceso activo y el host se calló
+res = administrar_BD(scrapper, bot, True)
+if res[0] == "ok":
+    for k, v in res[1].items():
+        globals()[k] = v
+
+    if scrapper.cola["uso"]:
+        
+        scrapper.temp_dict[scrapper.cola["uso"]]["interrupcion"] = True #Esta variable la defino como flag para omitir todos los mensajes del bot hasta el punto donde estaba y que no sea repetitivo para el usuario
+
+        print("Al parecer, habia un proceso de publicación activo, a continuación lo reanudaré")
+        threading.Thread(name="Hilo usuario: {}".format(scrapper.cola["uso"]), target=start_publish, args=(bot, scrapper.cola["uso"])).start()
+
 
 app = Flask(__name__)
 

@@ -31,22 +31,6 @@ from f_src.chrome_driver import *
 import f_src
 from tb_src.usefull_functions import *
 
-# import pyautogui
-
-
-#variables de entorno
-
-if not "MONGO_URL" in os.environ:
-    MONGO_URL = "mongodb://localhost:27017"
-else:
-    MONGO_URL = os.environ["MONGO_URL"]
-
-
-
-cliente = MongoClient(MONGO_URL)
-db = cliente["face"]
-collection = db["usuarios"]
-# {"id_": random, "telegram_id": 1747104645, "user" : "example@gmail.com", cookies : cookies_dict}
 
 
 
@@ -148,7 +132,7 @@ def guardar_cookies(scrapper: s, user, **kwargs):
 
     try:
         with open(os.path.join(user_folder(user), "cookies.pkl"), "rb") as cookies:
-            collection.update_one({"telegram_id": user}, {"$set": {"cookies": dill.load(cookies)}})
+            scrapper.collection.update_one({"telegram_id": user}, {"$set": {"cookies": dill.load(cookies)}})
             
     except:
         del scrapper.temp_dict[user]["dic"], scrapper.temp_dict[user]["dict_cookies"]
@@ -194,7 +178,7 @@ def cargar_cookies(scrapper: s, user, bot=False , hacer_loguin=True):
     else:
         try:
             
-            scrapper.temp_dict[user]["res"] = collection.find_one({'_id': user})["cookies"]
+            scrapper.temp_dict[user]["res"] = scrapper.collection.find_one({'_id': user})["cookies"]
             if scrapper.temp_dict[user]["res"]:
                 #loguin por cookies
                 if hacer_loguin:
@@ -268,15 +252,13 @@ def cargar_cookies(scrapper: s, user, bot=False , hacer_loguin=True):
 
                             scrapper.wait.until(ec.visibility_of_element_located((By.CSS_SELECTOR, 'input[type="text"]')))
 
-                            handlers(bot, user , "Introduce tu número de movil (con el código regional adelante, ejemplo: +53, +52 , +01, etc) o tu correo electrónico para enviar el código de verificación" , "correo_o_numero", scrapper.temp_dict)
-
-                            for i in scrapper.temp_dict[user]["res"]:
+                            for i in scrapper.temp_dict[user]["user"]:
 
                                 scrapper.driver.find_element(By.CSS_SELECTOR, 'input[type="text"]').send_keys(i)
 
                                 time.sleep(0.5)
 
-                            handlers(bot, user , "Ahora introduce el código del SMS o el código que se te fué enviado a Whatsapp, revisa ambas\n\nEn caso de que no llegue, espera un momento..." , "correo_o_numero_verificacion", scrapper.temp_dict)
+                            handlers(bot, user , "Introduce el código del SMS o el código que se te fué enviado a Whatsapp, revisa ambas\n\nEn caso de que no llegue, espera un momento..." , "correo_o_numero_verificacion", scrapper.temp_dict)
 
                             for i in scrapper.temp_dict[user]["res"]:
 
@@ -394,7 +376,7 @@ def loguin(scrapper: s, user, bot, **kwargs):
     Hace loguin en Facebook, determinará si hacer loguin desde cero o no si se le proporciona un user y si hay algún archivo de ese usuario en la BD
     """
     
-
+    
     
 
     if list(filter(lambda file: file == "cookies.pkl", os.listdir(user_folder(user)))):
@@ -407,15 +389,15 @@ def loguin(scrapper: s, user, bot, **kwargs):
             give_error(bot, scrapper.driver, user, scrapper.temp_dict[user]["res"])
         
 
-        if not collection.find_one({"telegram_id": user}):
-            collection.insert_one({"_id": int(time.time()), "telegram_id": user})
+        if not scrapper.collection.find_one({"telegram_id": user}):
+            scrapper.collection.insert_one({"_id": int(time.time()), "telegram_id": user})
             guardar_cookies(scrapper, user)
         
         return scrapper.temp_dict[user]["res"]
     
     else:
-        if collection.find_one({"telegram_id": user}):
-            scrapper.temp_dict[user]["res"] = collection.find_one({"telegram_id": user})
+        if scrapper.collection.find_one({"telegram_id": user}):
+            scrapper.temp_dict[user]["res"] = scrapper.collection.find_one({"telegram_id": user})
             if scrapper.temp_dict[user]["res"].get("cookies"):
                 guardar_cookies(scrapper, user, cookiespkl=scrapper.temp_dict[user]["res"]["cookies"])
                 return loguin(scrapper, user, bot)
@@ -425,7 +407,7 @@ def loguin(scrapper: s, user, bot, **kwargs):
 
         else:
 
-            collection.insert_one({"_id": int(time.time()), "telegram_id": user})
+            scrapper.collection.insert_one({"_id": int(time.time()), "telegram_id": user})
                 
             return loguin_cero(scrapper, user, bot)
             
@@ -938,14 +920,14 @@ def publicacion(scrapper: s, bot:telebot.TeleBot, user, load_url=True, contador 
     if kwargs.get("diccionario"):
         scrapper.temp_dict = kwargs["diccionario"]
 
-    if scrapper.temp_dict[user].get("repetir"):
+    if scrapper.temp_dict[user].get("repetir") and not scrapper.temp_dict[user].get("interrupcion"):
         bot.send_message(user, m_texto("A continuación, comenzaré a publicar en breve...\n\nYa he publicado <b>{}</b> veces por todos los grupos disponibles". format(scrapper.temp_dict[user]["c_r"])))
         
     
     # scrapper.temp_dict[user]["info"] = bot.edit_message_text(text="🆕 Mensaje de Información\n\nEstoy accediendo a la publicación del enlace que me proporcionaste...", chat_id=user, message_id=scrapper.temp_dict[user]["info"].message_id)    
     
     
-    if user == scrapper.admin and not scrapper.temp_dict[user].get("repetir"):
+    if not scrapper.temp_dict[user].get("repetir"):
         handlers(bot, user, "A continuación, establece un tiempo de espera luego de finalizada la publicación para volver a repetir el proceso en bucle\nIngresa el tiempo de repetición en MINUTOS\n\nSi solo deseas que no se repita y se publique solamente esta vez pulsa en '<b>No Repetir</b>'", "bucle_publicacion", scrapper.temp_dict, markup=ReplyKeyboardMarkup(True, True).add("No Repetir"))
 
         if scrapper.temp_dict[user]["res"]:
@@ -958,7 +940,7 @@ def publicacion(scrapper: s, bot:telebot.TeleBot, user, load_url=True, contador 
     scrapper.temp_dict[user]["tiempo_debug"] = []
     
     
-    if not kwargs.get("temp_dic"):
+    if not kwargs.get("temp_dic") and not scrapper.temp_dict[user].get("interrupcion"):
         scrapper.temp_dict[user]["publicacion"] = {"publicados" : [], "error" : [], "pendientes": [], "lista_grupos": [], "texto_publicacion": "Lista de Grupos en los que se ha Publicado:\n\n"}
         
         
@@ -972,7 +954,11 @@ def publicacion(scrapper: s, bot:telebot.TeleBot, user, load_url=True, contador 
     #bucle para publicar por los grupos
     
     while True:
+
         
+        if contador != 0:
+            administrar_BD(scrapper, bot)
+
         scrapper.temp_dict[user]["if_cancelar"]()
 
         scrapper.temp_dict[user]["demora"] = time.time()
@@ -1581,11 +1567,12 @@ def main(scrapper: s, bot: telebot.TeleBot, user):
     #     scrapper.temp_dict[user]["texto_r"] = scrapper.temp_dict[user]["texto_r"].replace(re.search(r"[\U0001F300-\U0001F9FF\U0001F600-\U0001F64F\U00002600-\U000026FF\U00002700-\U000027BF]+", scrapper.temp_dict[user]["texto_r"]).group(), "")
 
 
-    comprobar_BD(collection)
+    comprobar_BD(scrapper.collection)
     
     scrapper.temp_dict[user]["if_cancelar"] = lambda scrapper=scrapper, user=user, bot=bot: if_cancelar(scrapper, user, bot)
 
-    scrapper.temp_dict[user]["info"] = bot.send_message(user, m_texto("Empezaré a procesar tu petición..."), reply_markup=telebot.types.ReplyKeyboardRemove())
+    if not scrapper.temp_dict[user].get("interrupcion"):
+        scrapper.temp_dict[user]["info"] = bot.send_message(user, m_texto("Empezaré a procesar tu petición..."), reply_markup=telebot.types.ReplyKeyboardRemove())
 
     scrapper.temp_dict[user]["if_cancelar"]()
 
@@ -1624,63 +1611,60 @@ def main(scrapper: s, bot: telebot.TeleBot, user):
 
     scrapper.temp_dict[user]["if_cancelar"]()
 
-    try:
-        if scrapper.temp_dict[user].get("perfil_actual") and scrapper.temp_dict[user].get("repetir"):
+    if scrapper.temp_dict[user].get("perfil_actual"):
 
-            scrapper.temp_dict[user]["res"] = elegir_cuenta(scrapper , user, bot, perfil_actual=scrapper.temp_dict[user]["perfil_actual"])
+        scrapper.temp_dict[user]["res"] = elegir_cuenta(scrapper , user, bot, perfil_actual=scrapper.temp_dict[user]["perfil_actual"])
 
-        else:
-            scrapper.temp_dict[user]["res"] = elegir_cuenta(scrapper , user, bot, ver_actual=True)
+    else:
+        scrapper.temp_dict[user]["res"] = elegir_cuenta(scrapper , user, bot, ver_actual=True)
 
-        if scrapper.temp_dict[user]["res"][0] == "error":
+    if scrapper.temp_dict[user]["res"][0] == "error":
 
 
-            give_error(bot, scrapper.driver, user, "ID usuario: " + str(user) + "\n\nDescripción:\n" + str(scrapper.temp_dict[user]["res"][1]))
-            return
+        give_error(bot, scrapper.driver, user, "ID usuario: " + str(user) + "\n\nDescripción:\n" + str(scrapper.temp_dict[user]["res"][1]))
+        return
 
-        if not scrapper.temp_dict[user].get("perfil_actual"):
+    if not scrapper.temp_dict[user].get("perfil_actual"):
+    
+        if not len(scrapper.temp_dict[user]["res"]) == 3:
         
-            if not len(scrapper.temp_dict[user]["res"]) == 3:
+            scrapper.temp_dict[user]["teclado"] = ReplyKeyboardMarkup(True, True, row_width=1, input_field_placeholder="¿Quieres cambiar a otro perfil?").add("Si", "No")
             
-                scrapper.temp_dict[user]["teclado"] = ReplyKeyboardMarkup(True, True, row_width=1, input_field_placeholder="¿Quieres cambiar a otro perfil?").add("Si", "No")
-                
-                scrapper.temp_dict[user]["perfil_actual"] = str(scrapper.temp_dict[user]["res"][1])
+            scrapper.temp_dict[user]["perfil_actual"] = str(scrapper.temp_dict[user]["res"][1])
 
-                handlers(bot, user, "El perfil actual es:\n\n=> <b>" + str(scrapper.temp_dict[user]["res"][1]) + "</b>\n\n¿Quieres cambiar de perfil?", "perfil_pregunta", scrapper.temp_dict, markup=scrapper.temp_dict[user]["teclado"])
+            handlers(bot, user, "El perfil actual es:\n\n=> <b>" + str(scrapper.temp_dict[user]["res"][1]) + "</b>\n\n¿Quieres cambiar de perfil?", "perfil_pregunta", scrapper.temp_dict, markup=scrapper.temp_dict[user]["teclado"])
 
-                
-                
-                if scrapper.temp_dict[user]["res"].text.lower() == "si":
-                    scrapper.temp_dict[user]["res"] = elegir_cuenta(scrapper, user, bot)
-                    if scrapper.temp_dict[user]["res"][0] == "error":
+            
+            
+            if scrapper.temp_dict[user]["res"].text.lower() == "si":
+                scrapper.temp_dict[user]["res"] = elegir_cuenta(scrapper, user, bot)
+                if scrapper.temp_dict[user]["res"][0] == "error":
 
 
-                        give_error(bot, scrapper.driver, user, "ID usuario: " + str(user) + "\n\nDescripción del error:\n" + str(scrapper.temp_dict[user]["res"][1]))
-
-                    else:
-                        # scrapper.temp_dict[user]["info"] = bot.edit_message_text(text=f"🆕 Mensaje de Información\n\nHe cambiado al perfil de: {scrapper.temp_dict[user]["res"][1]}", chat_id=user, message_id=scrapper.temp_dict[user]["info"].message_id, reply_markup=telebot.types.ReplyKeyboardRemove())
-
-                        scrapper.temp_dict[user]["perfil_actual"] = str(scrapper.temp_dict[user]["res"][1])
-                        
-                        bot.send_message(user, m_texto("He cambiado al perfil de:\n\n=> <b>" + str(scrapper.temp_dict[user]["res"][1]) + "</b>\n\nLoguin completado exitosamente!"), reply_markup=telebot.types.ReplyKeyboardRemove())
+                    give_error(bot, scrapper.driver, user, "ID usuario: " + str(user) + "\n\nDescripción del error:\n" + str(scrapper.temp_dict[user]["res"][1]))
 
                 else:
-                    # scrapper.temp_dict[user]["info"] = bot.edit_message_text(text=f"🆕 Mensaje de Información\n\nMuy bien, continuaré con el perfil actual", chat_id=user, message_id=scrapper.temp_dict[user]["info"].message_id, reply_markup=telebot.types.ReplyKeyboardRemove())
+                    # scrapper.temp_dict[user]["info"] = bot.edit_message_text(text=f"🆕 Mensaje de Información\n\nHe cambiado al perfil de: {scrapper.temp_dict[user]["res"][1]}", chat_id=user, message_id=scrapper.temp_dict[user]["info"].message_id, reply_markup=telebot.types.ReplyKeyboardRemove())
 
-                    bot.send_message(user, m_texto("Muy bien, continuaré con el perfil actual\n\nLoguin completado exitosamente!"), reply_markup=telebot.types.ReplyKeyboardRemove())
+                    scrapper.temp_dict[user]["perfil_actual"] = str(scrapper.temp_dict[user]["res"][1])
+                    
+                    bot.send_message(user, m_texto("He cambiado al perfil de:\n\n=> <b>" + str(scrapper.temp_dict[user]["res"][1]) + "</b>\n\nLoguin completado exitosamente!"), reply_markup=telebot.types.ReplyKeyboardRemove())
+
             else:
-                bot.send_message(user, m_texto("Al parecer, solamente está el perfil de:\n\n=> <b>" + str(scrapper.temp_dict[user]["res"][1]) +"</b>\n\nContinuaré con ese..."))
+                # scrapper.temp_dict[user]["info"] = bot.edit_message_text(text=f"🆕 Mensaje de Información\n\nMuy bien, continuaré con el perfil actual", chat_id=user, message_id=scrapper.temp_dict[user]["info"].message_id, reply_markup=telebot.types.ReplyKeyboardRemove())
+
+                bot.send_message(user, m_texto("Muy bien, continuaré con el perfil actual\n\nLoguin completado exitosamente!"), reply_markup=telebot.types.ReplyKeyboardRemove())
+        else:
+            bot.send_message(user, m_texto("Al parecer, solamente está el perfil de:\n\n=> <b>" + str(scrapper.temp_dict[user]["res"][1]) +"</b>\n\nContinuaré con ese..."))
 
         
-    except:
-        give_error(bot, scrapper.driver, user, "Ha ocurrido un error intentando ver la cuenta actual! ID usuario: " + str(user) + "\n\nMensaje de error:\n" + str(format_exc()))
-        return
     
         
 
     
             
-    guardar_cookies(scrapper, user)    
+    guardar_cookies(scrapper, user)
+    administrar_BD(scrapper, bot) 
 
 
     scrapper.temp_dict[user]["if_cancelar"]()
@@ -1692,6 +1676,7 @@ def main(scrapper: s, bot: telebot.TeleBot, user):
 
     if not scrapper.temp_dict[user]["publicacion_res"][0] == "ok":
         
+        administrar_BD(scrapper, bot) 
 
         scrapper.temp_dict[user]["publicacion"]["hora_reinicio"] = time.time() + (scrapper.temp_dict[user]["repetir"] * 60) #el tiempo para repetir está en minutos, así que tengo que multiplicarlo en segundos
                         
