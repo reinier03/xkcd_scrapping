@@ -955,7 +955,7 @@ def publicacion(scrapper: s, bot:telebot.TeleBot, user, load_url=True, contador 
     
     while True:
 
-        
+
         if contador != 0:
             administrar_BD(scrapper, bot)
 
@@ -1607,7 +1607,7 @@ def main(scrapper: s, bot: telebot.TeleBot, user):
         give_error(bot, scrapper.driver, user, "ID usuario: " + str(user) + "\nFaltó algo :(",)
     
 
-    
+    administrar_BD(scrapper, bot)
 
     scrapper.temp_dict[user]["if_cancelar"]()
 

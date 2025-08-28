@@ -389,8 +389,8 @@ def get_work(m: telebot.types.Message):
 
         #si el texto es "/publicar 3" 
         if len(m.text.split()) > 1:
-            if m.text.split()[1].isdigit():
-                scrapper.temp_dict[m.from_user.id]["contador"] = int(m.text.split()[1])
+            if re.search(r"\d+", m.text):
+                scrapper.temp_dict[m.from_user.id]["contador"] = int(re.search(r"\d+", m.text).group())
 
             if "-t" in m.text and m.from_user.id == admin:
                 scrapper.temp_dict[m.from_user.id]["mostrar_tiempo_debug"] = True
@@ -418,6 +418,8 @@ def get_work(m: telebot.types.Message):
 
         bot.register_next_step_handler(m, get_work_texto)
 
+    return
+
 
 def get_work_texto(m: telebot.types.Message):
     global scrapper
@@ -429,7 +431,7 @@ def get_work_texto(m: telebot.types.Message):
         return
 
     if not m.content_type == "text":
-        bot.send_message(m.chat.id, m_texto("Mal! No has enviado texto...\n\nEnvíame a continuación el texto de la Publicación...", True), reply_markup = telebot.types.ReplyKeyboardMarkup(True, True).add("Cancelar Operacion"))
+        bot.send_message(m.chat.id, m_texto("Mal! No has enviado texto...\n\nEnvíame a continuación el texto de la Publicación...", True))
 
         bot.register_next_step_handler(m, get_work_texto)
 
@@ -443,6 +445,8 @@ def get_work_texto(m: telebot.types.Message):
 
 
     bot.register_next_step_handler(m, get_work_foto)
+
+    return
 
     
 def get_work_foto(m: telebot.types.Message):
@@ -490,8 +494,6 @@ def start_publish(bot, user):
             facebook_scrapper.main(scrapper, bot, user)
         except Exception as err:
             scrapper.temp_dict[user]["res"] = str(format_exc())
-
-            
 
             if "no" == str(err.args[0]):
                 pass

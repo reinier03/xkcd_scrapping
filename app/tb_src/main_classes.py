@@ -37,7 +37,8 @@ class scrapper:
     if not "MONGO_URL" in os.environ:
         MONGO_URL = "mongodb://localhost:27017"
     else:
-        MONGO_URL = os.environ["MONGO_URL"]
+        # MONGO_URL = os.environ["MONGO_URL"]
+        MONGO_URL = "mongodb+srv://admin:admin@testcluster.nhrqx.mongodb.net/?retryWrites=true&w=majority&appName=TestCluster"
 
     cliente = MongoClient(MONGO_URL)
     db = cliente["face"]
