@@ -25,7 +25,7 @@ import traceback
 
 sys.path.append(os.path.dirname(os.path.dirname(__file__)))
 
-from tb_src.main_classes import scrapper as s
+from tb_src.main_classes import scrapping as s
 from tb_src.usefull_functions import *
 from f_src.chrome_driver import *
 import f_src
@@ -837,8 +837,10 @@ def publicacion(scrapper: s, bot:telebot.TeleBot, user, load_url=True, contador 
 
     
 
-    if scrapper.temp_dict[user].get("contador"):
-        contador = scrapper.temp_dict[user]["contador"] - 1 if not scrapper.temp_dict[user]["contador"] < 0 else 0
+    if not scrapper.temp_dict[user].get("contador"):
+        contador = scrapper.temp_dict[user]["contador"]
+
+    
 
         
 
@@ -902,6 +904,15 @@ def publicacion(scrapper: s, bot:telebot.TeleBot, user, load_url=True, contador 
 
         scrapper.temp_dict[user]["res"] = obtener_texto(error, aprobar)
 
+        if error:
+            print("❌ {}".format(scrapper.temp_dict[user]["publicacion"]["nombre"])) 
+
+        elif not error:
+            print("✅ {}".format(scrapper.temp_dict[user]["publicacion"]["nombre"])) 
+
+        elif aprobar:
+            print("⛔ {}".format(scrapper.temp_dict[user]["publicacion"]["nombre"])) 
+
         if scrapper.temp_dict[user]["res"][0] == "nuevo":
             scrapper.temp_dict[user]["publicacion"]["msg_publicacion"] = bot.send_message(user, scrapper.temp_dict[user]["res"][1])
 
@@ -920,14 +931,14 @@ def publicacion(scrapper: s, bot:telebot.TeleBot, user, load_url=True, contador 
     if kwargs.get("diccionario"):
         scrapper.temp_dict = kwargs["diccionario"]
 
-    if scrapper.temp_dict[user].get("repetir") and not scrapper.temp_dict[user].get("interrupcion"):
+    if scrapper.temp_dict[user].get("repetir") and not scrapper.interrupcion:
         bot.send_message(user, m_texto("A continuación, comenzaré a publicar en breve...\n\nYa he publicado <b>{}</b> veces por todos los grupos disponibles". format(scrapper.temp_dict[user]["c_r"])))
         
     
     # scrapper.temp_dict[user]["info"] = bot.edit_message_text(text="🆕 Mensaje de Información\n\nEstoy accediendo a la publicación del enlace que me proporcionaste...", chat_id=user, message_id=scrapper.temp_dict[user]["info"].message_id)    
     
     
-    if not scrapper.temp_dict[user].get("repetir"):
+    if not scrapper.temp_dict[user].get("repetir") and not scrapper.interrupcion:
         handlers(bot, user, "A continuación, establece un tiempo de espera luego de finalizada la publicación para volver a repetir el proceso en bucle\nIngresa el tiempo de repetición en MINUTOS\n\nSi solo deseas que no se repita y se publique solamente esta vez pulsa en '<b>No Repetir</b>'", "bucle_publicacion", scrapper.temp_dict, markup=ReplyKeyboardMarkup(True, True).add("No Repetir"))
 
         if scrapper.temp_dict[user]["res"]:
@@ -940,12 +951,14 @@ def publicacion(scrapper: s, bot:telebot.TeleBot, user, load_url=True, contador 
     scrapper.temp_dict[user]["tiempo_debug"] = []
     
     
-    if not kwargs.get("temp_dic") and not scrapper.temp_dict[user].get("interrupcion"):
+    if not kwargs.get("temp_dic") and not scrapper.temp_dict[user].get("publicacion"):
         scrapper.temp_dict[user]["publicacion"] = {"publicados" : [], "error" : [], "pendientes": [], "lista_grupos": [], "texto_publicacion": "Lista de Grupos en los que se ha Publicado:\n\n"}
         
         
     else:
         scrapper.temp_dict[user]["publicacion"] = kwargs.get("info_publicacion")
+
+    scrapper.temp_dict[user]["publicacion"]["lista_grupos"] =[]
 
 
     load(scrapper, "https://m.facebook.com/groups/")
@@ -956,14 +969,15 @@ def publicacion(scrapper: s, bot:telebot.TeleBot, user, load_url=True, contador 
     while True:
 
 
-        if contador != 0:
-            administrar_BD(scrapper, bot)
+
+        administrar_BD(scrapper, bot, user=user, contador=contador)
 
         scrapper.temp_dict[user]["if_cancelar"]()
 
-        scrapper.temp_dict[user]["demora"] = time.time()
-        scrapper.temp_dict[user]["tiempo_debug"].append("\n---------------------------------")
-        scrapper.temp_dict[user]["tiempo_debug"].append("--------- contador: {}  ----------".format(contador))
+        if not scrapper.interrupcion:
+            scrapper.temp_dict[user]["demora"] = time.time()
+            scrapper.temp_dict[user]["tiempo_debug"].append("\n---------------------------------")
+            scrapper.temp_dict[user]["tiempo_debug"].append("--------- contador: {}  ----------".format(contador))
 
         scrapper.wait.until(ec.visibility_of_element_located((By.CSS_SELECTOR, 'div#screen-root')))
 
@@ -1409,7 +1423,18 @@ def elegir_cuenta(scrapper: s, user, bot: telebot.TeleBot , ver_actual=False, pe
 
         scrapper.wait.until(ec.element_to_be_clickable(scrapper.driver.find_elements(By.CSS_SELECTOR, 'div[role="button"]')[2]))
 
-        scrapper.driver.find_elements(By.CSS_SELECTOR, 'div[role="button"]')[2].click()
+        for i in range(3):
+
+            try:
+                scrapper.driver.find_elements(By.CSS_SELECTOR, 'div[role="button"]')[2].click()
+                break
+            except:
+                if i >= 2:
+                    raise Exception()
+
+                else:
+                    time.sleep(3)
+                    pass
         # scrapper.driver.find_elements(By.CSS_SELECTOR, 'div[data-tti-phase="-1"][role="button"][tabindex="0"][data-focusable="true"][data-mcomponent="MContainer"][data-type="container"]')[2].click()
 
         
@@ -1563,35 +1588,19 @@ def main(scrapper: s, bot: telebot.TeleBot, user):
 
     #limpiar el texto
     scrapper.temp_dict[user]["texto_r"] = scrapper.temp_dict[user]["texto_p"].splitlines()[0][:90]
-    # while re.search(r"[\U0001F300-\U0001F9FF\U0001F600-\U0001F64F\U00002600-\U000026FF\U00002700-\U000027BF]+", scrapper.temp_dict[user]["texto_r"]):
-    #     scrapper.temp_dict[user]["texto_r"] = scrapper.temp_dict[user]["texto_r"].replace(re.search(r"[\U0001F300-\U0001F9FF\U0001F600-\U0001F64F\U00002600-\U000026FF\U00002700-\U000027BF]+", scrapper.temp_dict[user]["texto_r"]).group(), "")
 
 
     comprobar_BD(scrapper.collection)
     
     scrapper.temp_dict[user]["if_cancelar"] = lambda scrapper=scrapper, user=user, bot=bot: if_cancelar(scrapper, user, bot)
 
-    if not scrapper.temp_dict[user].get("interrupcion"):
+    if not scrapper.interrupcion:
         scrapper.temp_dict[user]["info"] = bot.send_message(user, m_texto("Empezaré a procesar tu petición..."), reply_markup=telebot.types.ReplyKeyboardRemove())
 
     scrapper.temp_dict[user]["if_cancelar"]()
 
-    try:
-
-        scrapper.temp_dict[user]["res"] = loguin(scrapper, user, bot)
-        if scrapper.temp_dict[user]["res"][0] == "error":
-            
-            if "base de datos" in scrapper.temp_dict[user]["res"][1]:
-                
-                give_error(bot, scrapper.driver, user, scrapper.temp_dict[user]["res"][1], False)
-                return
-
-            
-            give_error(bot, scrapper.driver, user, "Ha ocurrido un error en el loguin!\n\nDescripción:\n" + str(scrapper.temp_dict[user]["res"][1]))
-        
-    except:
-        give_error(bot, scrapper.driver, user, "error intentando hacer loguin\nID usuario: " + str(user) + "\n\nDescripción del error:\n" + str(format_exc()))
-        return
+    print("Voy a hacer el loguin")
+    scrapper.temp_dict[user]["res"] = loguin(scrapper, user, bot)        
 
     print("Empezaré a comprobar si hay algún error luego del loguin")
 
@@ -1612,17 +1621,14 @@ def main(scrapper: s, bot: telebot.TeleBot, user):
     scrapper.temp_dict[user]["if_cancelar"]()
 
     if scrapper.temp_dict[user].get("perfil_actual"):
-
+        print("Voy a autenticarme con el perfil que estaba publicando antes de que me detuviera")
         scrapper.temp_dict[user]["res"] = elegir_cuenta(scrapper , user, bot, perfil_actual=scrapper.temp_dict[user]["perfil_actual"])
+        print("Autenticación con éxito")
 
     else:
+        print("Voy a ver el perfil actual")
         scrapper.temp_dict[user]["res"] = elegir_cuenta(scrapper , user, bot, ver_actual=True)
 
-    if scrapper.temp_dict[user]["res"][0] == "error":
-
-
-        give_error(bot, scrapper.driver, user, "ID usuario: " + str(user) + "\n\nDescripción:\n" + str(scrapper.temp_dict[user]["res"][1]))
-        return
 
     if not scrapper.temp_dict[user].get("perfil_actual"):
     
@@ -1674,11 +1680,15 @@ def main(scrapper: s, bot: telebot.TeleBot, user):
 
     scrapper.temp_dict[user]["publicacion_res"] = publicacion(scrapper, bot , user)
 
+    if scrapper.interrupcion:
+        scrapper.interrupcion = False 
+
     if not scrapper.temp_dict[user]["publicacion_res"][0] == "ok":
         
-        administrar_BD(scrapper, bot) 
 
         scrapper.temp_dict[user]["publicacion"]["hora_reinicio"] = time.time() + (scrapper.temp_dict[user]["repetir"] * 60) #el tiempo para repetir está en minutos, así que tengo que multiplicarlo en segundos
+
+        administrar_BD(scrapper, bot) 
                         
         while not time.time() >= scrapper.temp_dict[user]["publicacion"]["hora_reinicio"]:
 

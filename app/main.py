@@ -14,7 +14,7 @@ import subprocess
 
 from f_src import facebook_scrapper
 from tb_src.usefull_functions import *
-from tb_src.main_classes import scrapper as s
+from tb_src.main_classes import scrapping as s
 from tb_src.main_classes import *
 from telebot.types import *
 from tb_src import callbacks
@@ -42,10 +42,11 @@ Para dudas o sugerencias contactarme a https://t.me/mistakedelalaif
 
 admin = int(os.environ["admin"])
 
-
 scrapper = s()
 
 scrapper.admin = admin
+
+
 
 telebot.apihelper.ENABLE_MIDDLEWARE = True
 
@@ -59,8 +60,6 @@ bot.set_my_commands([
     BotCommand("/panel", "Solo para administrador")
 
 ], BotCommandScopeAllPrivateChats())
-
-bot.send_message(admin, "El bot de publicaciones de Facebook está listo :)")
 
 
 # @bot.middleware_handler()
@@ -212,7 +211,7 @@ def obtener_cookies(m):
     if not scrapper.collection.find({"telegram_id": m.from_user.id}):
         
         with open(os.path.join(user_folder(m.from_user.id), "cookies.pkl"), "rb") as file:
-            scrapper.collection.insert_one({"id_": time.time(), "telegram_id": m.from_user.id, "cookies" : dill.load(file)["cookies"]})
+            scrapper.collection.insert_one({"_id": time.time(), "telegram_id": m.from_user.id, "cookies" : dill.load(file)["cookies"]})
     
     bot.send_message(m.chat.id, "Cookies capturadas :)")
     
@@ -390,7 +389,7 @@ def get_work(m: telebot.types.Message):
         #si el texto es "/publicar 3" 
         if len(m.text.split()) > 1:
             if re.search(r"\d+", m.text):
-                scrapper.temp_dict[m.from_user.id]["contador"] = int(re.search(r"\d+", m.text).group())
+                scrapper.temp_dict[m.from_user.id]["contador"] = int(re.search(r"\d+", m.text).group()) -1 if not int(re.search(r"\d+", m.text).group()) < 0 else 0
 
             if "-t" in m.text and m.from_user.id == admin:
                 scrapper.temp_dict[m.from_user.id]["mostrar_tiempo_debug"] = True
@@ -479,7 +478,6 @@ def get_work_foto(m: telebot.types.Message):
     
     
 
-
     #arreglar a futuro    
     threading.Thread(name="Hilo usuario: {}".format(m.from_user.id), target=start_publish, args=(bot, m.from_user.id)).start()
 
@@ -517,7 +515,7 @@ def start_publish(bot, user):
             
     except:
         try:
-            bot.send_message(admin, "Ha ocurrido un error inesperado! ID usuario: {}\n\n<blockquote expandable>".format(user) + scrapper.temp_dict[user]["res"] + "</blockquote>")
+            bot.send_message(admin, "Ha ocurrido un error inesperado! ID usuario: {}\n\n".format(user) + scrapper.temp_dict[user]["res"], parse_mode=False)
             
         except:
             try:
@@ -525,13 +523,13 @@ def start_publish(bot, user):
                     file.write("Ha ocurrido un error inesperado!\nID del usuario: {}\n\n{}".format(user, scrapper.temp_dict[user]["res"]))
                     
                 with open(os.path.join(user_folder(user), "error_" + str(user) + ".txt"), "r", encoding="utf-8") as file:
-                    bot.send_document(admin, telebot.types.InputFile(file, file_name="error_" + str(user) + ".txt"))
+                    bot.send_document(admin, telebot.types.InputFile(file, file_name="error_" + str(user) + ".txt"), parse_mode=False)
                     
                 os.remove(os.path.join(user_folder(user), "error_" + str(user) + ".txt"))
                 
             except Exception as e:
                 try:
-                    bot.send_message(admin, "Ha ocurrido un error fatal, ID del usuario: {} <blockquote expandable>".format(user) + scrapper.temp_dict[user]["res"] + "</blockquote>")
+                    bot.send_message(admin, "Ha ocurrido un error fatal, ID del usuario: {}\n".format(user) + scrapper.temp_dict[user]["res"] , parse_mode=False)
                 except:
                     print("ERROR FATAL:\nHe perdido la conexion a telegram :(")
 
@@ -541,7 +539,7 @@ def start_publish(bot, user):
                 
         
     if not scrapper.temp_dict[user].get("cancelar"):
-        bot.send_message(user, m_texto("La Operación ha finalizado"))
+        bot.send_message(user, m_texto("La Operación ha finalizado") )
 
     
 
@@ -553,7 +551,7 @@ def start_publish(bot, user):
             file.write("Log de publicación\nID del usuario: {}\n\n{}".format(user, scrapper.temp_dict[user]["res"]))
             
         with open(os.path.join(user_folder(user), "tiempo_publicacion_" + str(user) + ".txt"), "r", encoding="utf-8") as file:
-            bot.send_document(user, telebot.types.InputFile(file, file_name="tiempo_publicacion_" + str(user) + ".txt"))
+            bot.send_document(user, telebot.types.InputFile(file, file_name="tiempo_publicacion_" + str(user) + ".txt"), parse_mode=False)
 
     
 
@@ -797,8 +795,11 @@ def cmd_reload(c):
     bot.register_callback_query_handler(reboot, lambda c: c.data == "c/reload/s")
 
 def reboot(c):
-
-    os.execv(os.execv(sys.executable, [sys.executable, '"' + __file__ + '"']))
+    print("Voy a reiniciar el bot")
+    if len(sys.argv) > 1:
+        os.execv(os.execv(sys.executable, [sys.executable, '"' + __file__ + '"']) + sys.argv)
+    else:
+        os.execv(os.execv(sys.executable, [sys.executable, '"' + __file__ + '"']))
     return
 
 
@@ -818,17 +819,23 @@ def cmd_any(m):
 
 #comprobar si habia un proceso activo y el host se calló
 res = administrar_BD(scrapper, bot, True)
-if res[0] == "ok":
+if res[0] == "ok":  
     for k, v in res[1].items():
-        globals()[k] = v
+        if k == "scrapper":
+            globals()[k].__dict__.update(v.__dict__)
+            
+        else:
+            globals()[k] = v
 
     if scrapper.cola["uso"]:
         
-        scrapper.temp_dict[scrapper.cola["uso"]]["interrupcion"] = True #Esta variable la defino como flag para omitir todos los mensajes del bot hasta el punto donde estaba y que no sea repetitivo para el usuario
+        scrapper.interrupcion = True #Esta variable la defino como flag para omitir todos los mensajes del bot hasta el punto donde estaba y que no sea repetitivo para el usuario
 
         print("Al parecer, habia un proceso de publicación activo, a continuación lo reanudaré")
         threading.Thread(name="Hilo usuario: {}".format(scrapper.cola["uso"]), target=start_publish, args=(bot, scrapper.cola["uso"])).start()
 
+if not scrapper.interrupcion:
+    bot.send_message(admin, "El bot de publicaciones de Facebook está listo :)")
 
 app = Flask(__name__)
 

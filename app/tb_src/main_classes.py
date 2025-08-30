@@ -1,3 +1,5 @@
+import selenium
+from selenium.webdriver.remote.webelement import WebElement
 from selenium.webdriver.support.ui import WebDriverWait
 import time
 import os
@@ -6,49 +8,136 @@ import pprint
 import sys
 from pymongo import MongoClient
 
+
 sys.path.append(os.path.dirname(os.path.dirname(__file__)))
 
-from .usefull_functions import *
+from tb_src.usefull_functions import *
 from f_src.chrome_driver import uc_driver
 
 
 
 
 
-class scrapper:
+class scrapping:
 
-    driver = uc_driver(True)
+    def __init__(self, iniciar_web=True):
+
+
+        if iniciar_web:
+            self.__iniciar()
+
+
+        if not "MONGO_URL" in os.environ:
+            self.MONGO_URL = "mongodb://localhost:27017"
+        else:
+            self.MONGO_URL = os.environ["MONGO_URL"]
+
+        self.cliente = MongoClient(self.MONGO_URL)
+        self.db = self.cliente["face"]
+
+
+        self.collection = self.db["usuarios"] 
+        
+        #Para tener mas detalles de la estructura de la base de datos consulte el archivo: "../BD structure.txt"
+
+        #----------------------------------------------------------------
+        
+
+        self.temp_dict = {}
+        self.cola = {"uso": False, "cola_usuarios": []}
+        self.delay = 60
+        self.password = True
+        self.interrupcion = False
+        self.admin = None
+        self.usuarios_permitidos = []
+
+        return
     
-    if os.name == "nt":
-        wait = WebDriverWait(driver, 80)
-    else:
-        wait = WebDriverWait(driver, 30)
-
-    wait_s = WebDriverWait(driver, 8)
-    temp_dict = {}
-    cola = {"uso": False, "cola_usuarios": []}
-    delay = 60
-    password = True
-    admin = None
-    usuarios_permitidos = []
+    def __getstate__(self):
+        res = self.__dict__.copy().copy()
+        
+        # Eliminar TODOS los objetos no serializables
+        elementos_a_eliminar = [
+            "driver", "wait", "wait_s", 
+            "collection", "db", "cliente"  # ← ¡MongoDB también tiene sockets!
+        ]
+        
+        for elemento in elementos_a_eliminar:
+            if elemento in res:
+                del res[elemento]
+        
+        
+        if res.get("temp_dict"):
+        
+            def es_objeto_selenium(obj):
+                """Detecta si es un objeto de Selenium o similar"""
+                if obj is None:
+                    return False
+                # Verificar por nombre de clase o módulo
+                clase_name = obj.__class__.__name__
+                modulo_name = obj.__class__.__module__
+                
+                return (clase_name in ['WebElement', 'ActionChains', 'WebDriver'] or 
+                        'selenium' in str(modulo_name) or
+                        'undetected_chromedriver' in str(modulo_name))
+            
+            def limpiar_objetos(obj):
+                if es_objeto_selenium(obj):
+                    return "[SELENIUM_OBJECT_REMOVED]"
+                elif isinstance(obj, dict):
+                    return {k: limpiar_objetos(v) for k, v in obj.items()}
+                elif isinstance(obj, list):
+                    return [limpiar_objetos(item) for item in obj]
+                elif isinstance(obj, tuple):
+                    return tuple(limpiar_objetos(item) for item in obj)
+                else:
+                    return obj
+            
+            
+            return limpiar_objetos(res["temp_dict"])
+        
+        
+        
     
-    #----------------------database------------------------------------
+    def __setstate__(self, state):
+        # Restaurar el estado básico primero
+        self.__dict__.update(state)
+        
+        # Reconstruir la conexión de MongoDB
+        if not hasattr(self, 'MONGO_URL'):
+            if not "MONGO_URL" in os.environ:
+                self.MONGO_URL = "mongodb://localhost:27017"
+            else:
+                self.MONGO_URL = os.environ["MONGO_URL"]
+        
+        self.cliente = MongoClient(self.MONGO_URL)
+        self.db = self.cliente["face"]
+        self.collection = self.db["usuarios"]
 
-    if not "MONGO_URL" in os.environ:
-        MONGO_URL = "mongodb://localhost:27017"
-    else:
-        # MONGO_URL = os.environ["MONGO_URL"]
-        MONGO_URL = "mongodb+srv://admin:admin@testcluster.nhrqx.mongodb.net/?retryWrites=true&w=majority&appName=TestCluster"
-
-    cliente = MongoClient(MONGO_URL)
-    db = cliente["face"]
-
-
-    collection = db["usuarios"] #Esta BD guardará la informacion tanto de los usuarios como del bot 
+        return
+        
+        # Reconstruir el driver de selenium si es necesario
+        if not hasattr(self, 'driver'):
+            self.driver = None
+            self.wait = None
+            self.wait_s = None
+        
+        return
     
-    #Para tener mas detalles de la estructura de la base de datos consulte el archivo: "../BD structure.txt"
 
-    #----------------------------------------------------------------
+    
+    
+    def __iniciar(self):
+        self.driver = uc_driver(True)
+
+        if os.name == "nt":
+            self.wait = WebDriverWait(self.driver, 80)
+        else:
+            self.wait = WebDriverWait(self.driver, 30)
+
+        self.wait_s = WebDriverWait(self.driver, 8)
+
+        return
 
     
     
@@ -58,24 +147,12 @@ class scrapper:
         pprint.pprint(self.temp_dict[user], sort_dicts=False)
 
     def __str__(self):
-        return """
-dict cola: {}
-dict temp_dict: 
-{}
-var delay: {}
-var password: {}
-var admin: {}
-list usuarios_permitidos: {}
-""".format(
+        texto = ""
 
-    "Usuario actual: <code>" + str(self.cola["uso"]) + "</code> | Usuarios en espera: " + ", ".join(["<code>" + str(i) + "</code>" for i in self.cola["cola_usuarios"]]) if self.cola["cola_usuarios"] else "Usuario actual <code>" + str(self.cola["uso"]) + "</code> | " + "Actualmente no hay usuarios en cola",
-    "\n".join(["{} : {}".format(k,v) for k,v in self.temp_dict.items()]) if self.temp_dict else "VACÍO", 
-    self.delay,
-    self.password,
-    self.admin,
-    self.usuarios_permitidos
-
-    )
+        for k, v in self.__dict__.items():
+            texto += "scrapper.<b>{}</b>  =>  {}\n\n".format(k, v)
+        
+        return texto
 
 
 

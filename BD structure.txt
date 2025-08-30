@@ -3,7 +3,7 @@ Esto es un Mongo DB
 #por cada usuario
 
 estructura db["usuarios"]:
-{"id_": random, "telegram_id": 1747104645, "user" : "example@gmail.com", "password": "juanito123", "cookies" : cookies.pkl}
+{"_id": random, "telegram_id": 1747104645, "user" : "example@gmail.com", "password": "juanito123", "cookies" : cookies.pkl}
 
 Explicacion:
     "id_" : se genera con time.time()

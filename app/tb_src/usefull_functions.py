@@ -97,8 +97,11 @@ def liberar_cola(scrapper, user, bot):
         except:
             pass
     
-
+    if scrapper.interrupcion:
+        scrapper.interrupcion = False
+        
     del scrapper.temp_dict[user]
+    administrar_BD(scrapper, bot)
     return
 
 def obtener_grupos(scrapper, user, all: bool = False):
@@ -411,20 +414,41 @@ def clear_doom(driver: Chrome, hacer_limpieza=True):
     return "ok"
 
 
-def administrar_BD(scrapper, bot, cargar_cookies=False, **kwargs):
+def leer_BD(scrapper = False):
+    if scrapper:
+        print(dill.loads(scrapper.collection.find_one({"_id": "telegram_bot"})["cookies"])["scrapper"])
+    else:
+        with open(os.path.join(tempdir, "bot_cookies.pkl"), "rb") as file:
+            file.seek(0)
+            print(dill.loads(file.read())["scrapper"])
+
+    return
+
+
+def administrar_BD(scrapper, bot, cargar_cookies=False, user=False, **kwargs):
     """
     El parametro 'guardar' si es True, guardará el estado actual del bot, Si es False lo cargará
     """
+
     dict_guardar = {"scrapper": scrapper}
-    
+    for k, v in kwargs.items():
+        if not user:
+            dict_guardar.update({k: v})
+
+        if user:
+            dict_guardar["scrapper"].temp_dict[user].update({k: v})
+
     #GUARDAR
     if cargar_cookies == False:
         #si va a guardarse el estado...
-        with open(os.path.join(tempdir, "bot_cookies.pkl"), "wb") as file:
+
+        
+
+        with open(os.path.join(gettempdir(), "bot_cookies.pkl"), "wb") as file:
 
             dill.dump(dict_guardar, file)
 
-        with open(os.path.join(tempdir, "bot_cookies.pkl"), "rb") as file:
+        with open(os.path.join(gettempdir(), "bot_cookies.pkl"), "rb") as file:
 
             if scrapper.collection.find_one({"_id": "telegram_bot", "telegram_id": bot.user.id}):
                 
@@ -442,15 +466,15 @@ def administrar_BD(scrapper, bot, cargar_cookies=False, **kwargs):
             
             res = ("ok" , dill.loads(scrapper.collection.find_one({"_id": "telegram_bot", "telegram_id": bot.user.id})["cookies"]))
 
-            with open(os.path.join(tempdir, "bot_cookies.pkl"), "wb") as file:
+            with open(os.path.join(gettempdir(), "bot_cookies.pkl"), "wb") as file:
                 dill.dump(dill.loads(scrapper.collection.find_one({"_id": "telegram_bot", "telegram_id": bot.user.id})["cookies"]), file)
 
 
         else:
             #si no hay ningun archivo del bot en la base de datos primero compruebo si hay una copia local para insertarla en la BD
-            if os.path.isfile(os.path.join(tempdir, "bot_cookies.pkl")):
+            if os.path.isfile(os.path.join(gettempdir(), "bot_cookies.pkl")):
 
-                with open(os.path.join(tempdir, "bot_cookies.pkl"), "rb") as file:
+                with open(os.path.join(gettempdir(), "bot_cookies.pkl"), "rb") as file:
                     scrapper.collection.insert_one({"_id": "telegram_bot", "telegram_id": bot.user.id, "cookies": file.read()})
 
                     file.seek(0)
@@ -459,11 +483,11 @@ def administrar_BD(scrapper, bot, cargar_cookies=False, **kwargs):
                     
             #si no hay copia ni en local ni en online pues la creo
             else:
-                with open(os.path.join(tempdir, "bot_cookies.pkl"), "wb") as file:
+                with open(os.path.join(gettempdir(), "bot_cookies.pkl"), "wb") as file:
 
                     dill.dump(dict_guardar, file)
 
-                with open(os.path.join(tempdir, "bot_cookies.pkl"), "rb") as file:
+                with open(os.path.join(gettempdir(), "bot_cookies.pkl"), "rb") as file:
 
                     scrapper.collection.insert_one({"_id": "telegram_bot", "telegram_id": bot.user.id, "cookies" : file.read()})
                     res = ("fail", "se ha guardado una nueva copia, al parecer no habia ninguna")
