@@ -902,6 +902,7 @@ def publicacion(scrapper: scrapping, bot:telebot.TeleBot, user, load_url=True, c
     
     def enviar_grupos(error: bool, aprobar=False):
         
+        
         scrapper.temp_dict[user]["res"] = obtener_texto(error, aprobar)
 
         if error:
@@ -1288,28 +1289,30 @@ def publicacion(scrapper: scrapping, bot:telebot.TeleBot, user, load_url=True, c
                 
                 try:    
                     
-                    def comprobar_p(espera: int = 8):
+                    def comprobar_p(scrapper, espera: int = 8):
                         """
                         True si encuentra la publicacion en el grupo
                         False si no la encuentra
                         "pendiente" si está pendiente
                         """
-                        global scrapper
                         
-                        try:  
+                        try:                             
                             #este revisa la primera publicación del grupo
                             WebDriverWait(scrapper.driver, espera).until(ec.any_of(lambda driver, scrapper=scrapper, user=user: driver.find_element(By.XPATH, '//*[contains(text(), "{}")]'.format(str(scrapper.temp_dict[user]["perfil_actual"]).strip())) and driver.find_element(By.XPATH, '//*[contains(text(), "{}")]'.format(scrapper.temp_dict[user]["texto_r"]))))
 
                             
                             
+                            try:
+                                if scrapper.driver.find_element(By.XPATH, '//*[contains(text(), "Your post is pending")]'):
 
-                            if scrapper.driver.find_element(By.XPATH, '//*[contains(text(), "Your post is pending")]'):
+                                #if len(scrapper.driver.find_element(By.XPATH, '//*[@id="screen-root"]/div/div[3]/div[8]').find_elements(By.XPATH, './*')) == 2
 
-                            #if len(scrapper.driver.find_element(By.XPATH, '//*[@id="screen-root"]/div/div[3]/div[8]').find_elements(By.XPATH, './*')) == 2
-
-                                scrapper.temp_dict[user]["publicacion"]["pendientes"].append(scrapper.temp_dict[user]["publicacion"]["nombre"])
-                                    
-                                return "pendiente"
+                                    scrapper.temp_dict[user]["publicacion"]["pendientes"].append(scrapper.temp_dict[user]["publicacion"]["nombre"])
+                                        
+                                    return "pendiente"
+                            
+                            except:
+                                pass
 
 
                             #Se mostraron el nombre del perfil y parte de la publicación, eso significa que se ha publicado adecuadamente
@@ -1323,12 +1326,11 @@ def publicacion(scrapper: scrapping, bot:telebot.TeleBot, user, load_url=True, c
                             return False
                         
 
-                    match comprobar_p():
+                    match comprobar_p(scrapper):
                         
                         case True:
                             
                             print("✅ " + str(scrapper.temp_dict[user]["publicacion"]["nombre"]))
-
 
                             enviar_grupos(False)
 
@@ -1337,8 +1339,6 @@ def publicacion(scrapper: scrapping, bot:telebot.TeleBot, user, load_url=True, c
                         case "pendiente":
                             
                             print("⛔️ " + str(scrapper.temp_dict[user]["publicacion"]["nombre"]))
-
-                            
 
                             enviar_grupos(False, True)
 
@@ -1349,6 +1349,8 @@ def publicacion(scrapper: scrapping, bot:telebot.TeleBot, user, load_url=True, c
                 except:
                 
                     if i >= 2:
+                        scrapper.temp_dict[user]["tiempo_debug"].append(get_time_debug(scrapper, user, "comprobar que la publicación se hizo en el grupo pero se obtuvo UN ERROR en el grupo #{} linea {}".format(contador + 1, traceback.extract_stack()[-1].lineno)))
+
                         raise Exception("La publicación NO ha sido encontrada en el grupo: {}".format(scrapper.temp_dict[user]["publicacion"]["nombre"]))
 
                     else:
