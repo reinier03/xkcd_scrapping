@@ -4,7 +4,9 @@ import os
 import selenium.webdriver
 import selenium.webdriver.remote
 import selenium.webdriver.remote.webelement
+from seleniumbase.undetected import WebElement
 import telebot
+from telebot.types import *
 import re
 from traceback import format_exc
 import selenium
@@ -28,6 +30,22 @@ from tb_src import bot_handlers
 # import cv2
 # import numpy
 # import pyautogui
+
+def elemento_click(scrapper, elemento : tuple, intentos = 3):
+
+    for i in range(intentos):
+        
+        try:
+            scrapper.wait_s.until(ec.element_to_be_clickable(elemento))
+            scrapper.find_element(elemento[0], elemento[1]).click()
+
+        except:
+            if i >= intentos -1:
+                raise Exception("No he podido darle click al elemento: {}".format(elemento))
+
+            time.sleep(2)
+                
+
 
 def facebook_popup(scrapper, user):
     """
@@ -279,7 +297,11 @@ def if_cancelar(scrapper, user, bot):
         give_error(bot, scrapper.driver, user, "no", False)
     
     elif scrapper.temp_dict[user].get("cancelar_forzoso"):
-        bot.send_message(int(user), m_texto("El administrador @{} ha finalizado tu proceso\n\nSi tienes alguna queja comunícate con él".format(bot.get_chat(scrapper.admin).username)))
+        bot.send_message(int(user), m_texto("El administrador ha finalizado tu proceso\n\nSi tienes alguna queja comunícate con él"), reply_markup=InlineKeyboardMarkup([
+
+            [InlineKeyboardButton("👮‍♂️ Contacta con el admin", url="https://t.me/{}".format(bot.get_chat(scrapper.admin).username))]
+
+        ]))
         
         give_error(bot, scrapper.driver, user, "no", False)
 
@@ -416,13 +438,15 @@ def clear_doom(driver: Chrome, hacer_limpieza=True):
 
 def leer_BD(scrapper = False):
     if scrapper:
-        print(dill.loads(scrapper.collection.find_one({"_id": "telegram_bot"})["cookies"])["scrapper"])
+        res = dill.loads(scrapper.collection.find_one({"_id": "telegram_bot"})["cookies"])["scrapper"]
+        print(res)
     else:
         with open(os.path.join(tempdir, "bot_cookies.pkl"), "rb") as file:
             file.seek(0)
-            print(dill.loads(file.read())["scrapper"])
+            res = dill.loads(file.read())["scrapper"]
+            print(res)
 
-    return
+    return res
 
 
 def administrar_BD(scrapper, bot, cargar_cookies=False, user=False, **kwargs):
@@ -438,6 +462,7 @@ def administrar_BD(scrapper, bot, cargar_cookies=False, user=False, **kwargs):
         if user:
             dict_guardar["scrapper"].temp_dict[user].update({k: v})
 
+    
     #GUARDAR
     if cargar_cookies == False:
         #si va a guardarse el estado...

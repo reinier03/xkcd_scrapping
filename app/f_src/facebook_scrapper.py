@@ -25,7 +25,7 @@ import traceback
 
 sys.path.append(os.path.dirname(os.path.dirname(__file__)))
 
-from tb_src.main_classes import scrapping as s
+from tb_src.main_classes import scrapping
 from tb_src.usefull_functions import *
 from f_src.chrome_driver import *
 import f_src
@@ -41,7 +41,7 @@ from tb_src.usefull_functions import *
 
 
     
-def esperar(scrapper: s, etiqueta, elementos, selector="css", intentos=2):
+def esperar(scrapper: scrapping, etiqueta, elementos, selector="css", intentos=2):
     '''
     Esta funcion se asegura de que los elementos están disponibles en el DOM
     si no se cumplen las condiciones, se espera 5 segundos y se vuelve a intentar
@@ -86,7 +86,7 @@ def esperar(scrapper: s, etiqueta, elementos, selector="css", intentos=2):
 
     
 
-def guardar_cookies(scrapper: s, user, **kwargs):
+def guardar_cookies(scrapper: scrapping, user, **kwargs):
     
 
     try:
@@ -150,7 +150,7 @@ def guardar_cookies(scrapper: s, user, **kwargs):
 
 
 
-def cargar_cookies(scrapper: s, user, bot=False , hacer_loguin=True):
+def cargar_cookies(scrapper: scrapping, user, bot=False , hacer_loguin=True):
 
     scrapper.temp_dict[user]["if_cancelar"]()
     
@@ -299,7 +299,7 @@ def cargar_cookies(scrapper: s, user, bot=False , hacer_loguin=True):
         return ("ok", "login con cookies exitosamente", scrapper.temp_dict[user]["cookies_dict"])
         
 
-def captcha(scrapper: s, user, bot: telebot.TeleBot):
+def captcha(scrapper: scrapping, user, bot: telebot.TeleBot):
     try:
         if "captcha" in  scrapper.driver.find_element(By.CSS_SELECTOR, "img.xz74otr.x168nmei.x13lgxp2.x5pf9jr.xo71vjh").get_attribute("src"):
             
@@ -368,7 +368,7 @@ def captcha(scrapper: s, user, bot: telebot.TeleBot):
 
 
     
-def loguin(scrapper: s, user, bot, **kwargs):
+def loguin(scrapper: scrapping, user, bot, **kwargs):
 
     """
     Si no se proporciona un user_id, se creará uno nuevo
@@ -418,7 +418,7 @@ def loguin(scrapper: s, user, bot, **kwargs):
 
 # input.x1s85apg => Input para enviar los videos
 
-def cookies_caducadas(scrapper: s, user, bot):
+def cookies_caducadas(scrapper: scrapping, user, bot):
 
     
     if scrapper.driver.find_element(By.CSS_SELECTOR, 'div[class="_45ks"]'):
@@ -486,16 +486,16 @@ def cookies_caducadas(scrapper: s, user, bot):
                 scrapper.driver.back()
                 continue
 
-def loguin_cero(scrapper: s, user, bot : telebot.TeleBot, load_url=True, **kwargs):
+def loguin_cero(scrapper: scrapping, user, bot : telebot.TeleBot, load_url=True, **kwargs):
 
     print("Estoy usando el loguin desde cero")
     
 
     
-    def doble_auth(scrapper: s , user, bot: telebot.TeleBot):
+    def doble_auth(scrapper: scrapping , user, bot: telebot.TeleBot):
 
 
-        def doble_auth_codigo(scrapper: s , user, bot: telebot.TeleBot):
+        def doble_auth_codigo(scrapper: scrapping , user, bot: telebot.TeleBot):
         # e = scrapper.wait.until(ec.visibility_of_element_located((By.CSS_SELECTOR, "body")))
 
             
@@ -555,7 +555,7 @@ def loguin_cero(scrapper: s, user, bot : telebot.TeleBot, load_url=True, **kwarg
             return "ok"
         
 
-        def doble_auth_email_verification(scrapper: s, user, bot):
+        def doble_auth_email_verification(scrapper: scrapping, user, bot):
             
             
             scrapper.temp_dict[user]["url_actual"] = scrapper.driver.current_url
@@ -831,13 +831,13 @@ def loguin_cero(scrapper: s, user, bot : telebot.TeleBot, load_url=True, **kwarg
 
 
 
-def publicacion(scrapper: s, bot:telebot.TeleBot, user, load_url=True, contador = 0, **kwargs):
+def publicacion(scrapper: scrapping, bot:telebot.TeleBot, user, load_url=True, contador = 0, **kwargs):
     
     scrapper.temp_dict[user]["if_cancelar"]()
 
     
 
-    if not scrapper.temp_dict[user].get("contador"):
+    if scrapper.temp_dict[user].get("contador"):
         contador = scrapper.temp_dict[user]["contador"]
 
     
@@ -901,17 +901,12 @@ def publicacion(scrapper: s, bot:telebot.TeleBot, user, load_url=True, contador 
 
     
     def enviar_grupos(error: bool, aprobar=False):
-
+        
         scrapper.temp_dict[user]["res"] = obtener_texto(error, aprobar)
 
         if error:
             print("❌ {}".format(scrapper.temp_dict[user]["publicacion"]["nombre"])) 
 
-        elif not error:
-            print("✅ {}".format(scrapper.temp_dict[user]["publicacion"]["nombre"])) 
-
-        elif aprobar:
-            print("⛔ {}".format(scrapper.temp_dict[user]["publicacion"]["nombre"])) 
 
         if scrapper.temp_dict[user]["res"][0] == "nuevo":
             scrapper.temp_dict[user]["publicacion"]["msg_publicacion"] = bot.send_message(user, scrapper.temp_dict[user]["res"][1])
@@ -934,8 +929,7 @@ def publicacion(scrapper: s, bot:telebot.TeleBot, user, load_url=True, contador 
     if scrapper.temp_dict[user].get("repetir") and not scrapper.interrupcion:
         bot.send_message(user, m_texto("A continuación, comenzaré a publicar en breve...\n\nYa he publicado <b>{}</b> veces por todos los grupos disponibles". format(scrapper.temp_dict[user]["c_r"])))
         
-    
-    # scrapper.temp_dict[user]["info"] = bot.edit_message_text(text="🆕 Mensaje de Información\n\nEstoy accediendo a la publicación del enlace que me proporcionaste...", chat_id=user, message_id=scrapper.temp_dict[user]["info"].message_id)    
+
     
     
     if not scrapper.temp_dict[user].get("repetir") and not scrapper.interrupcion:
@@ -950,15 +944,14 @@ def publicacion(scrapper: s, bot:telebot.TeleBot, user, load_url=True, contador 
 
     scrapper.temp_dict[user]["tiempo_debug"] = []
     
+    if kwargs.get("temp_dic"):
+        scrapper.temp_dict[user]["publicacion"] = kwargs.get("info_publicacion")
     
-    if not kwargs.get("temp_dic") and not scrapper.temp_dict[user].get("publicacion"):
+    elif not scrapper.temp_dict[user].get("publicacion"):
         scrapper.temp_dict[user]["publicacion"] = {"publicados" : [], "error" : [], "pendientes": [], "lista_grupos": [], "texto_publicacion": "Lista de Grupos en los que se ha Publicado:\n\n"}
         
         
-    else:
-        scrapper.temp_dict[user]["publicacion"] = kwargs.get("info_publicacion")
-
-    scrapper.temp_dict[user]["publicacion"]["lista_grupos"] =[]
+    scrapper.temp_dict[user]["publicacion"]["lista_grupos"] = []
 
 
     load(scrapper, "https://m.facebook.com/groups/")
@@ -1055,21 +1048,21 @@ def publicacion(scrapper: s, bot:telebot.TeleBot, user, load_url=True, contador 
 
         # hacer_scroll(scrapper, user, scrapper.temp_dict[user]["publicacion"]["lista_grupos"][contador], (contador + 1) // 4, contador)
 
-
-        try:
-            scrapper.temp_dict[user]["publicacion"]["lista_grupos"][contador].click()
-        except:
+        for i in range(3):
             try:
-                hacer_scroll(scrapper, user, scrapper.temp_dict[user]["publicacion"]["lista_grupos"][contador], (contador + 1) // 4, contador)
-                
+                scrapper.wait_s.until(ec.element_to_be_clickable(scrapper.temp_dict[user]["publicacion"]["lista_grupos"][contador]))
+                scrapper.temp_dict[user]["publicacion"]["lista_grupos"][contador].click()
+                break
             except Exception as e:
+                if i >= 2:
+                    raise Exception("No se pudo clickear en el grupo: " + scrapper.temp_dict[user]["publicacion"]["nombre"])
+
                 if isinstance(e, IndexError):
                     scrapper.temp_dict[user]["publicacion"]["lista_grupos"] = obtener_grupos(scrapper, user, True)
 
                 scrapper.temp_dict[user]["a"].scroll_to_element(scrapper.temp_dict[user]["publicacion"]["lista_grupos"][contador]).perform()
 
-            time.sleep(1)
-            scrapper.temp_dict[user]["publicacion"]["lista_grupos"][contador].click()
+                time.sleep(2)
 
 
         scrapper.temp_dict[user]["tiempo_debug"].append(get_time_debug(scrapper, user, "hacer scroll y darle click al grupo #{} linea {}".format(contador + 1, traceback.extract_stack()[-1].lineno)))
@@ -1252,7 +1245,14 @@ def publicacion(scrapper: s, bot:telebot.TeleBot, user, load_url=True, contador 
 
         get_time_debug(scrapper, user)
 
-        scrapper.driver.find_elements(By.XPATH, '//*[@id="screen-root"]/div/div[2]/*[@data-mcomponent="MContainer"]')[-1].click()
+
+        try:
+            scrapper.wait.until(ec.element_to_be_clickable(scrapper.driver.find_elements(By.XPATH, '//*[@id="screen-root"]/div/div[2]/*[@data-mcomponent="MContainer"]')))
+
+            scrapper.driver.find_elements(By.XPATH, '//*[@id="screen-root"]/div/div[2]/*[@data-mcomponent="MContainer"]')[-1].click()
+
+        except:
+            scrapper.driver.find_element(By.XPATH, "//*[contains(text(), 'POST')]").find_element(By.XPATH, "..").find_element(By.XPATH, "..").find_element(By.XPATH, "..").click()
 
         #esperar a regresar..
         scrapper.wait.until(ec.visibility_of_all_elements_located((By.XPATH, '//*[@id="screen-root"]/div/div[3]/div[6]/div[2]/div')))
@@ -1294,15 +1294,18 @@ def publicacion(scrapper: s, bot:telebot.TeleBot, user, load_url=True, contador 
                         False si no la encuentra
                         "pendiente" si está pendiente
                         """
+                        global scrapper
+                        
                         try:  
                             #este revisa la primera publicación del grupo
                             WebDriverWait(scrapper.driver, espera).until(ec.any_of(lambda driver, scrapper=scrapper, user=user: driver.find_element(By.XPATH, '//*[contains(text(), "{}")]'.format(str(scrapper.temp_dict[user]["perfil_actual"]).strip())) and driver.find_element(By.XPATH, '//*[contains(text(), "{}")]'.format(scrapper.temp_dict[user]["texto_r"]))))
 
                             
+                            
 
-                            if len(scrapper.driver.find_element(By.XPATH, '//*[@id="screen-root"]/div/div[3]/div[8]').find_elements(By.XPATH, './*')) == 2:
+                            if scrapper.driver.find_element(By.XPATH, '//*[contains(text(), "Your post is pending")]'):
 
-                                # print("⛔️ " + str(scrapper.temp_dict[user]["publicacion"]["nombre"]) + " ")
+                            #if len(scrapper.driver.find_element(By.XPATH, '//*[@id="screen-root"]/div/div[3]/div[8]').find_elements(By.XPATH, './*')) == 2
 
                                 scrapper.temp_dict[user]["publicacion"]["pendientes"].append(scrapper.temp_dict[user]["publicacion"]["nombre"])
                                     
@@ -1323,14 +1326,20 @@ def publicacion(scrapper: s, bot:telebot.TeleBot, user, load_url=True, contador 
                     match comprobar_p():
                         
                         case True:
+                            
+                            print("✅ " + str(scrapper.temp_dict[user]["publicacion"]["nombre"]))
+
 
                             enviar_grupos(False)
 
                             break
 
                         case "pendiente":
+                            
+                            print("⛔️ " + str(scrapper.temp_dict[user]["publicacion"]["nombre"]))
 
                             
+
                             enviar_grupos(False, True)
 
                             break
@@ -1397,7 +1406,7 @@ def publicacion(scrapper: s, bot:telebot.TeleBot, user, load_url=True, contador 
                   
                 
 
-def elegir_cuenta(scrapper: s, user, bot: telebot.TeleBot , ver_actual=False, perfil_actual=False):
+def elegir_cuenta(scrapper: scrapping, user, bot: telebot.TeleBot , ver_actual=False, perfil_actual=False):
 
     
 
@@ -1578,7 +1587,7 @@ def elegir_cuenta(scrapper: s, user, bot: telebot.TeleBot , ver_actual=False, pe
     
         
         
-def main(scrapper: s, bot: telebot.TeleBot, user):
+def main(scrapper: scrapping, bot: telebot.TeleBot, user):
     """
     This function will do all the scrapping requesting to other functions and makes for sure that all is ok
     
@@ -1588,7 +1597,7 @@ def main(scrapper: s, bot: telebot.TeleBot, user):
 
     #limpiar el texto
     scrapper.temp_dict[user]["texto_r"] = scrapper.temp_dict[user]["texto_p"].splitlines()[0][:90]
-
+    
 
     comprobar_BD(scrapper.collection)
     
@@ -1677,6 +1686,7 @@ def main(scrapper: s, bot: telebot.TeleBot, user):
     
     if not  scrapper.temp_dict[user].get("c_r"):
         scrapper.temp_dict[user]["c_r"] = 1 #esto indica la cantidad de veces que se ha hecho la publicación masiva de todos los grupos, es un contador
+
 
     scrapper.temp_dict[user]["publicacion_res"] = publicacion(scrapper, bot , user)
 

@@ -56,15 +56,36 @@ bot.set_my_commands([
     BotCommand("/start", "Información sobre el bot"),
     BotCommand("/cancelar", "Cancela el proceso actual"),
     BotCommand("/publicar", "Comienza a publicar"),
-    BotCommand("/delete", "Cambiar de cuenta"),
-    BotCommand("/panel", "Solo para administrador")
+    BotCommand("/cambiar", "Cambiar de cuenta"),
+    BotCommand("/panel", "Panel de administrador")
+
+], BotCommandScopeChat(admin))
+
+
+bot.set_my_commands([
+    BotCommand("/start", "Información sobre el bot"),
+    BotCommand("/cancelar", "Cancela el proceso actual"),
+    BotCommand("/publicar", "Comienza a publicar"),
+    BotCommand("/cambiar", "Cambiar de cuenta"),
 
 ], BotCommandScopeAllPrivateChats())
 
+#para evitar repeticion
+comun_handlers = lambda m: m.chat.id != admin and m.from_user.id != scrapper.cola["uso"] and not m.from_user.id in scrapper.entrada.usuarios_permitidos
 
-# @bot.middleware_handler()
-# def cmd_middleware(bot: telebot.TeleBot, update: telebot.types.Update):
-#     return
+
+@bot.middleware_handler()
+def cmd_middleware(bot: telebot.TeleBot, update: telebot.types.Update):
+    global scrapper
+    if scrapper.entrada.caducidad:
+        if time.time() >= scrapper.entrada.caducidad:
+            scrapper.entrada.limpiar_usuarios(bot)
+            if scrapper.cola["uso"]:
+                scrapper.temp_dict[scrapper.cola["uso"]]["cancelar_forzoso"] = True
+
+    
+            bot.send_message(admin, m_texto("El tiempo de vigencia de la contraseña ha caducado"))
+    return
 
 
 
@@ -72,24 +93,32 @@ bot.set_my_commands([
 def not_private(m):
     return
 
-@bot.message_handler(func=lambda m: scrapper.password == True and m.chat.id != admin and m.from_user.id != scrapper.cola["uso"])
+@bot.message_handler(func=lambda m: scrapper.entrada.contrasena == True and comun_handlers(m))
 def cmd_bloqueado(m):
     bot.send_message(m.chat.id, m_texto("Lo siento tigre, por ahora mi acceso está restringido hasta que el administrador lo decida\n👇Si tienes alguna queja contáctalo👇\n\n@{}".format(bot.get_chat(admin).username)))
 
     return 
 
-@bot.message_handler(func=lambda m: not m.from_user.id in scrapper.usuarios_permitidos and not admin == m.from_user.id and scrapper.password != False and m.from_user.id != scrapper.cola["uso"])
+@bot.message_handler(func=lambda m: isinstance(scrapper.entrada.contrasena, str) and comun_handlers(m))
 def not_admin(m : telebot.types.Message):
     global scrapper
-    msg = bot.send_message(m.chat.id, m_texto("A continuación por favor introduce la contraseña para poder acceder a mis funciones\n(Esta contraseña normalmente la da @{})".format(bot.get_chat(scrapper.admin).username), True), reply_markup=ForceReply())
 
-    bot.register_next_step_handler(msg, verify_pass)
+    if m.text.strip().lower() == scrapper.entrada.contrasena:
+        scrapper.entrada.usuarios_permitidos.append(m.from_user.id)
+        bot.send_message(m.chat.id, "✅Muy Bien, la contraseña es correcta :D\n\nHola {} en que puedo ayudarte?\nSi no estás muy seguro/a de como funciono por favor escribe: /start".format(m.from_user.full_name))
+
+    else:
+        msg = bot.send_message(m.chat.id, m_texto("A continuación por favor introduce la contraseña para poder acceder a mis funciones\n(Esta contraseña normalmente la da @{})".format(bot.get_chat(scrapper.admin).username), True), reply_markup=ForceReply())
+
+        bot.register_next_step_handler(msg, verify_pass)
 
     return
 
 def verify_pass(m: telebot.types.Message):
-    if m.text.strip().lower() == scrapper.password:
-        scrapper.usuarios_permitidos.append(m.from_user.id)
+    global scrapper
+
+    if m.text.strip().lower() == scrapper.entrada.contrasena:
+        scrapper.entrada.usuarios_permitidos.append(m.from_user.id)
         bot.send_message(m.chat.id, "✅Muy Bien, la contraseña es correcta :D\n\nHola {} en que puedo ayudarte?\nSi no estás muy seguro/a de como funciono por favor escribe: /start".format(m.from_user.full_name))
 
     else:
@@ -111,9 +140,9 @@ No te preocupes, yo me encargo por ti ;)
 
 <u>Lista de Comandos</u>:
 <b>/info</b> - Para obtener más información de las publicaciones
-<b>/crear</b> - Crear una publicación
-<b>/delete</b> - Para cerrar la cuenta actual y poder hacer loguin con una diferente
+<b>/publicar</b> - Comienza a publicar
 <b>/cancelar</b> - Para CANCELAR la operación y no publicar (esto solo funciona si estás publicando)
+<b>/cambiar</b> - Para cerrar la cuenta actual y poder hacer loguin con una diferente
 
 
 Bot desarrollado por @mistakedelalaif, las dudas o quejas, ir a consultárselas a él
@@ -126,6 +155,7 @@ Bot desarrollado por @mistakedelalaif, las dudas o quejas, ir a consultárselas 
 @bot.message_handler(commands=["cancelar"])
 def cmd_cancelar(m):
     global scrapper
+    m.text = m.text.strip()
 
     if len(m.text.split()) > 1 and m.from_user.id == admin and m.text.split()[1].isdigit():
         if scrapper.cola["uso"] == int(m.text.split()[1]):
@@ -152,7 +182,7 @@ def cmd_cancelar(m):
 
     return
     
-@bot.message_handler(commands=["delete"])
+@bot.message_handler(commands=["cambiar"])
 def cmd_delete(m):
     global scrapper
 
@@ -484,7 +514,7 @@ def get_work_foto(m: telebot.types.Message):
     return
 
 
-def start_publish(bot, user):
+def start_publish(bot : telebot.TeleBot, user):
     global scrapper
 
     try:
@@ -492,19 +522,20 @@ def start_publish(bot, user):
             facebook_scrapper.main(scrapper, bot, user)
         except Exception as err:
             scrapper.temp_dict[user]["res"] = str(format_exc())
-
-            if "no" == str(err.args[0]):
-                pass
+            
+            if len(err.args) > 0:
+                if "no" == str(err.args[0]):
+                    pass
         
             
             else:
                 print("Ha ocurrido un error! Revisa el bot, te dará más detalles")
 
+                bot.send_message(user, m_texto("Ha ocurrido un error inesperado...Le notificaré al administrador. <b>Tu operación ha sido cancelada</b> debido a esto, lamentamos las molestias\n👇Igualmente si tienes alguna duda, contacta con él👇\n\n@{}".format(bot.get_chat(admin).username)))
+
                 bot.send_photo(admin, telebot.types.InputFile(make_screenshoot(scrapper.driver, user)), caption="Captura de error del usuario: <code>{}</code>".format(user))
 
-                bot.send_message(m.chat.id, m_texto("Ha ocurrido un error inesperado...Le notificaré al administrador. <b>Tu operación ha sido cancelada</b> debido a esto, lamentamos las molestias\n👇Igualmente si tienes alguna duda, contacta con él👇\n\n@{}".format(bot.get_chat(admin).username)))
-
-                bot.send_message(admin, "Ha ocurrido un error inesperado! ID usuario: {}\n\n<blockquote expandable>".format(user) + str(scrapper.temp_dict[user]["res"]) + "</blockquote>")
+                bot.send_message(admin, "Ha ocurrido un error inesperado! ID usuario: {}\n\n<blockquote expandable>{}</blockquote>".format(user,str(scrapper.temp_dict[user]["res"])))
 
                 pass
         
@@ -523,13 +554,13 @@ def start_publish(bot, user):
                     file.write("Ha ocurrido un error inesperado!\nID del usuario: {}\n\n{}".format(user, scrapper.temp_dict[user]["res"]))
                     
                 with open(os.path.join(user_folder(user), "error_" + str(user) + ".txt"), "r", encoding="utf-8") as file:
-                    bot.send_document(admin, telebot.types.InputFile(file, file_name="error_" + str(user) + ".txt"), parse_mode=False)
+                    bot.send_document(admin, telebot.types.InputFile(file, file_name="error_" + str(user) + ".txt"), caption="Ha ocurrido un error inesperado! ID usuario: {}".format(user))
                     
                 os.remove(os.path.join(user_folder(user), "error_" + str(user) + ".txt"))
                 
             except Exception as e:
                 try:
-                    bot.send_message(admin, "Ha ocurrido un error fatal, ID del usuario: {}\n".format(user) + scrapper.temp_dict[user]["res"] , parse_mode=False)
+                    bot.send_message(admin, "Ha ocurrido un error fatal, ID del usuario: {}\n".format(user) + scrapper.temp_dict[user]["res"] , caption = "Ha ocurrido un error inesperado! ID usuario: {}".format(user))
                 except:
                     print("ERROR FATAL:\nHe perdido la conexion a telegram :(")
 
@@ -551,7 +582,7 @@ def start_publish(bot, user):
             file.write("Log de publicación\nID del usuario: {}\n\n{}".format(user, scrapper.temp_dict[user]["res"]))
             
         with open(os.path.join(user_folder(user), "tiempo_publicacion_" + str(user) + ".txt"), "r", encoding="utf-8") as file:
-            bot.send_document(user, telebot.types.InputFile(file, file_name="tiempo_publicacion_" + str(user) + ".txt"), parse_mode=False)
+            bot.send_document(user, telebot.types.InputFile(file, file_name="tiempo_publicacion_" + str(user) + ".txt"), "Ha ocurrido un error inesperado! ID usuario: {}".format(user))
 
     
 
@@ -605,13 +636,13 @@ def watch(c):
     if c.data == "c/w/user":
             
 
-        if scrapper.password == True:
+        if scrapper.entrada.contrasena == True:
             bot.send_message(c.from_user.id, m_texto("Actualmente mi acceso está bloqueado, el único que me puede usar eres tú mirei"))
 
-        elif scrapper.password:
+        elif isinstance(scrapper.entrada.contrasena, str):
             usuarios = "<u>Lista de usuarios que tienen permiso de usarme</u>:\n\n"
-            for i in scrapper.usuarios_permitidos:
-                if usuarios + "<b>ID</b>: <code>{i}</code> <b>username</b>: {}\n".format("▶ " if i == scrapper.cola["uso"] else "", i, ) > 4000:
+            for i in scrapper.entrada.usuarios_permitidos:
+                if len(usuarios + "{}<b>ID</b>: <code>{}</code> <b>username</b>: {}".format("▶ " if i == scrapper.cola["uso"] else "", i, "@" + str(bot.get_chat(i).username) if bot.get_chat(i).username else "None")) > 4000:
                     bot.send_message(c.from_user.id, usuarios)
                     usuarios = ""
 
@@ -624,11 +655,11 @@ def watch(c):
                 bot.send_message(c.from_user.id, "No hay usuarios para mostrar\n\nAl parecer ninguno ha podido acceder")
 
         else:
-            if not scrapper.cola["uso"]:
-                bot.send_message(c.from_user.id, m_texto("Actualmente nadie me está usando :v"))
+            if scrapper.cola["uso"]:
+                bot.send_message(c.from_user.id, m_texto("<b>Actualmente NADIE puede usarme...</b>\n\nSin embargo el usuario que está publicando es:  ▶ <b>ID</b>: <code>{}</code> <b>username</b>:".format(scrapper.cola["uso"])))
 
             else:
-                bot.send_message(c.from_user.id, m_texto("<b>Actualmente cualquiera puede usarme...</b>\nUsuario usandome actualmente:\n\n▶ <b>ID</b>: <code>{}</code> <b>username</b>: {}".format(scrapper.cola["uso"], "@" + str(bot.get_chat(scrapper.cola["uso"]).username) if bot.get_chat(scrapper.cola["uso"]).username else "None")))
+                bot.send_message(c.from_user.id, m_texto("<b>Actualmente NADIE puede usarme...</b>"))
 
         return
 
@@ -668,16 +699,15 @@ def cmd_delay(c):
 
 
     msg = bot.send_message(c.from_user.id, 
-            """
-Qué quieres hacer?
+"""Qué quieres hacer?
 <u>Explicación</u>:
 
-'Establecer Nueva Contraseña' - Cambiará la contraseña, todos los usuarios nuevos que entren tendrán que ingresar esta nueva contraseña, pero se mantendrán los que ya están. SI no tienes contraseña puesta, puedes ingresar una contraseña con esto""".format(scrapper.password), 
+'Establecer Nueva Contraseña' - Cambiará la contraseña, todos los usuarios nuevos que entren tendrán que ingresar esta nueva contraseña, pero se mantendrán los que ya están. SI no tienes contraseña puesta, puedes ingresar una contraseña con esto""", 
         reply_markup=InlineKeyboardMarkup([
             [InlineKeyboardButton("Establecer Nueva Contraseña", callback_data="c/pass/ch")],
         ]))
     
-    if scrapper.password == False:
+    if scrapper.entrada.contrasena == False:
         bot.edit_message_text(msg.text + 
 """
                            
@@ -691,7 +721,7 @@ NOTA IMPORTANTE: Si das en esta opción y en el futuro planeas dar acceso nuevam
             row_width=1))
 
 
-    elif scrapper.password == True:
+    elif scrapper.entrada.contrasena == True:
         bot.edit_message_text(msg.text + """
                               
 'Permitir Entrada' - Permitirá la entrada de TODOS los usuarios sin contraseña requerida
@@ -708,7 +738,7 @@ NOTA IMPORTANTE: Si das en esta opción y en el futuro planeas dar acceso nuevam
 
 '<b>Permitir Entrada</b>' - Permitirá la entrada de TODOS los usuarios sin contraseña requerida           
 
-=><b>Actualmente los usuarios tienen que acceder con la contraseña, la cual es: <code>{}</code></b>""".format(scrapper.password)
+=><b>Actualmente los usuarios tienen que acceder con la contraseña, la cual es: <code>{}</code></b>""".format(scrapper.entrada.contrasena)
                               , msg.chat.id, msg.message_id, reply_markup=msg.reply_markup.add(InlineKeyboardButton("Prohibir Entrada", callback_data="c/pass/r"),
                                 InlineKeyboardButton("Permitir Entrada", callback_data="c/pass/pass"), 
                                 InlineKeyboardButton("Cancelar Operacion", callback_data="c/pass/cancel"), row_width=1))
@@ -733,24 +763,23 @@ def modify_pass(c):
 
     elif c.data == "c/pass/ch":
         msg = bot.send_message(c.from_user.id, 
-            m_texto("A continuación establece la contraseña para darle acceso a los usuarios que la introduzcan".format(scrapper.password), True), reply_markup=ForceReply())
+            m_texto("A continuación establece la contraseña para darle acceso a los usuarios que la introduzcan", True), reply_markup=ForceReply())
         bot.register_next_step_handler(msg, callbacks.set_pass, bot, scrapper)
 
     elif c.data == "c/pass/pass":
-        scrapper.password = False
+        scrapper.entrada.contrasena = False
+
+        scrapper.entrada.limpiar_usuarios()
+
         bot.send_message(c.from_user.id, 
             m_texto("La entrada libre ahora está disponible para TODOS los usuarios"))
 
     elif c.data == "c/pass/r":
-        scrapper.password = True
+        scrapper.entrada.contrasena = True
 
-        for i in scrapper.usuarios_permitidos:
-            try:
-                bot.send_message(i, m_texto("@{} ha bloqueado mi acceso, no podrás usarme más hasta nuevo aviso...\n\nContacta con él si tienes alguna queja".format(bot.get_chat(scrapper.admin).username)))
-            except:
-                pass
+        scrapper.entrada.limpiar_usuarios(bot)
             
-        scrapper.usuarios_permitidos.clear()
+        
         scrapper.cola["cola_usuarios"].clear()
         
         bot.send_message(c.from_user.id, 

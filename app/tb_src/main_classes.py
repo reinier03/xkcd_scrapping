@@ -7,6 +7,9 @@ import threading
 import pprint
 import sys
 from pymongo import MongoClient
+from seleniumbase.core.sb_driver import WebDriver
+from telebot.types import *
+
 
 
 sys.path.append(os.path.dirname(os.path.dirname(__file__)))
@@ -46,15 +49,24 @@ class scrapping:
         self.temp_dict = {}
         self.cola = {"uso": False, "cola_usuarios": []}
         self.delay = 60
-        self.password = True
+        self.entrada = Entrada(True)
         self.interrupcion = False
         self.admin = None
         self.usuarios_permitidos = []
 
         return
     
+    def __str__(self):
+        texto = "Clase |<b>scrapping</b>| variables:\n\n"
+
+        for k, v in self.__dict__.items():
+            texto += "scrapping.<b>{}</b>  =>  {}\n".format(k, v)
+        
+        return texto
+
+
     def __getstate__(self):
-        res = self.__dict__.copy().copy()
+        res = dict(self.__dict__.copy()).copy()
         
         # Eliminar TODOS los objetos no serializables
         elementos_a_eliminar = [
@@ -63,7 +75,7 @@ class scrapping:
         ]
         
         for elemento in elementos_a_eliminar:
-            if elemento in res:
+            if elemento in res.keys():
                 del res[elemento]
         
         
@@ -73,28 +85,33 @@ class scrapping:
                 """Detecta si es un objeto de Selenium o similar"""
                 if obj is None:
                     return False
-                # Verificar por nombre de clase o módulo
+
+                # elif isinstance(obj, (WebDriver, WebElement, ActionChains, WebDriverWait)):
+                #     return True
+
                 clase_name = obj.__class__.__name__
                 modulo_name = obj.__class__.__module__
-                
-                return (clase_name in ['WebElement', 'ActionChains', 'WebDriver'] or 
-                        'selenium' in str(modulo_name) or
-                        'undetected_chromedriver' in str(modulo_name))
+
+                if (clase_name in ['WebElement', 'ActionChains', 'WebDriver'] or 'selenium' in str(modulo_name) or 'undetected_chromedriver' in str(modulo_name)):
+                    return True
             
-            def limpiar_objetos(obj):
-                if es_objeto_selenium(obj):
-                    return "[SELENIUM_OBJECT_REMOVED]"
+            def limpiar_objetos(obj, **kwargs):
+                
+                if kwargs["key"] == "lista_grupos" or es_objeto_selenium(obj):
+                    return None
                 elif isinstance(obj, dict):
-                    return {k: limpiar_objetos(v) for k, v in obj.items()}
+                    return {k: limpiar_objetos(v, dic=kwargs.get("dic"), key=k) for k, v in obj.items()}
                 elif isinstance(obj, list):
-                    return [limpiar_objetos(item) for item in obj]
+                    return [limpiar_objetos(item, dic=kwargs.get("dic"), key=obj) for item in obj]
                 elif isinstance(obj, tuple):
-                    return tuple(limpiar_objetos(item) for item in obj)
+                    return tuple(limpiar_objetos(item , dic=kwargs.get("dic"), key=obj) for item in obj)
                 else:
                     return obj
             
             
-            return limpiar_objetos(res["temp_dict"])
+            return limpiar_objetos(res, dic=res["temp_dict"], key="root")
+
+        return res
         
         
         
@@ -116,14 +133,7 @@ class scrapping:
 
         return
         
-        # Reconstruir el driver de selenium si es necesario
-        if not hasattr(self, 'driver'):
-            self.driver = None
-            self.wait = None
-            self.wait_s = None
-        
-        return
-    
+
 
     
     
@@ -146,15 +156,58 @@ class scrapping:
     def show(self, user):
         pprint.pprint(self.temp_dict[user], sort_dicts=False)
 
-    def __str__(self):
-        texto = ""
+    
 
+
+
+class Entrada():
+    def __init__(self, contrasena):
+        """
+        Clase para administrar el metodo de entrada al bot
+
+        Si self.contrasena = False entonces todo el mundo podrá acceder al bot
+        Si self.contrasena = True entonces NADIE podria acceder excepto los que estan en self.usuarios_permitidos: list
+        """
+        self.contrasena = contrasena 
+        self.caducidad = False
+        self.usuarios_permitidos = []
+        self.usuarios_permitidos_permanente = []
+
+
+    def __str__(self):
+        texto = "Clase |Entrada| variables:\n\n"
         for k, v in self.__dict__.items():
-            texto += "scrapper.<b>{}</b>  =>  {}\n\n".format(k, v)
-        
+            texto += "Entrada.<b>{}</b>  =>  {}\n".format(k, v)
+
         return texto
 
+    def limpiar_usuarios(self, bot = False, excepciones=[]):
 
+        if bot:
+            self.contrasena = True
+            self.caducidad = False
+
+        copia_usuarios = self.usuarios_permitidos.copy()
+
+        for i in copia_usuarios:
+            if not i in excepciones:
+
+                if bot:
+
+                    try:
+                        bot.send_message(i, m_texto("Mi administrador ha bloqueado el acceso, no podrás usarme más hasta nuevo aviso...\n\nContacta con él si tienes alguna queja"), reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("👮‍♂️ Contacta con el admin", url="https://t.me/{}".format(bot.get_chat(int(os.environ["admin"])).username))]]))
+                    except:
+                        pass
+
+                self.usuarios_permitidos.remove(i)
+
+        return
+
+    
+
+        
+
+        
 
 class Usuario:
 
