@@ -1250,21 +1250,23 @@ def publicacion(scrapper: scrapping, bot:telebot.TeleBot, user, load_url=True, c
 
         scrapper.wait.until(ec.visibility_of_all_elements_located((By.XPATH, '//*[@id="screen-root"]/div/div[2]/*[@data-mcomponent="MContainer"]')))
 
-        scrapper.temp_dict[user]["e"] = scrapper.driver.find_elements(By.XPATH, '//*[@id="screen-root"]/div/div[2]/*[@data-mcomponent="MContainer"]')[-1]
+        scrapper.driver.find_elements(By.XPATH, '//*[@id="screen-root"]/div/div[2]/*[@data-mcomponent="MContainer"]')[-1].find_element(By.XPATH, './*').find_element(By.XPATH, './*').click()
 
-        for i in range(5):
+        # scrapper.temp_dict[user]["e"] = scrapper.driver.find_elements(By.XPATH, '//*[@id="screen-root"]/div/div[2]/*[@data-mcomponent="MContainer"]')[-1]
+
+        # for i in range(5):
         
-            try:
-                scrapper.temp_dict[user]["e"].click()
-                break
+        #     try:
+        #         scrapper.temp_dict[user]["e"].click()
+        #         break
 
-            except:
-                if i >= 4:
-                    raise Exception("")
+        #     except:
+        #         if i >= 4:
+        #             raise Exception("")
 
-                scrapper.temp_dict[user]["e"] = scrapper.temp_dict[user]["e"].find_element(By.XPATH, './*')
+        #         scrapper.temp_dict[user]["e"] = scrapper.temp_dict[user]["e"].find_element(By.XPATH, './*')
                 
-                time.sleep(2)
+        #         time.sleep(2)
 
         #esperar a regresar..
         scrapper.wait.until(ec.visibility_of_all_elements_located((By.XPATH, '//*[@id="screen-root"]/div/div[3]/div[6]/div[2]/div')))
@@ -1619,6 +1621,7 @@ def main(scrapper: scrapping, bot: telebot.TeleBot, user):
     #limpiar el texto
     scrapper.temp_dict[user]["texto_r"] = scrapper.temp_dict[user]["texto_p"].splitlines()[0][:90]
     
+    breakpoint()
 
     comprobar_BD(scrapper.collection)
     

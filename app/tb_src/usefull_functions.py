@@ -263,11 +263,12 @@ def obtener_grupos(scrapper, user, all: bool = False):
 
 def envia_fotos_input(scrapper, user, photo_path):
     
-    scrapper.wait.until(ec.visibility_of_element_located((By.XPATH, '//*[contains(@aria-label, "hotos")]')))
 
     try:
+        scrapper.wait_s.until(ec.visibility_of_element_located((By.XPATH, '//*[contains(text(), "otos")]')))
         scrapper.driver.find_elements(By.XPATH, '//*[contains(text(), "otos")]')[-1].click()
     except:
+        scrapper.wait_s.until(ec.visibility_of_element_located((By.XPATH, '//*[@id="screen-root"]/div/div[2]/div[7]')))
         scrapper.driver.find_element(By.XPATH, '//*[@id="screen-root"]/div/div[2]/div[7]').click()
         
 
