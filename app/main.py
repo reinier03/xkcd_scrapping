@@ -79,7 +79,7 @@ def cmd_middleware(bot: telebot.TeleBot, update: telebot.types.Update):
     global scrapper
     if scrapper.entrada.caducidad:
         if time.time() >= scrapper.entrada.caducidad:
-            scrapper.entrada.limpiar_usuarios(bot)
+            scrapper.entrada.limpiar_usuarios(scrapper, bot)
             if scrapper.cola["uso"]:
                 scrapper.temp_dict[scrapper.cola["uso"]]["cancelar_forzoso"] = True
 
@@ -256,16 +256,19 @@ def cmd_publish(m):
     
     
     bot.send_message(m.chat.id,
-"""A continuación ve a Facebook y sigue estos pasos para compartir la publicacion
-<blockquote>
-1 - Selecciona la publicación
-2 - Dale en el botón de '↪ Compartir'
-3 - Luego en el menú que aparece dale a 'Obtener Enlace'
-4 - Pega dicho enlace en el siguiente mensaje y envíamelo
-</blockquote>
+"""
+A continuación sigue estos pasos para compartir una publicación en Facebook:
 
-Ahora enviame el enlace de la publicación aquí y me ocuparé del resto ;)
-""")
+<blockquote>1 - Envíame /publicar
+2 - Luego de requerirtelo, envíame un texto para la publicación
+3 - (Opcional, lo puedes omitir) Luego de requerirtelo, envia una foto que ira adjunta en la foto 
+4 - Introduce tu usuario y luego la contraseña de facebook. Si tienes la doble autenticación configurada (2FA) tambien deberás ingresar los codigos de respaldo.
+5 - A continuación, si la cuenta con la que te logueaste tiene varios perfiles entonces deberás seleccionar con cual de todos tus perfiles publicarás
+6 - (Opcional, lo puedes omitir) Luego puedes seleccionar si quieres que la publicación se publique en masa luego de cierto tiempo.
+7 - Disfrutar de tu día mientras yo me encargo de publicar</blockquote>
+
+{}
+""".format("<b>Quedan {} hora(s) y {} minuto(s) para que me uses</b>, luego de eso estaré bloqueado".format( int((scrapper.entrada.caducidad - time.time() ) / 60 / 60), int((scrapper.entrada.caducidad - time.time() ) / 60 % 60) ) if isinstance(scrapper.entrada.caducidad, (float, int)) else "").strip())
     
     return
     
@@ -769,7 +772,7 @@ def modify_pass(c):
     elif c.data == "c/pass/pass":
         scrapper.entrada.contrasena = False
 
-        scrapper.entrada.limpiar_usuarios()
+        scrapper.entrada.limpiar_usuarios(scrapper)
 
         bot.send_message(c.from_user.id, 
             m_texto("La entrada libre ahora está disponible para TODOS los usuarios"))
@@ -777,7 +780,7 @@ def modify_pass(c):
     elif c.data == "c/pass/r":
         scrapper.entrada.contrasena = True
 
-        scrapper.entrada.limpiar_usuarios(bot)
+        scrapper.entrada.limpiar_usuarios(scrapper, bot)
             
         
         scrapper.cola["cola_usuarios"].clear()

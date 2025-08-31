@@ -1247,13 +1247,24 @@ def publicacion(scrapper: scrapping, bot:telebot.TeleBot, user, load_url=True, c
         get_time_debug(scrapper, user)
 
 
-        try:
-            scrapper.wait.until(ec.element_to_be_clickable(scrapper.driver.find_elements(By.XPATH, '//*[@id="screen-root"]/div/div[2]/*[@data-mcomponent="MContainer"]')))
 
-            scrapper.driver.find_elements(By.XPATH, '//*[@id="screen-root"]/div/div[2]/*[@data-mcomponent="MContainer"]')[-1].click()
+        scrapper.wait.until(ec.visibility_of_all_elements_located((By.XPATH, '//*[@id="screen-root"]/div/div[2]/*[@data-mcomponent="MContainer"]')))
 
-        except:
-            scrapper.driver.find_element(By.XPATH, "//*[contains(text(), 'POST')]").find_element(By.XPATH, "..").find_element(By.XPATH, "..").find_element(By.XPATH, "..").click()
+        scrapper.temp_dict[user]["e"] = scrapper.driver.find_elements(By.XPATH, '//*[@id="screen-root"]/div/div[2]/*[@data-mcomponent="MContainer"]')[-1]
+
+        for i in range(5):
+        
+            try:
+                scrapper.temp_dict[user]["e"].click()
+                break
+
+            except:
+                if i >= 4:
+                    raise Exception("")
+
+                scrapper.temp_dict[user]["e"] = scrapper.temp_dict[user]["e"].find_element(By.XPATH, './*')
+                
+                time.sleep(2)
 
         #esperar a regresar..
         scrapper.wait.until(ec.visibility_of_all_elements_located((By.XPATH, '//*[@id="screen-root"]/div/div[3]/div[6]/div[2]/div')))
@@ -1303,9 +1314,9 @@ def publicacion(scrapper: scrapping, bot:telebot.TeleBot, user, load_url=True, c
                             
                             
                             try:
-                                if scrapper.driver.find_element(By.XPATH, '//*[contains(text(), "Your post is pending")]'):
+                                # if scrapper.driver.find_element(By.XPATH, '//*[contains(text(), "Your post is pending")]'):
 
-                                #if len(scrapper.driver.find_element(By.XPATH, '//*[@id="screen-root"]/div/div[3]/div[8]').find_elements(By.XPATH, './*')) == 2
+                                if len(scrapper.driver.find_element(By.XPATH, '//*[@id="screen-root"]/div/div[3]/div[8]').find_elements(By.XPATH, './*')) == 2:
 
                                     scrapper.temp_dict[user]["publicacion"]["pendientes"].append(scrapper.temp_dict[user]["publicacion"]["nombre"])
                                         
@@ -1419,13 +1430,15 @@ def elegir_cuenta(scrapper: scrapping, user, bot: telebot.TeleBot , ver_actual=F
     
     try:
         #si ya el menú de cuentas está desplegado... hay que omitir cosas
-        scrapper.temp_dict[user]["e"] = scrapper.wait_s.find_element(By.CSS_SELECTOR, 'div[role="list"]')
+        scrapper.temp_dict[user]["e"] = scrapper.wait_s.until(ec.visibility_of_element_located((By.CSS_SELECTOR, 'div[role="list"]')))
 
         scrapper.temp_dict[user]["e"] = True
         
     except: 
         scrapper.temp_dict[user]["e"] = False
-        
+
+
+    #el menu no está desplegado    
     if not scrapper.temp_dict[user]["e"]:  
         # scrapper.driver.get(scrapper.driver.current_url + "/bookmarks/")
 
@@ -1433,64 +1446,67 @@ def elegir_cuenta(scrapper: scrapping, user, bot: telebot.TeleBot , ver_actual=F
         scrapper.wait.until(ec.any_of(lambda driver: len(driver.find_elements(By.CSS_SELECTOR, 'div[role="button"]')) > 3))
 
         scrapper.wait.until(ec.element_to_be_clickable(scrapper.driver.find_elements(By.CSS_SELECTOR, 'div[role="button"]')[2]))
-
-        for i in range(3):
-
-            try:
-                scrapper.driver.find_elements(By.CSS_SELECTOR, 'div[role="button"]')[2].click()
-                break
-            except:
-                if i >= 2:
-                    raise Exception()
-
-                else:
-                    time.sleep(3)
-                    pass
-        # scrapper.driver.find_elements(By.CSS_SELECTOR, 'div[data-tti-phase="-1"][role="button"][tabindex="0"][data-focusable="true"][data-mcomponent="MContainer"][data-type="container"]')[2].click()
-
+        #//*[contains(text(), "Your Pages and profiles")]/../../../..
+        #//div[contains(@role,"button")][contains(@aria-label, "Switch Profile")]
         
+        if not scrapper.temp_dict[user]["e"]:
+            for i in range(3):
 
-        # #Elemento de Configuracion de cuenta
-        scrapper.wait.until(ec.visibility_of_element_located((By.CSS_SELECTOR, 'div[role="list"]')))
+                try:
+                    scrapper.driver.find_elements(By.CSS_SELECTOR, 'div[role="button"]')[2].click()
+                    break
+                except:
+                    if i >= 2:
+                        raise Exception()
 
-
-
-        #Flecha para ver otros perfiles/cambiar
-        
-        scrapper.wait.until(ec.visibility_of_all_elements_located((By.CSS_SELECTOR, 'div[tabindex="0"][role="button"][data-focusable="true"][data-tti-phase="-1"][data-mcomponent="MContainer"][data-type="container"][class="m"]')))
-
-
-        if len(scrapper.driver.find_elements(By.CSS_SELECTOR, 'div[tabindex="0"][role="button"][data-focusable="true"][data-tti-phase="-1"][data-mcomponent="MContainer"][data-type="container"][class="m"]')) >= 4:
+                    else:
+                        time.sleep(3)
+                        pass
+            # scrapper.driver.find_elements(By.CSS_SELECTOR, 'div[data-tti-phase="-1"][role="button"][tabindex="0"][data-focusable="true"][data-mcomponent="MContainer"][data-type="container"]')[2].click()
 
             
-            scrapper.driver.find_elements(By.CSS_SELECTOR, 'div[tabindex="0"][role="button"][data-focusable="true"][data-tti-phase="-1"][data-mcomponent="MContainer"][data-type="container"][class="m"]')[-1].click()
+
+            # #Elemento de Configuracion de cuenta
+            scrapper.wait.until(ec.visibility_of_element_located((By.CSS_SELECTOR, 'div[role="list"]')))
 
 
 
-            # try:
-            #     scrapper.driver.find_elements(By.CSS_SELECTOR, 'div[role="button"]')[4].find_element(By.CSS_SELECTOR, 'img')
-
-            #     scrapper.driver.find_elements(By.CSS_SELECTOR, 'div[role="button"]')[5].click()
+            #Flecha para ver otros perfiles/cambiar
             
-            # except:
-            #     if not "\n" in scrapper.driver.find_elements(By.CSS_SELECTOR, 'div[role="button"]')[4].text:
-
-            #         scrapper.driver.find_elements(By.CSS_SELECTOR, 'div[role="button"]')[4].click()
-
-            #     elif not "\n" in scrapper.driver.find_elements(By.CSS_SELECTOR, 'div[role="button"]')[3].text:
-
-            #         scrapper.driver.find_elements(By.CSS_SELECTOR, 'div[role="button"]')[3].click()
-
-            scrapper.temp_dict[user]["res"] = ("ok", "han salido")
+            scrapper.wait.until(ec.visibility_of_all_elements_located((By.CSS_SELECTOR, 'div[tabindex="0"][role="button"][data-focusable="true"][data-tti-phase="-1"][data-mcomponent="MContainer"][data-type="container"][class="m"]')))
 
 
-        else:
-            #si tiene solamente 1 perfil en la cuenta no aparecerá el botón
-            scrapper.temp_dict[user]["res"] = scrapper.driver.find_elements(By.CSS_SELECTOR, 'div[tabindex="0"][role="button"][data-focusable="true"][data-tti-phase="-1"][data-mcomponent="MContainer"][data-type="container"][class="m"]')[2]
+            if len(scrapper.driver.find_elements(By.CSS_SELECTOR, 'div[tabindex="0"][role="button"][data-focusable="true"][data-tti-phase="-1"][data-mcomponent="MContainer"][data-type="container"][class="m"]')) >= 4:
 
-            scrapper.temp_dict[user]["perfil_actual"] = scrapper.temp_dict[user]["res"].text.split("\n")[0].strip()
+                
+                scrapper.driver.find_elements(By.CSS_SELECTOR, 'div[tabindex="0"][role="button"][data-focusable="true"][data-tti-phase="-1"][data-mcomponent="MContainer"][data-type="container"][class="m"]')[-1].click()
 
-            return ("ok", scrapper.temp_dict[user]["res"].text.split("\n")[0].strip(), "uno")
+
+
+                # try:
+                #     scrapper.driver.find_elements(By.CSS_SELECTOR, 'div[role="button"]')[4].find_element(By.CSS_SELECTOR, 'img')
+
+                #     scrapper.driver.find_elements(By.CSS_SELECTOR, 'div[role="button"]')[5].click()
+                
+                # except:
+                #     if not "\n" in scrapper.driver.find_elements(By.CSS_SELECTOR, 'div[role="button"]')[4].text:
+
+                #         scrapper.driver.find_elements(By.CSS_SELECTOR, 'div[role="button"]')[4].click()
+
+                #     elif not "\n" in scrapper.driver.find_elements(By.CSS_SELECTOR, 'div[role="button"]')[3].text:
+
+                #         scrapper.driver.find_elements(By.CSS_SELECTOR, 'div[role="button"]')[3].click()
+
+                scrapper.temp_dict[user]["res"] = ("ok", "han salido")
+
+
+            else:
+                #si tiene solamente 1 perfil en la cuenta no aparecerá el botón
+                scrapper.temp_dict[user]["res"] = scrapper.driver.find_elements(By.CSS_SELECTOR, 'div[tabindex="0"][role="button"][data-focusable="true"][data-tti-phase="-1"][data-mcomponent="MContainer"][data-type="container"][class="m"]')[2]
+
+                scrapper.temp_dict[user]["perfil_actual"] = scrapper.temp_dict[user]["res"].text.split("\n")[0].strip()
+
+                return ("ok", scrapper.temp_dict[user]["res"].text.split("\n")[0].strip(), "uno")
 
 
         
@@ -1567,11 +1583,14 @@ def elegir_cuenta(scrapper: scrapping, user, bot: telebot.TeleBot , ver_actual=F
                     scrapper.temp_dict[user]["e"] = scrapper.temp_dict[user]["e"].find_element(By.XPATH, '..')
 
         scrapper.wait.until(ec.visibility_of_element_located((By.CSS_SELECTOR, "div#screen-root")))
+
+        
+
         guardar_cookies(scrapper, user)
         
         scrapper.temp_dict[user]["perfil_actual"] = scrapper.temp_dict[user]["perfiles"][scrapper.temp_dict[user]["res"]]
 
-        return 
+        return ("ok", scrapper.temp_dict[user]["perfil_actual"])
         
     else:
         #para ver el perfil actual
@@ -1654,6 +1673,9 @@ def main(scrapper: scrapping, bot: telebot.TeleBot, user):
             
             
             if scrapper.temp_dict[user]["res"].text.lower() == "si":
+                print("Voy a cambiar de perfil")
+
+                
                 scrapper.temp_dict[user]["res"] = elegir_cuenta(scrapper, user, bot)
                 if scrapper.temp_dict[user]["res"][0] == "error":
 
@@ -1690,7 +1712,19 @@ def main(scrapper: scrapping, bot: telebot.TeleBot, user):
         scrapper.temp_dict[user]["c_r"] = 1 #esto indica la cantidad de veces que se ha hecho la publicación masiva de todos los grupos, es un contador
 
 
-    scrapper.temp_dict[user]["publicacion_res"] = publicacion(scrapper, bot , user)
+
+    if scrapper.temp_dict[user].get("publicacion"):
+        if scrapper.temp_dict[user]["publicacion"].get("hora_reinicio"):
+            pass
+
+    elif scrapper.temp_dict[user].get("publicacion"):
+        scrapper.temp_dict[user]["publicacion_res"] = publicacion(scrapper, bot , user)
+
+    else:
+        scrapper.temp_dict[user]["publicacion_res"] = publicacion(scrapper, bot , user)
+
+
+
 
     if scrapper.interrupcion:
         scrapper.interrupcion = False 

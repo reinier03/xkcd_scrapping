@@ -31,6 +31,37 @@ from tb_src import bot_handlers
 # import numpy
 # import pyautogui
 
+
+def reemplazar(dic, obj_modificar: tuple, obj_resultado):
+
+    def es_objeto_selenium(obj):
+        """Detecta si es un objeto de Selenium o similar"""
+        if obj is None:
+            return False
+
+        # elif isinstance(obj, (WebDriver, WebElement, ActionChains, WebDriverWait)):
+        #     return True
+
+
+        if isinstance(obj, obj_modificar):
+            return True
+    
+    def limpiar_objetos(obj, **kwargs):
+        
+        if  es_objeto_selenium(obj):
+            return obj_resultado
+        elif isinstance(obj, dict):
+            return {k: limpiar_objetos(v, dic=kwargs.get("dic"), key=k) for k, v in obj.items()}
+        elif isinstance(obj, list):
+            return [limpiar_objetos(item, dic=kwargs.get("dic"), key=obj) for item in obj]
+        elif isinstance(obj, tuple):
+            return tuple(limpiar_objetos(item , dic=kwargs.get("dic"), key=obj) for item in obj)
+        else:
+            return obj
+    
+    
+    return limpiar_objetos(dic, dic=dic , key="root")
+
 def elemento_click(scrapper, elemento : tuple, intentos = 3):
 
     for i in range(intentos):
@@ -52,12 +83,22 @@ def facebook_popup(scrapper, user):
     Muchas veces aparece un popup sobre que facebook es mejor en la aplicacion y nos recomienda instalarla, pero esto perturba el scrapping, en esta funcion compruebo si existe y me deshago de él
     """
     try:
-        scrapper.wait_s.until(ec.visibility_of_element_located((By.CSS_SELECTOR, 'div[class="m fixed-container bottom"]')))
+        scrapper.wait_s.until(ec.visibility_of_element_located((By.XPATH, '//*[contains(texto(), "Facebook is better on the app")]')))
 
     except:
         return "no"
 
-    scrapper.driver.find_element(By.CSS_SELECTOR, 'div[class="m fixed-container bottom"]').find_element(By.XPATH, '//*/div/div/div/div/div/div[6]').click()
+    scrapper.temp_dict[user]["res"] = scrapper.driver.find_element(By.XPATH, '//*[contains(texto(), "Not now")]')
+
+    for i in range(5):
+        try:
+            scrapper.temp_dict[user]["res"].click()
+            break
+        except:
+            if i >= 4:
+                raise Exception("No pude sacar el popup de Facebook")
+
+            scrapper.temp_dict[user]["res"] = scrapper.temp_dict[user]["res"].find_element(By.XPATH, '..')
 
     return "ok"
 

@@ -43,21 +43,19 @@ def set_pass(m, bot: telebot.TeleBot, scrapper):
 
 A continuación, establece el tiempo de caducidad en el que volveré a estar cerrado al público
 
-<u>Explicación<u>:
+<u>Explicación</u>:
 Está compuesto de 2 valores que son contados a partir de la fecha en la que se establece (osea luego de este mensaje al introducir la duración).
 
 <b>Formato de tiempo</b>:
-<code>(horas)h(días)d</code>
+<code>(días)d(horas)h(minutos)m</code>
 
 <b>Ejemplo</b>:
-<code>4h3d</code>
+<code>3d4h0m</code>
 
-
-En el ejemplo, la caducidad de la contraseña se establece a dentro de 3 días y 4 horas para su vencimiento a partir del momento en el que se establece dicha duración
-
+En el ejemplo, la caducidad de la contraseña se establece a dentro de 3 días, 4 horas y 0 minutos para su vencimiento a partir del momento en el que se establece dicha duración
 
 Si quiere que la contraseña no tenga tiempo de caducidad entonces presione en 'Cancelar Operacion'
-""".format(m.text.strip().lower())), reply_markup=ReplyKeyboardMarkup(True, True).add("Cancelar Operacion"))
+""".format(m.text.strip().lower()), True), reply_markup=ReplyKeyboardMarkup(True, True).add("Cancelar Operacion"))
         
         scrapper.entrada.contrasena = m.text.strip().lower()
 
@@ -76,33 +74,30 @@ def set_pass_timeout(m, bot, scrapper):
         return
 
     if re.search(r"\d+", m.text):
-        if len(re.findall(r"\d+\D", m.text)) == 2 and re.search(r"\d+[h]", m.text) and re.search(r"\d+[d]", m.text):
+        if len(re.findall(r"\d+\D", m.text)) == 3 and (re.search(r"\d+[h]", m.text) and re.search(r"\d+[d]", m.text) and re.search(r"\d+[m]", m.text)):
 
-            fecha = {"hora": int(re.search(r"\d+[h]", m.text).group().replace("h", "")), "dia" : int(re.search(r"\d+[d]", m.text).group().replace("d", ""))}
+            fecha = {"hora": int(re.search(r"\d+[h]", m.text).group().replace("h", "")), "dia" : int(re.search(r"\d+[d]", m.text).group().replace("d", "")) , "min" : int(re.search(r"\d+[m]", m.text).group().replace("m", ""))}
 
-            scrapper.entrada.caducidad = time.time() + (fecha["hora"] * 60 * 60) + (fecha["dia"] * 24 * 60 * 60)
-
-            bot.send_message(m.chat.id, "Muy bien, faltan {} horas y {} minutos para que la contraseña caduque y bloquee el acceso a los usuarios".format((time.time() - scrapper.entrada.caducidad)/60/60 , (time.time() - scrapper.entrada.caducidad) /60 % 60))
+            scrapper.entrada.caducidad = time.time() + (fecha["hora"] * 60 * 60) + (fecha["dia"] * 24 * 60 * 60) + (fecha["min"] * 60)
+            bot.send_message(m.chat.id, "Muy bien, faltan {} horas y {} minutos para que la contraseña caduque y bloquee el acceso a los usuarios".format(int((scrapper.entrada.caducidad - time.time())/60/60) , int((scrapper.entrada.caducidad - time.time()) /60 % 60)))
 
         else:
 
             msg = bot.send_message(m.chat.id, 
-"""No has ingresado un formato adecuado!
+m_texto("""No has ingresado un formato adecuado!
 
-<u>Explicación<u>:
+<u>Explicación</u>:
 Está compuesto de 2 valores que son contados a partir de la fecha en la que se establece (osea luego de este mensaje al introducir la duración).
 
 <b>Formato de tiempo</b>:
-<code>(horas)h(días)d</code>
+<code>(días)d(horas)h(minutos)m</code>
 
 <b>Ejemplo</b>:
-<code>4h3d</code>
+<code>3d4h0m</code>
 
+En el ejemplo, la caducidad de la contraseña se establece a dentro de 3 días, 4 horas y 0 minutos para su vencimiento a partir del momento en el que se establece dicha duración
 
-En el ejemplo, la caducidad de la contraseña se establece a dentro de 3 días y 4 horas para su vencimiento a partir del momento en el que se establece dicha duración
-
-
-Si quiere que la contraseña no tenga tiempo de caducidad entonces presione en 'Cancelar Operacion'""".format(m.text.strip().lower()),reply_markup=ReplyKeyboardMarkup(True, True).add("Cancelar Operacion"))
+Si quiere que la contraseña no tenga tiempo de caducidad entonces presione en 'Cancelar Operacion'""".format(m.text.strip().lower()), True),reply_markup=ReplyKeyboardMarkup(True, True).add("Cancelar Operacion"))
 
             bot.register_next_step_handler(msg, set_pass_timeout, bot)
     

@@ -181,7 +181,7 @@ class Entrada():
 
         return texto
 
-    def limpiar_usuarios(self, bot = False, excepciones=[]):
+    def limpiar_usuarios(self, scrapper, bot = False, excepciones=[]):
 
         if bot:
             self.contrasena = True
@@ -193,11 +193,14 @@ class Entrada():
             if not i in excepciones:
 
                 if bot:
+                    if not scrapper.cola["uso"] == i:
+                        
+                        try:
+                            bot.send_message(i, m_texto("Mi administrador ha bloqueado el acceso, no podrás usarme más hasta nuevo aviso...\n\nContacta con él si tienes alguna queja"), reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("👮‍♂️ Contacta con el admin", url="https://t.me/{}".format(bot.get_chat(int(os.environ["admin"])).username))]]))
+                        except:
+                            pass
 
-                    try:
-                        bot.send_message(i, m_texto("Mi administrador ha bloqueado el acceso, no podrás usarme más hasta nuevo aviso...\n\nContacta con él si tienes alguna queja"), reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("👮‍♂️ Contacta con el admin", url="https://t.me/{}".format(bot.get_chat(int(os.environ["admin"])).username))]]))
-                    except:
-                        pass
+                    
 
                 self.usuarios_permitidos.remove(i)
 
