@@ -837,8 +837,9 @@ def publicacion(scrapper: scrapping, bot:telebot.TeleBot, user, load_url=True, c
 
     
 
-    if scrapper.temp_dict[user].get("contador"):
-        contador = scrapper.temp_dict[user]["contador"]
+    if scrapper.temp_dict[user].get("publicacion"):
+        if scrapper.temp_dict[user]["publicacion"].get("contador"):
+            contador = scrapper.temp_dict[user]["publicacion"]["contador"]
 
     
 
@@ -949,7 +950,7 @@ def publicacion(scrapper: scrapping, bot:telebot.TeleBot, user, load_url=True, c
         scrapper.temp_dict[user]["publicacion"] = kwargs.get("info_publicacion")
     
     elif not scrapper.temp_dict[user].get("publicacion"):
-        scrapper.temp_dict[user]["publicacion"] = {"publicados" : [], "error" : [], "pendientes": [], "lista_grupos": [], "texto_publicacion": "Lista de Grupos en los que se ha Publicado:\n\n"}
+        scrapper.temp_dict[user]["publicacion"] = {"publicados" : [], "error" : [], "pendientes": [], "lista_grupos": [], "contador": contador ,"texto_publicacion": "Lista de Grupos en los que se ha Publicado:\n\n"}
         
         
     scrapper.temp_dict[user]["publicacion"]["lista_grupos"] = []
@@ -962,9 +963,10 @@ def publicacion(scrapper: scrapping, bot:telebot.TeleBot, user, load_url=True, c
     
     while True:
 
+        
+        scrapper.temp_dict[user]["publicacion"]["contador"] = contador
 
-
-        administrar_BD(scrapper, bot, user=user, contador=contador)
+        administrar_BD(scrapper, bot, user=user, publicacion=scrapper.temp_dict[user]["publicacion"])
 
         scrapper.temp_dict[user]["if_cancelar"]()
 
@@ -1621,7 +1623,6 @@ def main(scrapper: scrapping, bot: telebot.TeleBot, user):
     #limpiar el texto
     scrapper.temp_dict[user]["texto_r"] = scrapper.temp_dict[user]["texto_p"].splitlines()[0][:90]
     
-    breakpoint()
 
     comprobar_BD(scrapper.collection)
     
@@ -1716,21 +1717,13 @@ def main(scrapper: scrapping, bot: telebot.TeleBot, user):
 
 
 
-    if scrapper.temp_dict[user].get("publicacion"):
-        if scrapper.temp_dict[user]["publicacion"].get("hora_reinicio"):
-            pass
-
-    elif scrapper.temp_dict[user].get("publicacion"):
-        scrapper.temp_dict[user]["publicacion_res"] = publicacion(scrapper, bot , user)
-
+    if re.search(r"hora_reinicio", str(scrapper.temp_dict[user])):
+        pass
+    
     else:
         scrapper.temp_dict[user]["publicacion_res"] = publicacion(scrapper, bot , user)
 
 
-
-
-    if scrapper.interrupcion:
-        scrapper.interrupcion = False 
 
     if not scrapper.temp_dict[user]["publicacion_res"][0] == "ok":
         
@@ -1750,6 +1743,8 @@ def main(scrapper: scrapping, bot: telebot.TeleBot, user):
 
         scrapper.temp_dict[user]["c_r"] += 1
 
-        return loguin(scrapper, bot , user)
+        scrapper.interrupcion = False
+
+        return main(scrapper, bot, user)
 
     return scrapper.temp_dict[user]["publicacion_res"]

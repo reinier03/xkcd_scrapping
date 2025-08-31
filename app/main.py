@@ -534,7 +534,7 @@ def start_publish(bot : telebot.TeleBot, user):
             else:
                 print("Ha ocurrido un error! Revisa el bot, te dará más detalles")
 
-                bot.send_message(user, m_texto("Ha ocurrido un error inesperado...Le notificaré al administrador. <b>Tu operación ha sido cancelada</b> debido a esto, lamentamos las molestias\n👇Igualmente si tienes alguna duda, contacta con él👇\n\n@{}".format(bot.get_chat(admin).username)))
+                bot.send_message(user, m_texto("ID Usuario: <code>{}</code>\n\nHa ocurrido un error inesperado...Le notificaré al administrador. <b>Tu operación ha sido cancelada</b> debido a esto, lamentamos las molestias\n👇Igualmente si tienes alguna duda, contacta con él👇\n\n@{}".format(user, bot.get_chat(admin).username)))
 
                 bot.send_photo(admin, telebot.types.InputFile(make_screenshoot(scrapper.driver, user)), caption="Captura de error del usuario: <code>{}</code>".format(user))
 
