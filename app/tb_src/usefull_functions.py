@@ -737,7 +737,6 @@ def handlers(bot, user , msg ,info, diccionario: dict , **kwargs):
         case "bucle_publicacion":
 
             bot.register_next_step_handler(temp_dict[user]["msg"], bot_handlers.repetir_bucle, bot,user, info, temp_dict)
-            bot.callback_query_handler(bot_handlers.repetir_bucle, lambda c: c.data == "p/no_repetir")
             
             
     while True:

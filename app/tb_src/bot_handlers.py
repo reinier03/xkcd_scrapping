@@ -104,9 +104,9 @@ def repetir_bucle(m, bot, user, info, temp_dict):
     
     elif m.text.isdigit():
 
-        bot.send_message(user, "Muy bien, cada {} minutos estaré difundiendo la publicación por todos los grupos de esta cuenta\n\nCuando quieras cancelar la difusión por los grupos envíame /cancelar".format(m.text.strip()), reply_markup=telebot.types.ReplyKeyboardRemove())
+        bot.send_message(user, "Muy bien, cada {} hora(s) estaré difundiendo la publicación por todos los grupos de esta cuenta\n\nCuando quieras cancelar la difusión por los grupos envíame /cancelar".format(m.text.strip()), reply_markup=telebot.types.ReplyKeyboardRemove())
         
-        temp_dict[user]["res"] = int(m.text)
+        temp_dict[user]["res"] = int(m.text) * 60
         temp_dict[user]["completed"] = True
 
     else:

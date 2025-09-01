@@ -399,7 +399,7 @@ def get_work(m: telebot.types.Message):
 
         if not m.from_user.id in scrapper.cola["cola_usuarios"] and not m.from_user.id == scrapper.cola["uso"]:
 
-            msg = bot.send_message(m.chat.id, "Al parecer alguien ya me está usando :(\nLo siento pero por ahora estoy ocupado\n\n<b>¿Quieres que te notifique cuando dejen de usarme?</b>", reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("Si", callback_data="notify/si"), InlineKeyboardButton("No", callback_data="notify/no")]]))  
+            bot.send_message(m.chat.id, "Al parecer alguien ya me está usando :(\nLo siento pero por ahora estoy ocupado\n\n<b>¿Quieres que te notifique cuando dejen de usarme?</b>", reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("Si", callback_data="notify/si"), InlineKeyboardButton("No", callback_data="notify/no")]]))  
 
             bot.register_callback_query_handler(notificar, lambda c: c.data in ["notify/si", "notify/no"])
             return
@@ -418,6 +418,8 @@ def get_work(m: telebot.types.Message):
         m.text = m.text.strip()
         scrapper.cola["uso"] = m.from_user.id
         scrapper.temp_dict[m.from_user.id] = {}
+
+        bot.send_message(m.from_user.id, m_texto("En caso de dejarte de responder luego de que haya solicitado alguna información y tampoco te deje volver a usar el comando /publicar\n\nEntonces presiona el botón debajo de '<b>Cancelar Operación</b>' esto solucionará el problema pero terminará tu operación en el bot"), reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("Finalizar Operación y Arreglar Error", callback_data="cancel")]]))
 
         #si el texto es "/publicar 3" 
         if len(m.text.split()) > 1:
@@ -447,24 +449,29 @@ def get_work(m: telebot.types.Message):
                 pass
         
         
-        m = bot.send_message(m.chat.id, m_texto("Envíame a continuación el texto de la Publicación...", True), reply_markup = InlineKeyboardMarkup([[InlineKeyboardButton("Cancelar Operacón", callback_data="cancel")]]))
+        msg = bot.send_message(m.chat.id, m_texto("Envíame a continuación el texto de la Publicación...", True), reply_markup = ReplyKeyboardMarkup(True, True).add("Cancelar Operacón"))
 
 
-    bot.register_next_step_handler(m, get_work_texto)
+        bot.register_next_step_handler(msg, get_work_texto)
 
     return
 
 
 def get_work_texto(m: telebot.types.Message):
     global scrapper
-        
+
     if not m.from_user.id == scrapper.cola["uso"]:
         return
 
+    if m.text == "Cancelar Operación":
+        bot.send_message(m.chat.id, "Muy bien, la operación ha sido cancelada", reply_markup=ReplyKeyboardRemove())
+        liberar_cola(scrapper, m.from_user.id, bot)
+        return
+        
     if not m.content_type == "text":
-        bot.send_message(m.chat.id, m_texto("Mal! No has enviado texto...\n\nEnvíame a continuación el texto de la Publicación...", True))
+        msg = bot.send_message(m.chat.id, m_texto("Mal! No has enviado texto...\n\nEnvíame a continuación el texto de la Publicación...", True))
 
-        bot.register_next_step_handler(m, get_work_texto)
+        bot.register_next_step_handler(msg, get_work_texto)
 
         return
     
@@ -472,13 +479,8 @@ def get_work_texto(m: telebot.types.Message):
 
     scrapper.temp_dict[m.from_user.id]["texto_p"] = m.text.strip()
 
-    m = bot.send_message(m.chat.id, m_texto("A continuación. envíame 1 foto para la publicación (Por ahora solo admitimos 1)\n\nSi solamente quieres enviar texto presiona en '<b>Omitir Foto</b>'", True),reply_markup = InlineKeyboardMarkup([
-        [InlineKeyboardButton("Omitir Foto", callback_data="p/omitir_foto")],
-        [InlineKeyboardButton("Cancelar Operacón", callback_data="cancel")]
-    ]))
+    m = bot.send_message(m.chat.id, m_texto("A continuación. envíame 1 foto para la publicación (Por ahora solo admitimos 1)\n\nSi solamente quieres enviar texto presiona en '<b>Omitir Foto</b>'", True),reply_markup = ReplyKeyboardMarkup(True, True).add("Omitir Foto", "Cancelar Operación", row_width=1))
 
-
-    bot.register_callback_query_handler(get_work_foto, lambda c: c.data == "p/omitir_foto")
     bot.register_next_step_handler(m, get_work_foto)
 
     return
@@ -490,38 +492,34 @@ def get_work_foto(m):
     if not m.from_user.id == scrapper.cola["uso"]:
         return
 
-    if isinstance(m, telebot.types.CallbackQuery):
-        
-        bot.delete_message(m.from_user.id, m.message.message_id)
+    if m.text == "Cancelar Operación":
+        bot.send_message(m.chat.id, "Muy bien, la operación ha sido cancelada", reply_markup=ReplyKeyboardRemove())
+        liberar_cola(scrapper, m.from_user.id, bot)
+        return
 
-        if m.data == "p/omitir_foto":
-            scrapper.temp_dict[m.from_user.id]["foto_p"] = False
-        
-            bot.send_message(m.chat.id, m_texto("Muy bien, solamente enviaré el texto que me proporcionaste"), reply_markup=ReplyKeyboardRemove())
+    elif m.text == "Omitir Foto":
+        scrapper.temp_dict[m.from_user.id]["foto_p"] = False
 
-        m = m.message
+
+    elif m.photo:
+
+        with open(os.path.join(user_folder(m.from_user.id) , "foto_publicacion.png"), "wb") as file:
+            scrapper.temp_dict[m.from_user.id]["foto_p"] = os.path.join(user_folder(m.from_user.id) , "foto_publicacion.png")
+            file.write(bot.download_file(bot.get_file(m.photo[-1].file_id).file_path))
 
 
     else:
 
-        if m.photo:
+        m = bot.send_message(m.chat.id, m_texto("¡Debes de enviarme una foto!\n\nA continuación. envíame 1 foto para la publicación (Por ahora solo admitimos 1)\n\nSi solamente quieres enviar texto presiona en '<b>Omitir Foto</b>'", True), reply_markup = telebot.types.ReplyKeyboardMarkup(True, True).add("Omitir Foto", "Cancelar Operacion", row_width=1))
 
-            with open(os.path.join(user_folder(m.from_user.id) , "foto_publicacion.png"), "wb") as file:
-                scrapper.temp_dict[m.from_user.id]["foto_p"] = os.path.join(user_folder(m.from_user.id) , "foto_publicacion.png")
-                file.write(bot.download_file(bot.get_file(m.photo[-1].file_id).file_path))
+        bot.register_next_step_handler(m, get_work_foto)
+        return
 
+    
 
-        else:
+    
 
-            m = bot.send_message(m.chat.id, m_texto("¡Debes de enviarme una foto!\n\nA continuación. envíame 1 foto para la publicación (Por ahora solo admitimos 1)\n\nSi solamente quieres enviar texto presiona en '<b>Omitir Foto</b>'", True), reply_markup = InlineKeyboardMarkup([
-            [InlineKeyboardButton("Omitir Foto", callback_data="p/omitir_foto")],
-            [InlineKeyboardButton("Cancelar Operacón", callback_data="cancel")]]))
-
-            bot.register_callback_query_handler(get_work_foto, lambda c: c.data == "p/omitir_foto")
-            bot.register_next_step_handler(m, get_work_foto)
-
-            return
-
+    
     
 
     #arreglar a futuro    
@@ -824,10 +822,7 @@ def cancelar(c):
 
     bot.delete_message(c.message.chat.id, c.message.message_id)
 
-    bot.send_message(c.message.chat.id, "Muy Bien, la operación ha sido exitosamente cancelada")
-
-    administrar_BD(scrapper, bot)
-
+    bot.send_message(c.message.chat.id, "Muy Bien, la operación ha sido exitosamente cancelada", reply_markup=ReplyKeyboardRemove())
     return
 
 

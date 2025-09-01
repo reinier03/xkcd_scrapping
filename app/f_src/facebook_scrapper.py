@@ -935,7 +935,7 @@ def publicacion(scrapper: scrapping, bot:telebot.TeleBot, user, load_url=True, c
     
     
     if not scrapper.temp_dict[user].get("repetir") and not scrapper.interrupcion:
-        handlers(bot, user, "A continuación, establece un tiempo de espera luego de finalizada la publicación para volver a repetir el proceso en bucle\nIngresa el tiempo de repetición en MINUTOS\n\nSi solo deseas que no se repita y se publique solamente esta vez pulsa en '<b>No Repetir</b>'", "bucle_publicacion", scrapper.temp_dict, markup=ReplyKeyboardMarkup(True, True).add("No Repetir"))
+        handlers(bot, user, "A continuación, establece un tiempo de espera luego de finalizada la publicación para volver a repetir el proceso en bucle\nIngresa el tiempo de repetición en HORAS\n\nSi solo deseas que no se repita y se publique solamente esta vez pulsa en '<b>No Repetir</b>'", "bucle_publicacion", scrapper.temp_dict, markup=ReplyKeyboardMarkup(True, True).add("No Repetir"))
 
         if scrapper.temp_dict[user]["res"]:
 
