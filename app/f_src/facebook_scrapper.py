@@ -1674,7 +1674,7 @@ def main(scrapper: scrapping, bot: telebot.TeleBot, user):
     
         if not len(scrapper.temp_dict[user]["res"]) == 3:
         
-            scrapper.temp_dict[user]["teclado"] = ReplyKeyboardMarkup(True, True, row_width=1, input_field_placeholder="¿Quieres cambiar a otro perfil?").add("Si", "No", row_width=1)
+            scrapper.temp_dict[user]["teclado"] = ReplyKeyboardMarkup(True, True, row_width=1, input_field_placeholder="¿Quieres cambiar a otro perfil?").add("Si", "No", row_width=2)
             
             scrapper.temp_dict[user]["perfil_actual"] = str(scrapper.temp_dict[user]["res"][1])
 
