@@ -30,37 +30,36 @@ from tb_src import bot_handlers
 # import cv2
 # import numpy
 # import pyautogui
+def borrar_elemento(scrapper , elemento):
 
+    if isinstance(elemento, str):
+        try:
+            scrapper.driver.execute_script('document.querySelectorAll({}).forEach(e => e.remove());'.format(elemento))
+            return "ok"
 
-def reemplazar(dic, obj_modificar: tuple, obj_resultado):
+        except:
+            return "fail"
 
-    def es_objeto_selenium(obj):
-        """Detecta si es un objeto de Selenium o similar"""
-        if obj is None:
-            return False
+    elif isinstance(elemento, WebElement):
+        try:
+            scrapper.driver.execute_script('document.querySelectorAll(arguments[0]).forEach(e => e.remove());', elemento)
+            return "ok"
 
-        # elif isinstance(obj, (WebDriver, WebElement, ActionChains, WebDriverWait)):
-        #     return True
+        except:
+            return "fail"
 
+    elif isinstance(elemento, list):
 
-        if isinstance(obj, obj_modificar):
-            return True
-    
-    def limpiar_objetos(obj, **kwargs):
-        
-        if  es_objeto_selenium(obj):
-            return obj_resultado
-        elif isinstance(obj, dict):
-            return {k: limpiar_objetos(v, dic=kwargs.get("dic"), key=k) for k, v in obj.items()}
-        elif isinstance(obj, list):
-            return [limpiar_objetos(item, dic=kwargs.get("dic"), key=obj) for item in obj]
-        elif isinstance(obj, tuple):
-            return tuple(limpiar_objetos(item , dic=kwargs.get("dic"), key=obj) for item in obj)
-        else:
-            return obj
-    
-    
-    return limpiar_objetos(dic, dic=dic , key="root")
+        for e in elemento:
+            try:
+                scrapper.driver.execute_script('document.querySelectorAll(arguments[0]).forEach(e => e.remove());', e)
+            
+
+            except:
+                pass
+
+    return 
+
 
 def elemento_click(scrapper, elemento : tuple, intentos = 3):
 
@@ -147,8 +146,8 @@ def get_time(scrapper, user , tz_country = "America/Havana"):
 
 
 def liberar_cola(scrapper, user, bot):
-    scrapper.cola["uso"] = False      
 
+    scrapper.cola["uso"] = False      
 
     for i in scrapper.cola["cola_usuarios"]:
         try:
@@ -333,6 +332,17 @@ def load(scrapper, url):
         
 
 def if_cancelar(scrapper, user, bot):
+
+    if scrapper.entrada.caducidad:
+        if time.time() >= scrapper.entrada.caducidad:
+            scrapper.entrada.limpiar_usuarios(scrapper, bot)
+            if scrapper.cola["uso"]:
+                scrapper.temp_dict[scrapper.cola["uso"]]["cancelar_forzoso"] = True
+
+    
+            bot.send_message(scrapper.admin, m_texto("El tiempo de vigencia de la contraseña ha caducado"))
+
+
     if scrapper.temp_dict[user].get("cancelar"):
 
         bot.send_message(user, m_texto("Operación cancelada :("))
@@ -462,7 +472,7 @@ def clear_doom(driver: Chrome, hacer_limpieza=True):
     
     #
     try:
-        driver.execute_script('document.querySelectorAll("div.x78zum5.xdt5ytf.x1n2onr6.xat3117.xxzkxad").forEach(e => e.remove());')
+        driver.execute_script('document.querySelectorAll("div.x78zum5.xdt5ytf.x1n2onr6.xat3117.xxzkxad").forEach(e => e.remove());',)
         
     except:
         pass
@@ -727,6 +737,8 @@ def handlers(bot, user , msg ,info, diccionario: dict , **kwargs):
         case "bucle_publicacion":
 
             bot.register_next_step_handler(temp_dict[user]["msg"], bot_handlers.repetir_bucle, bot,user, info, temp_dict)
+            bot.callback_query_handler(bot_handlers.repetir_bucle, lambda c: c.data == "p/no_repetir")
+            
             
     while True:
         diccionario[user]["if_cancelar"]()

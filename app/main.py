@@ -50,7 +50,7 @@ scrapper.admin = admin
 
 telebot.apihelper.ENABLE_MIDDLEWARE = True
 
-bot = telebot.TeleBot(os.environ["token"], "html", disable_web_page_preview=True)
+bot = telebot.TeleBot(os.environ["token"], parse_mode="html", disable_web_page_preview=True)
 
 bot.set_my_commands([
     BotCommand("/start", "Información sobre el bot"),
@@ -446,9 +446,11 @@ def get_work(m: telebot.types.Message):
             except:
                 pass
         
-        m = bot.send_message(m.chat.id, m_texto("Envíame a continuación el texto de la Publicación...", True), reply_markup = telebot.types.ReplyKeyboardMarkup(True, True).add("Cancelar Operacion"))
+        
+        m = bot.send_message(m.chat.id, m_texto("Envíame a continuación el texto de la Publicación...", True), reply_markup = InlineKeyboardMarkup([[InlineKeyboardButton("Cancelar Operacón", callback_data="cancel")]]))
 
-        bot.register_next_step_handler(m, get_work_texto)
+
+    bot.register_next_step_handler(m, get_work_texto)
 
     return
 
@@ -456,10 +458,7 @@ def get_work(m: telebot.types.Message):
 def get_work_texto(m: telebot.types.Message):
     global scrapper
         
-    if m.text == "Cancelar Operacion":
-        bot.send_message(m.chat.id, m_texto("Operación Cancelada :("), reply_markup = telebot.types.ReplyKeyboardRemove())
-        liberar_cola(scrapper, m.from_user.id, bot)
-
+    if not m.from_user.id == scrapper.cola["uso"]:
         return
 
     if not m.content_type == "text":
@@ -473,42 +472,56 @@ def get_work_texto(m: telebot.types.Message):
 
     scrapper.temp_dict[m.from_user.id]["texto_p"] = m.text.strip()
 
-    m = bot.send_message(m.chat.id, m_texto("A continuación. envíame 1 foto para la publicación (Por ahora solo admitimos 1)\n\nSi solamente quieres enviar texto presiona en '<b>Omitir Foto</b>'", True),reply_markup = telebot.types.ReplyKeyboardMarkup(True, True).add("Omitir Foto", "Cancelar Operacion", row_width=1))
+    m = bot.send_message(m.chat.id, m_texto("A continuación. envíame 1 foto para la publicación (Por ahora solo admitimos 1)\n\nSi solamente quieres enviar texto presiona en '<b>Omitir Foto</b>'", True),reply_markup = InlineKeyboardMarkup([
+        [InlineKeyboardButton("Omitir Foto", callback_data="p/omitir_foto")],
+        [InlineKeyboardButton("Cancelar Operacón", callback_data="cancel")]
+    ]))
 
 
+    bot.register_callback_query_handler(get_work_foto, lambda c: c.data == "p/omitir_foto")
     bot.register_next_step_handler(m, get_work_foto)
 
     return
 
     
-def get_work_foto(m: telebot.types.Message):
+def get_work_foto(m):
     global scrapper
 
-    if m.text == "Cancelar Operacion":
-        bot.send_message(m.chat.id, m_texto("Operación Cancelada :("), reply_markup = telebot.types.ReplyKeyboardRemove())
-        liberar_cola(scrapper, m.from_user.id, bot)
+    if not m.from_user.id == scrapper.cola["uso"]:
         return
 
-    elif m.text == "Omitir Foto":
-        scrapper.temp_dict[m.from_user.id]["foto_p"] = False
+    if isinstance(m, telebot.types.CallbackQuery):
         
-        bot.send_message(m.chat.id, m_texto("Muy bien, solamente enviaré el texto que me proporcionaste"), reply_markup=ReplyKeyboardRemove())
+        bot.delete_message(m.from_user.id, m.message.message_id)
+
+        if m.data == "p/omitir_foto":
+            scrapper.temp_dict[m.from_user.id]["foto_p"] = False
         
+            bot.send_message(m.chat.id, m_texto("Muy bien, solamente enviaré el texto que me proporcionaste"), reply_markup=ReplyKeyboardRemove())
 
-    elif m.photo:
+        m = m.message
 
-        with open(os.path.join(user_folder(m.from_user.id) , "foto_publicacion.png"), "wb") as file:
-            scrapper.temp_dict[m.from_user.id]["foto_p"] = os.path.join(user_folder(m.from_user.id) , "foto_publicacion.png")
-            file.write(bot.download_file(bot.get_file(m.photo[-1].file_id).file_path))
 
     else:
 
-        m = bot.send_message(m.chat.id, m_texto("¡Debes de enviarme una foto!\n\nA continuación. envíame 1 foto para la publicación (Por ahora solo admitimos 1)\n\nSi solamente quieres enviar texto presiona en '<b>Omitir Foto</b>'", True), reply_markup = telebot.types.ReplyKeyboardMarkup(True, True).add("Omitir Foto", "Cancelar Operacion", row_width=1))
+        if m.photo:
 
-        bot.register_next_step_handler(m, get_work_foto)
-        return
+            with open(os.path.join(user_folder(m.from_user.id) , "foto_publicacion.png"), "wb") as file:
+                scrapper.temp_dict[m.from_user.id]["foto_p"] = os.path.join(user_folder(m.from_user.id) , "foto_publicacion.png")
+                file.write(bot.download_file(bot.get_file(m.photo[-1].file_id).file_path))
 
-    
+
+        else:
+
+            m = bot.send_message(m.chat.id, m_texto("¡Debes de enviarme una foto!\n\nA continuación. envíame 1 foto para la publicación (Por ahora solo admitimos 1)\n\nSi solamente quieres enviar texto presiona en '<b>Omitir Foto</b>'", True), reply_markup = InlineKeyboardMarkup([
+            [InlineKeyboardButton("Omitir Foto", callback_data="p/omitir_foto")],
+            [InlineKeyboardButton("Cancelar Operacón", callback_data="cancel")]]))
+
+            bot.register_callback_query_handler(get_work_foto, lambda c: c.data == "p/omitir_foto")
+            bot.register_next_step_handler(m, get_work_foto)
+
+            return
+
     
 
     #arreglar a futuro    
@@ -806,11 +819,15 @@ def cmd_delay(c):
 @bot.callback_query_handler(lambda c: c.data == "cancel")
 def cancelar(c):
 
-    
+    if c.from_user.id == scrapper.cola["uso"]:
+        liberar_cola(scrapper, c.from_user.id, bot)
 
     bot.delete_message(c.message.chat.id, c.message.message_id)
 
     bot.send_message(c.message.chat.id, "Muy Bien, la operación ha sido exitosamente cancelada")
+
+    administrar_BD(scrapper, bot)
+
     return
 
 
@@ -820,7 +837,7 @@ def cmd_reload(c):
     bot.send_message(c.from_user.id, "Estás seguro de que deseas continuar?, Esta acción no se puede deshacer e interrumpirá todos los procesos activos", reply_markup=InlineKeyboardMarkup(
         [
             [InlineKeyboardButton("Si, Deseo reiniciar", callback_data="c/reload/s")],
-            [InlineKeyboardButton("No, Cancela", callback_data="cancel")]
+            [InlineKeyboardButton("No, No lo hagas", callback_data="cancel")]
         ]
     , row_width=1))
 

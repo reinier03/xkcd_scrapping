@@ -963,17 +963,17 @@ def publicacion(scrapper: scrapping, bot:telebot.TeleBot, user, load_url=True, c
     
     while True:
 
-        
+        #Esta variable es para poder luego guardarla en la BD de MongoDB
         scrapper.temp_dict[user]["publicacion"]["contador"] = contador
 
         administrar_BD(scrapper, bot, user=user, publicacion=scrapper.temp_dict[user]["publicacion"])
 
         scrapper.temp_dict[user]["if_cancelar"]()
-
-        if not scrapper.interrupcion:
-            scrapper.temp_dict[user]["demora"] = time.time()
-            scrapper.temp_dict[user]["tiempo_debug"].append("\n---------------------------------")
-            scrapper.temp_dict[user]["tiempo_debug"].append("--------- contador: {}  ----------".format(contador))
+        
+        
+        scrapper.temp_dict[user]["demora"] = time.time()
+        scrapper.temp_dict[user]["tiempo_debug"].append("\n---------------------------------")
+        scrapper.temp_dict[user]["tiempo_debug"].append("--------- contador: {}  ----------".format(contador))
 
         scrapper.wait.until(ec.visibility_of_element_located((By.CSS_SELECTOR, 'div#screen-root')))
 
@@ -1244,7 +1244,6 @@ def publicacion(scrapper: scrapping, bot:telebot.TeleBot, user, load_url=True, c
 
         
 
-        #click en publicar
 
         get_time_debug(scrapper, user)
 
@@ -1292,115 +1291,114 @@ def publicacion(scrapper: scrapping, bot:telebot.TeleBot, user, load_url=True, c
         
         get_time_debug(scrapper, user)
 
-        try:
+        
 
-            scrapper.wait.until(ec.visibility_of_all_elements_located((By.XPATH, '//*[@id="screen-root"]/div/div[3]/div[6]/div[2]/div')))
 
-            scrapper.temp_dict[user]["a"].scroll_by_amount(0 , scrapper.driver.find_element(By.XPATH, '//*[@id="screen-root"]/div/div[3]/div[6]/div[2]/div').location["y"] + scrapper.driver.find_element(By.XPATH, '//*[@id="screen-root"]/div/div[3]/div[6]/div[2]/div').size["height"]).perform()
 
-            #verificar si el nombre de la cuenta actual esta entre las últimas publicaciones del grupo para asi comprobar que se publicó correctamente
+        scrapper.wait.until(ec.visibility_of_all_elements_located((By.XPATH, '//*[@id="screen-root"]/div/div[3]/div[6]/div[2]/div')))
 
-            for i in range(3):
+        scrapper.temp_dict[user]["a"].scroll_by_amount(0 , scrapper.driver.find_element(By.XPATH, '//*[@id="screen-root"]/div/div[3]/div[6]/div[2]/div').location["y"] + scrapper.driver.find_element(By.XPATH, '//*[@id="screen-root"]/div/div[3]/div[6]/div[2]/div').size["height"]).perform()
+
+
+        #verificar si el nombre de la cuenta actual esta entre las últimas publicaciones del grupo para asi comprobar que se publicó correctamente
+        for iteracion_buscar in range(3):
+
+            def comprobar_p(scrapper, espera: int = 8):
+                """
+                True si encuentra la publicacion en el grupo
+                False si no la encuentra
+                "pendiente" si está pendiente
+                """
                 
-                try:    
-                    
-                    def comprobar_p(scrapper, espera: int = 8):
-                        """
-                        True si encuentra la publicacion en el grupo
-                        False si no la encuentra
-                        "pendiente" si está pendiente
-                        """
-                        
-                        try:                             
-                            #este revisa la primera publicación del grupo
-                            WebDriverWait(scrapper.driver, espera).until(ec.any_of(lambda driver, scrapper=scrapper, user=user: driver.find_element(By.XPATH, '//*[contains(text(), "{}")]'.format(str(scrapper.temp_dict[user]["perfil_actual"]).strip())) and driver.find_element(By.XPATH, '//*[contains(text(), "{}")]'.format(scrapper.temp_dict[user]["texto_r"]))))
+                try:                             
+                    #este revisa la primera publicación del grupo
+                    WebDriverWait(scrapper.driver, espera).until(ec.any_of(lambda driver, scrapper=scrapper, user=user: driver.find_element(By.XPATH, '//*[contains(text(), "{}")]'.format(str(scrapper.temp_dict[user]["perfil_actual"]).strip())) and driver.find_element(By.XPATH, '//*[contains(text(), "{}")]'.format(scrapper.temp_dict[user]["texto_r"]))))
 
-                            
-                            
-                            try:
-                                # if scrapper.driver.find_element(By.XPATH, '//*[contains(text(), "Your post is pending")]'):
+                    scrapper.temp_dict[user]["publicacion"]["publicados"].append(scrapper.temp_dict[user]["publicacion"]["nombre"])
 
-                                if len(scrapper.driver.find_element(By.XPATH, '//*[@id="screen-root"]/div/div[3]/div[8]').find_elements(By.XPATH, './*')) == 2:
-
-                                    scrapper.temp_dict[user]["publicacion"]["pendientes"].append(scrapper.temp_dict[user]["publicacion"]["nombre"])
-                                        
-                                    return "pendiente"
-                            
-                            except:
-                                pass
-
-
-                            #Se mostraron el nombre del perfil y parte de la publicación, eso significa que se ha publicado adecuadamente
-                            # print("✅ " + str(scrapper.temp_dict[user]["publicacion"]["nombre"]))
-
-                            scrapper.temp_dict[user]["publicacion"]["publicados"].append(scrapper.temp_dict[user]["publicacion"]["nombre"])
-
-                            return True
-                        
-                        except:
-                            return False
-                        
-
-                    match comprobar_p(scrapper):
-                        
-                        case True:
-                            
-                            print("✅ " + str(scrapper.temp_dict[user]["publicacion"]["nombre"]))
-
-                            enviar_grupos(False)
-
-                            break
-
-                        case "pendiente":
-                            
-                            print("⛔️ " + str(scrapper.temp_dict[user]["publicacion"]["nombre"]))
-
-                            enviar_grupos(False, True)
-
-                            break
-                        
-
-
+                    return True
+                
                 except:
+                    pass
+                    
+                    
+                try:
+                    # if scrapper.driver.find_element(By.XPATH, '//*[contains(text(), "Your post is pending")]'):
+
+                    if len(scrapper.driver.find_element(By.XPATH, '//*[@id="screen-root"]/div/div[3]/div[8]').find_elements(By.XPATH, './*')) == 2:
+
+                        scrapper.temp_dict[user]["publicacion"]["pendientes"].append(scrapper.temp_dict[user]["publicacion"]["nombre"])
+                            
+                        return "pendiente"
                 
-                    if i >= 2:
-                        scrapper.temp_dict[user]["tiempo_debug"].append(get_time_debug(scrapper, user, "comprobar que la publicación se hizo en el grupo pero se obtuvo UN ERROR en el grupo #{} linea {}".format(contador + 1, traceback.extract_stack()[-1].lineno)))
+                except:
+                    pass
 
-                        raise Exception("La publicación NO ha sido encontrada en el grupo: {}".format(scrapper.temp_dict[user]["publicacion"]["nombre"]))
+                    
+                
+                
+                return False
+                
 
-                    else:
-                        scrapper.driver.refresh()
+            match comprobar_p(scrapper):
+                
+                case True:
+                    
+                    print("✅ " + str(scrapper.temp_dict[user]["publicacion"]["nombre"]))
+
+                    enviar_grupos(False)
+
+                    break
+
+                case "pendiente":
+                    
+                    print("⛔️ " + str(scrapper.temp_dict[user]["publicacion"]["nombre"]))
+
+                    enviar_grupos(False, True)
+
+                    break
+
+                case False:
+
+                    if not iteracion_buscar >= 2:
+
+                        if iteracion_buscar == 0:
+                            scrapper.driver.refresh()
 
                         try:
-                            scrapper.temp_dict[user]["a"].scroll_by_amount(0, round(scrapper.driver.find_element(By.XPATH, '//*[@id="screen-root"]/div/div[3]/div[11]').size["height"] * (i + 0.50))).perform()
+                            scrapper.driver.find_element(By.CSS_SELECTOR, "body").send_keys(Keys.END)
                         except:
                             pass
 
                         time.sleep(2)
+                    #----------------------------------------------------------------------------------
+
+                    else:
+                        scrapper.temp_dict[user]["tiempo_debug"].append(get_time_debug(scrapper, user, "comprobar que la publicación se hizo en el grupo pero se obtuvo UN ERROR en el grupo #{} linea {}".format(contador + 1, traceback.extract_stack()[-1].lineno)))
+
+                        print("❌ {}".format(scrapper.temp_dict[user]["publicacion"]["nombre"]))
+                        scrapper.temp_dict[user]["publicacion"]["error"].append(scrapper.temp_dict[user]["publicacion"]["nombre"])
+
+
+                        enviar_grupos(True)
+
+
+                        #el boton para ir atrás, a los grupos
+                        scrapper.wait.until(ec.visibility_of_element_located((By.CSS_SELECTOR, 'div[role="button"]')))
+                        scrapper.driver.find_element(By.CSS_SELECTOR, 'div[role="button"]').click()
+
+                        contador += 1
+
+                        scrapper.temp_dict[user]["demora"] = time.time() - scrapper.temp_dict[user]["demora"]
+                        scrapper.temp_dict[user]["tiempo_debug"].append("=> " + "{}:{}".format(int(scrapper.temp_dict[user]["demora"] / 60), int(scrapper.temp_dict[user]["demora"] % 60)) + " minutos <= tiempo para publicar en el grupo")
+
+                        continue
+
+                        
+                                
                     
 
             
-
-        except:
-            scrapper.temp_dict[user]["tiempo_debug"].append(get_time_debug(scrapper, user, "comprobar que la publicación se hizo en el grupo pero se obtuvo UN ERROR en el grupo #{} linea {}".format(contador + 1, traceback.extract_stack()[-1].lineno)))
-
-            print("❌ {}".format(scrapper.temp_dict[user]["publicacion"]["nombre"]))
-            scrapper.temp_dict[user]["publicacion"]["error"].append(scrapper.temp_dict[user]["publicacion"]["nombre"])
-
-
-            enviar_grupos(True)
-
-
-            #el boton para ir atrás, a los grupos
-            scrapper.wait.until(ec.visibility_of_element_located((By.CSS_SELECTOR, 'div[role="button"]')))
-            scrapper.driver.find_element(By.CSS_SELECTOR, 'div[role="button"]').click()
-
-            contador += 1
-
-            scrapper.temp_dict[user]["demora"] = time.time() - scrapper.temp_dict[user]["demora"]
-            scrapper.temp_dict[user]["tiempo_debug"].append("=> " + "{}:{}".format(int(scrapper.temp_dict[user]["demora"] / 60), int(scrapper.temp_dict[user]["demora"] % 60)) + " minutos <= tiempo para publicar en el grupo")
-
-            continue
 
 
 
@@ -1416,7 +1414,9 @@ def publicacion(scrapper: scrapping, bot:telebot.TeleBot, user, load_url=True, c
         scrapper.temp_dict[user]["demora"] = time.time() - scrapper.temp_dict[user]["demora"]
         scrapper.temp_dict[user]["tiempo_debug"].append("=> " + "{}:{}".format(int(scrapper.temp_dict[user]["demora"] / 60), int(scrapper.temp_dict[user]["demora"] % 60)) + " minutos <= tiempo para publicar en el grupo")
 
-        time.sleep(scrapper.delay)
+        while time.time() < time.time() + scrapper.delay:
+            scrapper.temp_dict[user]["if_cancelar"]()
+            time.sleep(5)
 
         
             
@@ -1552,7 +1552,6 @@ def elegir_cuenta(scrapper: scrapping, user, bot: telebot.TeleBot , ver_actual=F
 
     
     
-    
     if not ver_actual:
         
         scrapper.temp_dict[user]["teclado"] = ReplyKeyboardMarkup(True, True, input_field_placeholder="Elige un perfil")
@@ -1572,6 +1571,11 @@ def elegir_cuenta(scrapper: scrapping, user, bot: telebot.TeleBot , ver_actual=F
             handlers(bot, user, "Cual de los perfiles de esta cuenta quieres usar?", "perfil_elegir", scrapper.temp_dict, markup=scrapper.temp_dict[user]["teclado"])
 
         scrapper.temp_dict[user]["e"] = scrapper.temp_dict[user]["cuentas"][scrapper.temp_dict[user]["res"]]
+
+        # breakpoint()
+
+        borrar_elemento(scrapper, 'div[role="presentation"]')
+        
         
         for i in range(5):
             try:
@@ -1716,7 +1720,7 @@ def main(scrapper: scrapping, bot: telebot.TeleBot, user):
         scrapper.temp_dict[user]["c_r"] = 1 #esto indica la cantidad de veces que se ha hecho la publicación masiva de todos los grupos, es un contador
 
 
-
+    
     if re.search(r"hora_reinicio", str(scrapper.temp_dict[user])):
         pass
     
