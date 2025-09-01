@@ -1414,7 +1414,9 @@ def publicacion(scrapper: scrapping, bot:telebot.TeleBot, user, load_url=True, c
         scrapper.temp_dict[user]["demora"] = time.time() - scrapper.temp_dict[user]["demora"]
         scrapper.temp_dict[user]["tiempo_debug"].append("=> " + "{}:{}".format(int(scrapper.temp_dict[user]["demora"] / 60), int(scrapper.temp_dict[user]["demora"] % 60)) + " minutos <= tiempo para publicar en el grupo")
 
-        while time.time() < time.time() + scrapper.delay:
+        scrapper.temp_dict[user]["timeout"] = time.time() + scrapper.delay
+
+        while time.time() < scrapper.temp_dict[user]["timeout"]:
             scrapper.temp_dict[user]["if_cancelar"]()
             time.sleep(5)
 
@@ -1672,7 +1674,7 @@ def main(scrapper: scrapping, bot: telebot.TeleBot, user):
     
         if not len(scrapper.temp_dict[user]["res"]) == 3:
         
-            scrapper.temp_dict[user]["teclado"] = ReplyKeyboardMarkup(True, True, row_width=1, input_field_placeholder="¿Quieres cambiar a otro perfil?").add("Si", "No")
+            scrapper.temp_dict[user]["teclado"] = ReplyKeyboardMarkup(True, True, row_width=1, input_field_placeholder="¿Quieres cambiar a otro perfil?").add("Si", "No", row_width=1)
             
             scrapper.temp_dict[user]["perfil_actual"] = str(scrapper.temp_dict[user]["res"][1])
 
