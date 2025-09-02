@@ -1734,7 +1734,7 @@ def main(scrapper: scrapping, bot: telebot.TeleBot, user):
     if not scrapper.temp_dict[user]["publicacion_res"][0] == "ok":
         
 
-        scrapper.temp_dict[user]["publicacion"]["hora_reinicio"] = time.time() + (scrapper.temp_dict[user]["repetir"] * 60) #el tiempo para repetir está en minutos, así que tengo que multiplicarlo en segundos
+        scrapper.temp_dict[user]["publicacion"]["hora_reinicio"] = time.time() + scrapper.temp_dict[user]["repetir"]
 
         administrar_BD(scrapper, bot) 
                         
