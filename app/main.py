@@ -143,10 +143,11 @@ No te preocupes, yo me encargo por ti ;)
 <b>/publicar</b> - Comienza a publicar
 <b>/cancelar</b> - Para CANCELAR la operación y no publicar (esto solo funciona si estás publicando)
 <b>/cambiar</b> - Para cerrar la cuenta actual y poder hacer loguin con una diferente
+<b>/tiempo_restante</b> - Para saber el tiempo que te queda para seguir usándome, normalmente este tiempo lo establece mi administrador {}, así que ve y habla con él
 
 
 Bot desarrollado por @mistakedelalaif, las dudas o quejas, ir a consultárselas a él
-""")
+""".format(str("@" + bot.get_chat(admin).username) if bot.get_chat(admin).username else str(bot.get_chat(admin).first_name)))
     return
 
 
@@ -261,11 +262,11 @@ A continuación sigue estos pasos para compartir una publicación en Facebook:
 
 <blockquote>1 - Envíame /publicar
 2 - Luego de requerirtelo, envíame un texto para la publicación
-3 - (Opcional, lo puedes omitir) Luego de requerirtelo, envia una foto que ira adjunta en la foto 
-4 - Introduce tu usuario y luego la contraseña de facebook. Si tienes la doble autenticación configurada (2FA) tambien deberás ingresar los codigos de respaldo.
+3 - (Opcional, lo puedes omitir) Luego de requerirtelo, envia una foto que ira adjunta en la publicación (actualmente solo soportamos 1, pero en versiones futuras intentaré incluir más) 
+4 - Introduce tu usuario y luego la contraseña de facebook. Si tienes la doble autenticación configurada (o también llamado : <b>2FA</b>) tambien deberás ingresar los codigos de respaldo.
 5 - A continuación, si la cuenta con la que te logueaste tiene varios perfiles entonces deberás seleccionar con cual de todos tus perfiles publicarás
-6 - (Opcional, lo puedes omitir) Luego puedes seleccionar si quieres que la publicación se publique en masa luego de cierto tiempo.
-7 - Disfrutar de tu día mientras yo me encargo de publicar</blockquote>
+6 - (Opcional, lo puedes omitir) Luego puedes seleccionar si quieres que la publicación se vuelva a publicar en todos tus grupos de nuevo luego de un tiempo de espera. Si es lo que quieres debes definir el tiempo en HORAS o simplemente darle en 'No repetir' para que solamente se publique 1 vez
+7 - Disfrutar de tu día mientras yo me encargo de publicar :D</blockquote>
 
 {}
 """.format("<b>Quedan {} hora(s) y {} minuto(s) para que me uses</b>, luego de eso estaré bloqueado".format( int((scrapper.entrada.caducidad - time.time() ) / 60 / 60), int((scrapper.entrada.caducidad - time.time() ) / 60 % 60) ) if isinstance(scrapper.entrada.caducidad, (float, int)) else "").strip())
@@ -419,7 +420,7 @@ def get_work(m: telebot.types.Message):
         scrapper.cola["uso"] = m.from_user.id
         scrapper.temp_dict[m.from_user.id] = {}
 
-        bot.send_message(m.from_user.id, m_texto("En caso de dejarte de responder luego de que haya solicitado alguna información y tampoco te deje volver a usar el comando /publicar\n\nEntonces presiona el botón debajo de '<b>Cancelar Operación</b>' esto solucionará el problema pero terminará tu operación en el bot"), reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("Finalizar Operación y Arreglar Error", callback_data="cancel")]]))
+        bot.send_message(m.from_user.id, m_texto("En caso de dejarte de responder luego de que haya solicitado alguna información y tampoco te deje volver a usar el comando /publicar\n\nEntonces presiona el botón debajo de '<b>Finalizar Operación y Arreglar Error</b>' esto solucionará el problema pero terminará tu operación en el bot"), reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("Finalizar Operación y Arreglar Error", callback_data="cancel")]]))
 
         #si el texto es "/publicar 3" 
         if len(m.text.split()) > 1:

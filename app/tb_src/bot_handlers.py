@@ -112,7 +112,7 @@ def repetir_bucle(m, bot, user, info, temp_dict):
             temp_dict[user]["completed"] = True
 
         
-        bot.send_message(user, "Muy bien, cada {} hora(s) estaré difundiendo la publicación por todos los grupos de esta cuenta\n\nCuando quieras cancelar la difusión por los grupos envíame /cancelar".format(temp_dict[user]["res"]), reply_markup=telebot.types.ReplyKeyboardRemove())
+        bot.send_message(user, "Muy bien, cada {} hora(s) estaré difundiendo la publicación por todos los grupos de esta cuenta\n\nCuando quieras cancelar la difusión por los grupos envíame /cancelar".format(int(temp_dict[user]["res"] / 60 / 60)), reply_markup=telebot.types.ReplyKeyboardRemove())
 
     else:
 
