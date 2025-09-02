@@ -935,7 +935,7 @@ def publicacion(scrapper: scrapping, bot:telebot.TeleBot, user, load_url=True, c
     
     
     if not scrapper.temp_dict[user].get("repetir") and not scrapper.interrupcion:
-        handlers(bot, user, "A continuación, establece un tiempo de espera luego de finalizada la publicación para volver a repetir el proceso en bucle\nIngresa el tiempo de repetición en HORAS\n\nSi solo deseas que no se repita y se publique solamente esta vez pulsa en '<b>No Repetir</b>'", "bucle_publicacion", scrapper.temp_dict, markup=ReplyKeyboardMarkup(True, True).add("No Repetir"))
+        handlers(bot, user, "A continuación, establece un tiempo de espera luego de finalizada la publicación masiva para volver a repetir el proceso en bucle\nIngresa el tiempo de repetición en HORAS\n\nSi solo deseas que no se repita y se publique solamente esta vez en todos tus grupos pulsa en '<b>No Repetir</b>'", "bucle_publicacion", scrapper.temp_dict, markup=ReplyKeyboardMarkup(True, True).add("No Repetir"))
 
         if scrapper.temp_dict[user]["res"]:
 
@@ -1297,7 +1297,7 @@ def publicacion(scrapper: scrapping, bot:telebot.TeleBot, user, load_url=True, c
 
         scrapper.wait.until(ec.visibility_of_all_elements_located((By.XPATH, '//*[@id="screen-root"]/div/div[3]/div[6]/div[2]/div')))
 
-        scrapper.temp_dict[user]["a"].scroll_by_amount(0 , scrapper.driver.find_element(By.XPATH, '//*[@id="screen-root"]/div/div[3]/div[6]/div[2]/div').location["y"] + scrapper.driver.find_element(By.XPATH, '//*[@id="screen-root"]/div/div[3]/div[6]/div[2]/div').size["height"]).perform()
+        # scrapper.temp_dict[user]["a"].scroll_by_amount(0 , scrapper.driver.find_element(By.XPATH, '//*[@id="screen-root"]/div/div[3]/div[6]/div[2]/div').location["y"] + scrapper.driver.find_element(By.XPATH, '//*[@id="screen-root"]/div/div[3]/div[6]/div[2]/div').size["height"]).perform()
 
 
         #verificar si el nombre de la cuenta actual esta entre las últimas publicaciones del grupo para asi comprobar que se publicó correctamente
