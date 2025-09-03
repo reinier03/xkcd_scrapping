@@ -46,8 +46,6 @@ scrapper = s()
 
 scrapper.admin = admin
 
-
-
 telebot.apihelper.ENABLE_MIDDLEWARE = True
 
 bot = telebot.TeleBot(os.environ["token"], parse_mode="html", disable_web_page_preview=True)
@@ -82,6 +80,12 @@ def cmd_middleware(bot: telebot.TeleBot, update: telebot.types.Update):
             scrapper.entrada.limpiar_usuarios(scrapper, bot)
             if scrapper.cola["uso"]:
                 scrapper.temp_dict[scrapper.cola["uso"]]["cancelar_forzoso"] = True
+                
+                if update.message:
+                    liberar_cola(scrapper, update.message.from_user.id)
+
+                elif update.callback_query:
+                    liberar_cola(scrapper, update.callback_query.message.from_user.id)
 
     
             bot.send_message(admin, m_texto("El tiempo de vigencia de la contraseña ha caducado"))
@@ -143,11 +147,11 @@ No te preocupes, yo me encargo por ti ;)
 <b>/publicar</b> - Comienza a publicar
 <b>/cancelar</b> - Para CANCELAR la operación y no publicar (esto solo funciona si estás publicando)
 <b>/cambiar</b> - Para cerrar la cuenta actual y poder hacer loguin con una diferente
-<b>/tiempo_restante</b> - Para saber el tiempo que te queda para seguir usándome, normalmente este tiempo lo establece mi administrador {}, así que ve y habla con él
+
 
 
 Bot desarrollado por @mistakedelalaif, las dudas o quejas, ir a consultárselas a él
-""".format(str("@" + bot.get_chat(admin).username) if bot.get_chat(admin).username else str(bot.get_chat(admin).first_name)))
+""")
     return
 
 
@@ -165,6 +169,12 @@ def cmd_cancelar(m):
                 scrapper.temp_dict[int(m.text.split()[1])]["cancelar_forzoso"] = True
 
                 bot.send_message(m.chat.id, m_texto("Muy Bien, Cancelaré la operación actual para ese usuario"))
+
+
+                liberar_cola(scrapper, scrapper.cola["uso"], bot)
+
+                # if not scrapper.temp_dict[scrapper.cola["uso"]].get("texto_r"):
+                #     liberar_cola(scrapper, scrapper.cola["uso"], bot)
                 
                 
             else:
@@ -175,7 +185,13 @@ def cmd_cancelar(m):
 
     elif scrapper.cola.get("uso") == m.from_user.id:
         bot.send_message(m.chat.id, m_texto("Muy Bien, Cancelaré la operación actual tan pronto cómo sea posible..."))
+
         scrapper.temp_dict[m.from_user.id]["cancelar"] = True
+
+        # if not scrapper.temp_dict[scrapper.cola["uso"]].get("texto_r"):
+        #     liberar_cola(scrapper, scrapper.cola["uso"], bot)
+
+        liberar_cola(scrapper, scrapper.cola["uso"], bot)
         
 
     else:
@@ -420,7 +436,7 @@ def get_work(m: telebot.types.Message):
         scrapper.cola["uso"] = m.from_user.id
         scrapper.temp_dict[m.from_user.id] = {}
 
-        bot.send_message(m.from_user.id, m_texto("En caso de dejarte de responder luego de que haya solicitado alguna información y tampoco te deje volver a usar el comando /publicar\n\nEntonces presiona el botón debajo de '<b>Finalizar Operación y Arreglar Error</b>' esto solucionará el problema pero terminará tu operación en el bot"), reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("Finalizar Operación y Arreglar Error", callback_data="cancel")]]))
+        # bot.send_message(m.from_user.id, m_texto("En caso de dejarte de responder luego de que haya solicitado alguna información y tampoco te deje volver a usar el comando /publicar\n\nEntonces presiona el botón debajo de '<b>Finalizar Operación y Arreglar Error</b>' esto solucionará el problema pero terminará tu operación en el bot\n\nRecuerde, uselo en forma de emergencia si durante el proceso de publicación el bot se queda atascado, mientras tanto, no lo toque"), reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("Finalizar Operación y Arreglar Error", callback_data="cancel")]]))
 
         #si el texto es "/publicar 3" 
         if len(m.text.split()) > 1:

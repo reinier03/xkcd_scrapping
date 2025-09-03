@@ -656,7 +656,7 @@ def loguin_cero(scrapper: scrapping, user, bot : telebot.TeleBot, load_url=True,
 
             if not "save-device" in scrapper.driver.current_url:
 
-                bot.send_message(user, "🆕 Mensaje de Información\n\nHas Introducido un código incorrecto! Vuelve a intentarlo!")
+                bot.send_message(user, m_texto("Has Introducido un código incorrecto!\n...Espera un momento..."))
 
                 return loguin_cero(scrapper, user, bot)
             
@@ -837,9 +837,9 @@ def publicacion(scrapper: scrapping, bot:telebot.TeleBot, user, load_url=True, c
 
     
 
-    if scrapper.temp_dict[user].get("publicacion"):
-        if scrapper.temp_dict[user]["publicacion"].get("contador"):
-            contador = scrapper.temp_dict[user]["publicacion"]["contador"]
+
+    if scrapper.temp_dict[user].get("contador"):
+        contador = scrapper.temp_dict[user]["contador"]
 
     
 
@@ -950,7 +950,7 @@ def publicacion(scrapper: scrapping, bot:telebot.TeleBot, user, load_url=True, c
         scrapper.temp_dict[user]["publicacion"] = kwargs.get("info_publicacion")
     
     elif not scrapper.temp_dict[user].get("publicacion"):
-        scrapper.temp_dict[user]["publicacion"] = {"publicados" : [], "error" : [], "pendientes": [], "lista_grupos": [], "contador": contador ,"texto_publicacion": "Lista de Grupos en los que se ha Publicado:\n\n"}
+        scrapper.temp_dict[user]["publicacion"] = {"publicados" : [], "error" : [], "pendientes": [], "lista_grupos": [] ,"texto_publicacion": "Lista de Grupos en los que se ha Publicado:\n\n"}
         
         
     scrapper.temp_dict[user]["publicacion"]["lista_grupos"] = []
@@ -964,7 +964,7 @@ def publicacion(scrapper: scrapping, bot:telebot.TeleBot, user, load_url=True, c
     while True:
 
         #Esta variable es para poder luego guardarla en la BD de MongoDB
-        scrapper.temp_dict[user]["publicacion"]["contador"] = contador
+        scrapper.temp_dict[user]["contador"] = contador
 
         administrar_BD(scrapper, bot, user=user, publicacion=scrapper.temp_dict[user]["publicacion"])
 
@@ -1574,7 +1574,6 @@ def elegir_cuenta(scrapper: scrapping, user, bot: telebot.TeleBot , ver_actual=F
 
         scrapper.temp_dict[user]["e"] = scrapper.temp_dict[user]["cuentas"][scrapper.temp_dict[user]["res"]]
 
-        # breakpoint()
 
         borrar_elemento(scrapper, 'div[role="presentation"]')
         
@@ -1722,7 +1721,8 @@ def main(scrapper: scrapping, bot: telebot.TeleBot, user):
         scrapper.temp_dict[user]["c_r"] = 1 #esto indica la cantidad de veces que se ha hecho la publicación masiva de todos los grupos, es un contador
 
 
-    
+
+    #-----------------------------------PUBLICACIÓN----------------------------------------------
     if re.search(r"hora_reinicio", str(scrapper.temp_dict[user])):
         pass
     

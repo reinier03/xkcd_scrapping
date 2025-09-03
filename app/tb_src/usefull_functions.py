@@ -82,7 +82,10 @@ def facebook_popup(scrapper, user):
     Muchas veces aparece un popup sobre que facebook es mejor en la aplicacion y nos recomienda instalarla, pero esto perturba el scrapping, en esta funcion compruebo si existe y me deshago de él
     """
     try:
-        scrapper.wait_s.until(ec.visibility_of_element_located((By.XPATH, '//*[contains(texto(), "Facebook is better on the app")]')))
+        scrapper.wait_s.until(ec.any_of(
+            ec.visibility_of_element_located((By.XPATH, '//*[contains(texto(), "Facebook is better on the app")]')),
+            
+            ))
 
     except:
         return "no"
@@ -147,7 +150,18 @@ def get_time(scrapper, user , tz_country = "America/Havana"):
 
 def liberar_cola(scrapper, user, bot):
 
-    scrapper.cola["uso"] = False      
+    if scrapper.temp_dict[user].get("cancelar"):
+        bot.send_message(user, m_texto("Operación cancelada :("))
+
+    elif scrapper.temp_dict[user].get("cancelar_forzoso"):
+
+        bot.send_message(int(user), m_texto("El administrador ha finalizado tu proceso\n\nSi tienes alguna queja comunícate con él"), reply_markup=InlineKeyboardMarkup([
+
+            [InlineKeyboardButton("👮‍♂️ Contacta con el admin", url="https://t.me/{}".format(bot.get_chat(scrapper.admin).username))]
+
+        ]))
+
+    scrapper.cola["uso"] = False
 
     for i in scrapper.cola["cola_usuarios"]:
         try:
@@ -316,6 +330,7 @@ def load(scrapper, url):
         except:
             pass
         
+        
         while True:
             try:
                 WebDriverWait(scrapper.driver, 500).until(ec.visibility_of_element_located((By.CSS_SELECTOR, "body")))
@@ -339,23 +354,15 @@ def if_cancelar(scrapper, user, bot):
             if scrapper.cola["uso"]:
                 scrapper.temp_dict[scrapper.cola["uso"]]["cancelar_forzoso"] = True
 
+                liberar_cola(scrapper, user, bot)
+
     
             bot.send_message(scrapper.admin, m_texto("El tiempo de vigencia de la contraseña ha caducado"))
 
 
-    if scrapper.temp_dict[user].get("cancelar"):
-
-        bot.send_message(user, m_texto("Operación cancelada :("))
-        give_error(bot, scrapper.driver, user, "no", False)
-    
-    elif scrapper.temp_dict[user].get("cancelar_forzoso"):
-        bot.send_message(int(user), m_texto("El administrador ha finalizado tu proceso\n\nSi tienes alguna queja comunícate con él"), reply_markup=InlineKeyboardMarkup([
-
-            [InlineKeyboardButton("👮‍♂️ Contacta con el admin", url="https://t.me/{}".format(bot.get_chat(scrapper.admin).username))]
-
-        ]))
+    if scrapper.temp_dict[user].get("cancelar") or scrapper.temp_dict[user].get("cancelar_forzoso"):
         
-        give_error(bot, scrapper.driver, user, "no", False)
+        liberar_cola(scrapper, user, bot)
 
     return "ok"
 

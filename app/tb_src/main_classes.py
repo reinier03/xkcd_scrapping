@@ -7,28 +7,114 @@ import threading
 import pprint
 import sys
 from pymongo import MongoClient
-from seleniumbase.core.sb_driver import WebDriver
 from telebot.types import *
-
-
+import undetected_chromedriver as uc
 
 sys.path.append(os.path.dirname(os.path.dirname(__file__)))
 
 from tb_src.usefull_functions import *
-from f_src.chrome_driver import uc_driver
+from f_src.chrome_driver import *
+
+
+
+
+class uc_class(uc.Chrome):
+
+    def __init__(self):
+
+        o = uc.ChromeOptions()
+        
+        o.add_experimental_option(
+            "prefs", {
+                "credentials_enable_service": False,
+                "profile.password_manager_enabled" : False
+            }
+        )
+
+        if os.name != "nt":
+            o = anadir_opciones(o, container=True , mobile=True)
+
+            super().__init__(
+                options=o,
+                log_level=3,
+                keep_alive=True,
+                driver_executable_path='/usr/lib/chromium/chromedriver')
+
+        else:
+            o = anadir_opciones(o, mobile=True)
+            super().__init__(
+                options=o,
+                log_level=3,
+                keep_alive=True,
+                driver_executable_path=r'D:\Programacion\Proyectos personales\webscrapping\chromedriver-win64\chromedriver.exe')
+
+
+
+        self.set_window_rect(height=851, width=450)
+        self.set_window_position(x=0, y=0)
+
+
+            
+        
+            
+
+
+    def __existe(self):
+        if not self.cola["uso"]:
+            raise Exception("no")
+
+        elif self.temp_dict.get(self.cola["uso"]):
+            if self.temp_dict[self.cola["uso"]].get("cancelar") or self.temp_dict[self.cola["uso"]].get("cancelar_forzoso"):
+                raise Exception("no")
+
+        return "ok"
+
+
+    def find_element(self, by=By.ID, value: Optional[str] = None) -> WebElement:
+        self.__existe()
+
+        return super().find_element(by, value)
+
+    
+    def find_elements(self, by=By.ID, value: Optional[str] = None) -> list[WebElement]:
+        self.__existe()
+
+        return super().find_elements(by, value)
 
 
 
 
 
-class scrapping:
+
+
+
+class scrapping():
 
     def __init__(self, iniciar_web=True):
 
+        self.temp_dict = {}
+        self.cola = {"uso": False, "cola_usuarios": []}
+        self.delay = 60
+        self.entrada = Entrada(True)
+        self.interrupcion = False
+        self.admin = None
+        self.usuarios_permitidos = []
 
         if iniciar_web:
-            self.__iniciar()
 
+            self.driver = uc_class()
+
+            if os.name == "nt":
+                self.wait = WebDriverWait(self.driver, 80)
+            else:
+                self.wait = WebDriverWait(self.driver, 30)
+
+            self.wait_s = WebDriverWait(self.driver, 8)
+
+            self.driver.temp_dict = self.temp_dict
+            self.driver.cola = self.cola
+
+        
 
         if not "MONGO_URL" in os.environ:
             self.MONGO_URL = "mongodb://localhost:27017"
@@ -46,15 +132,11 @@ class scrapping:
         #----------------------------------------------------------------
         
 
-        self.temp_dict = {}
-        self.cola = {"uso": False, "cola_usuarios": []}
-        self.delay = 60
-        self.entrada = Entrada(True)
-        self.interrupcion = False
-        self.admin = None
-        self.usuarios_permitidos = []
+        
 
         return
+
+
     
     def __str__(self):
         texto = "Clase |<b>scrapping</b>| variables:\n\n"
@@ -132,31 +214,7 @@ class scrapping:
         self.collection = self.db["usuarios"]
 
         return
-        
 
-
-    
-    
-    def __iniciar(self):
-        self.driver = uc_driver(True)
-
-        if os.name == "nt":
-            self.wait = WebDriverWait(self.driver, 80)
-        else:
-            self.wait = WebDriverWait(self.driver, 30)
-
-        self.wait_s = WebDriverWait(self.driver, 8)
-
-        return
-
-    
-    
-    
-
-    def show(self, user):
-        pprint.pprint(self.temp_dict[user], sort_dicts=False)
-
-    
 
 
 

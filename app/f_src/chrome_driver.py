@@ -113,7 +113,7 @@ def selenium_driver():
     return driver
 
 
-def uc_driver(mobile=False):
+def uc_driver(mobile=False, **kwargs):
 
     o = uc.ChromeOptions()
     
@@ -131,7 +131,8 @@ def uc_driver(mobile=False):
     
     
 
-    
+
+
     if os.name != "nt":
         o = anadir_opciones(o, container=True , mobile=mobile)
 
@@ -153,7 +154,6 @@ def uc_driver(mobile=False):
             desired_capabilities={}
         )
 
-    
     if mobile:
         driver.set_window_rect(height=851, width=450)
         driver.set_window_position(x=0, y=0)
