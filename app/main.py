@@ -184,7 +184,6 @@ def cmd_cancelar(m):
             bot.send_message(m.chat.id, m_texto("Este usuario no está usando las publicaciones"))
 
     elif scrapper.cola.get("uso") == m.from_user.id:
-        bot.send_message(m.chat.id, m_texto("Muy Bien, Cancelaré la operación actual tan pronto cómo sea posible..."))
 
         scrapper.temp_dict[m.from_user.id]["cancelar"] = True
 
@@ -466,7 +465,7 @@ def get_work(m: telebot.types.Message):
                 pass
         
         
-        msg = bot.send_message(m.chat.id, m_texto("Envíame a continuación el texto de la Publicación...", True), reply_markup = ReplyKeyboardMarkup(True, True).add("Cancelar Operacón"))
+        msg = bot.send_message(m.chat.id, m_texto("Envíame a continuación el texto de la Publicación...", True), reply_markup = ReplyKeyboardMarkup(True, True).add("Cancelar Operación"))
 
 
         bot.register_next_step_handler(msg, get_work_texto)
@@ -493,12 +492,12 @@ def get_work_texto(m: telebot.types.Message):
         return
     
         
+    else:
+        scrapper.temp_dict[m.from_user.id]["texto_p"] = m.text.strip()
 
-    scrapper.temp_dict[m.from_user.id]["texto_p"] = m.text.strip()
+        m = bot.send_message(m.chat.id, m_texto("A continuación. envíame 1 foto para la publicación (Por ahora solo admitimos 1)\n\nSi solamente quieres enviar texto presiona en '<b>Omitir Foto</b>'", True),reply_markup = ReplyKeyboardMarkup(True, True).add("Omitir Foto", "Cancelar Operación", row_width=1))
 
-    m = bot.send_message(m.chat.id, m_texto("A continuación. envíame 1 foto para la publicación (Por ahora solo admitimos 1)\n\nSi solamente quieres enviar texto presiona en '<b>Omitir Foto</b>'", True),reply_markup = ReplyKeyboardMarkup(True, True).add("Omitir Foto", "Cancelar Operación", row_width=1))
-
-    bot.register_next_step_handler(m, get_work_foto)
+        bot.register_next_step_handler(m, get_work_foto)
 
     return
 

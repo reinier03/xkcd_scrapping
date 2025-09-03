@@ -151,15 +151,11 @@ def get_time(scrapper, user , tz_country = "America/Havana"):
 def liberar_cola(scrapper, user, bot):
 
     if scrapper.temp_dict[user].get("cancelar"):
-        bot.send_message(user, m_texto("Operación cancelada :("))
+        bot.send_message(user, m_texto("Operación cancelada :("), reply_markup=ReplyKeyboardRemove())
 
     elif scrapper.temp_dict[user].get("cancelar_forzoso"):
 
-        bot.send_message(int(user), m_texto("El administrador ha finalizado tu proceso\n\nSi tienes alguna queja comunícate con él"), reply_markup=InlineKeyboardMarkup([
-
-            [InlineKeyboardButton("👮‍♂️ Contacta con el admin", url="https://t.me/{}".format(bot.get_chat(scrapper.admin).username))]
-
-        ]))
+        bot.send_message(int(user), m_texto("El administrador ha finalizado tu proceso\n\n👇Si tienes alguna queja comunícate con él👇\n{}".format(str("@" + bot.get_chat(scrapper.admin).username) if bot.get_chat(scrapper.admin).username else str(" "))), reply_markup=ReplyKeyboardRemove())
 
     scrapper.cola["uso"] = False
 
