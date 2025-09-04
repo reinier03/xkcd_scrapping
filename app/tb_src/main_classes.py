@@ -22,6 +22,9 @@ class uc_class(uc.Chrome):
 
     def __init__(self):
 
+        self._temp_dict = {}
+        self._cola = {}
+
         o = uc.ChromeOptions()
         
         o.add_experimental_option(
@@ -53,18 +56,15 @@ class uc_class(uc.Chrome):
         self.set_window_rect(height=851, width=450)
         self.set_window_position(x=0, y=0)
 
-
-            
-        
             
 
 
     def __existe(self):
-        if not self.cola["uso"]:
+        if not self._cola["uso"]:
             raise Exception("no")
 
-        elif self.temp_dict.get(self.cola["uso"]):
-            if self.temp_dict[self.cola["uso"]].get("cancelar") or self.temp_dict[self.cola["uso"]].get("cancelar_forzoso"):
+        elif self.temp_dict.get(self._cola["uso"]):
+            if self.temp_dict[self._cola["uso"]].get("cancelar") or self.temp_dict[self._cola["uso"]].get("cancelar_forzoso"):
                 raise Exception("no")
 
         return "ok"
@@ -92,8 +92,8 @@ class scrapping():
 
     def __init__(self, iniciar_web=True):
 
-        self.temp_dict = {}
-        self.cola = {"uso": False, "cola_usuarios": []}
+        self._temp_dict = {}
+        self._cola = {"uso": False, "cola_usuarios": []}
         self.delay = 60
         self.entrada = Entrada(True)
         self.interrupcion = False
@@ -111,8 +111,6 @@ class scrapping():
 
             self.wait_s = WebDriverWait(self.driver, 8)
 
-            self.driver.temp_dict = self.temp_dict
-            self.driver.cola = self.cola
 
         
 
@@ -214,6 +212,42 @@ class scrapping():
         self.collection = self.db["usuarios"]
 
         return
+
+
+    @property
+    def cola(self):
+        return self._cola
+
+
+    @cola.setter
+    def cola(self, value):
+        breakpoint()
+        self._cola = value
+        self.driver._cola = value
+
+        return
+
+    @cola.getter
+    def cola(self):
+        breakpoint()
+        return self._cola
+
+
+    @property
+    def temp_dict(self):
+        return self._temp_dict
+
+
+    @temp_dict.setter
+    def temp_dict(self, value):
+        self._temp_dict = value
+        self.driver._temp_dict = value
+
+        return
+
+    @temp_dict.getter
+    def temp_dict(self):
+        return self._temp_dict
 
 
 

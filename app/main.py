@@ -459,7 +459,7 @@ def get_work(m: telebot.types.Message):
                     ]
                 ))
 
-                bot.register_callback_query_handler(call_notificar, lambda call: call.data == "no_mas" and call.from_user.id == i)
+                bot.register_callback_query_handler(call_notificar, lambda call: call.data == "no_mas" and call.from_user.id == i)  
 
             except:
                 pass
@@ -652,7 +652,7 @@ def call_ver(c):
     bot.send_message(c.from_user.id, "Qué deseas saber?", reply_markup=InlineKeyboardMarkup(
         [
             [InlineKeyboardButton("Ver Usuarios", callback_data="c/w/user")],
-            [InlineKeyboardButton("Ver Variables principales", callback_data="c/w/main_vars")]
+            [InlineKeyboardButton("Ver Variables principales", callback_data="c/w/main_vars")],
             [InlineKeyboardButton("Ver TODAS las Variables", callback_data= "c/w/vars")]
         ]
     ))
@@ -696,12 +696,20 @@ def watch(c):
     elif c.data == "c/w/main_vars":
         variables = []
 
-        for i in {"clase scrapper": scrapper, "admin": admin, "scrapper.MONGO_URL" : scrapper.MONGO_URL, "clase BD": scrapper.collection, "url_host" : os.environ.get("webhook_url")}.items():
+        for k,v in {"clase scrapper": scrapper, "admin": admin, "scrapper.MONGO_URL" : scrapper.MONGO_URL, "clase BD": scrapper.collection, "url_host" : os.environ.get("webhook_url")}.items():
 
-            variables.append("<b>{}</b>  :  {}\n".format(k,v))
+            try:
+                
+                variables.append("{}  :  {}\n".format(str(k) , str(v)))
 
-        for i in range(round(len("\n".join(variables)) / 4000)):
-            bot.send_message(c.from_user.id, "\n".join(variables)[i*4000 : (i+1) * 4000])
+                for i in list(set(re.findall(r"<[/]*\D>", variables[-1]))):
+                    variables[-1] = variables[-1].replace(i, "")
+
+            except:
+                pass
+
+        for i in range(round((len("\n".join(variables)) / 4000) + 1)):
+            bot.send_message(c.from_user.id, "\n".join(variables)[i*4000 : (i+1) * 4000], parse_mode=False)
 
     elif c.data == "c/w/vars":
         
@@ -709,12 +717,18 @@ def watch(c):
         variables = []
         
         for k,v in globals().items():
+
             try:
-                variables.append("{}  :  {}\n".format(k,v))
+                
+                variables.append("{}  :  {}\n".format(str(k) , str(v)))
+
+                for i in list(set(re.findall(r"<[/]*\D>", variables[-1]))):
+                    variables[-1] = variables[-1].replace(i, "")
+
             except:
                 pass
         
-        for i in range(round(len("\n".join(variables)) / 4000)):
+        for i in range(round((len("\n".join(variables)) / 4000) + 1)):
             bot.send_message(c.from_user.id, "\n".join(variables)[i*4000 : (i+1) * 4000], parse_mode=False)
 
     return
