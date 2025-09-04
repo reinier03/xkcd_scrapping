@@ -6,10 +6,10 @@ import dill
 import tempfile
 import os
 
-d = scrapping()
+s = scrapping()
 
-driver = d
-
+s.temp_dict = {123: {"algo": 13245}}
+s.cola = {"uso": 123}
 
 
 breakpoint()

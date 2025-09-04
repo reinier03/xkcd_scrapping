@@ -42,9 +42,10 @@ Para dudas o sugerencias contactarme a https://t.me/mistakedelalaif
 
 admin = int(os.environ["admin"])
 
+#------------------declaring main class--------------------------
 scrapper = s()
-
 scrapper.admin = admin
+#--------------------------END--------------------------
 
 telebot.apihelper.ENABLE_MIDDLEWARE = True
 
@@ -435,7 +436,8 @@ def get_work(m: telebot.types.Message):
         scrapper.cola["uso"] = m.from_user.id
         scrapper.temp_dict[m.from_user.id] = {}
 
-        # bot.send_message(m.from_user.id, m_texto("En caso de dejarte de responder luego de que haya solicitado alguna información y tampoco te deje volver a usar el comando /publicar\n\nEntonces presiona el botón debajo de '<b>Finalizar Operación y Arreglar Error</b>' esto solucionará el problema pero terminará tu operación en el bot\n\nRecuerde, uselo en forma de emergencia si durante el proceso de publicación el bot se queda atascado, mientras tanto, no lo toque"), reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("Finalizar Operación y Arreglar Error", callback_data="cancel")]]))
+        scrapper.cola = scrapper.cola
+        scrapper.temp_dict = scrapper.temp_dict
 
         #si el texto es "/publicar 3" 
         if len(m.text.split()) > 1:
@@ -552,13 +554,10 @@ def start_publish(bot : telebot.TeleBot, user):
             facebook_scrapper.main(scrapper, bot, user)
         except Exception as err:
             scrapper.temp_dict[user]["res"] = str(format_exc())
+
+
             
-            if len(err.args) > 0:
-                if "no" == str(err.args[0]):
-                    pass
-        
-            
-            else:
+            if not err.args or not str(err.args).startswith("('no',"):
                 print("Ha ocurrido un error! Revisa el bot, te dará más detalles")
 
                 bot.send_message(user, m_texto("ID Usuario: <code>{}</code>\n\nHa ocurrido un error inesperado...Le notificaré al administrador. <b>Tu operación ha sido cancelada</b> debido a esto, lamentamos las molestias\n👇Igualmente si tienes alguna duda, contacta con él👇\n\n@{}".format(user, bot.get_chat(admin).username)))
@@ -567,6 +566,10 @@ def start_publish(bot : telebot.TeleBot, user):
 
                 bot.send_message(admin, "Ha ocurrido un error inesperado! ID usuario: {}\n\n<blockquote expandable>{}</blockquote>".format(user,str(scrapper.temp_dict[user]["res"])))
 
+                pass
+
+                
+            else:
                 pass
         
         
@@ -893,11 +896,14 @@ def cmd_any(m):
 
 #comprobar si habia un proceso activo y el host se calló
 res = administrar_BD(scrapper, bot, True)
-if res[0] == "ok":  
+if res[0] == "ok":
     for k, v in res[1].items():
         if k == "scrapper":
-            globals()[k].__dict__.update(v.__dict__)
+            variable = v.__dict__
+            scrapper.temp_dict = variable["_temp_dict"]
+            scrapper.cola = variable["_cola"]
             
+
         else:
             globals()[k] = v
 
@@ -910,6 +916,7 @@ if res[0] == "ok":
 
 if not scrapper.interrupcion:
     bot.send_message(admin, "El bot de publicaciones de Facebook está listo :)")
+    
 
 app = Flask(__name__)
 

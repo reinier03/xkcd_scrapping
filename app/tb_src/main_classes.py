@@ -70,16 +70,17 @@ class uc_class(uc.Chrome):
         return "ok"
 
 
-    def find_element(self, by=By.ID, value: Optional[str] = None) -> WebElement:
-        self.__existe()
+    # def find_element(self, by=By.ID, value: Optional[str] = None) -> WebElement:
+    #     self.__existe()
 
-        return super().find_element(by, value)
+    #     return super().find_element(by, value)
+
 
     
-    def find_elements(self, by=By.ID, value: Optional[str] = None) -> list[WebElement]:
-        self.__existe()
+    # def find_elements(self, by=By.ID, value: Optional[str] = None) -> list[WebElement]:
+    #     self.__existe()
 
-        return super().find_elements(by, value)
+    #     return super().find_elements(by, value)
 
 
     @property
@@ -264,7 +265,39 @@ class scrapping():
         return
 
 
-    
+    def __existe(self):
+        if not self._cola["uso"]:
+            raise Exception("no")
+
+        elif self._temp_dict.get(self._cola["uso"]):
+            if self._temp_dict[self._cola["uso"]].get("cancelar") or self._temp_dict[self._cola["uso"]].get("cancelar_forzoso"):
+                raise Exception("no")
+
+        return "ok"
+
+
+
+    def find_element(self, by=By.CSS_SELECTOR, value="body"):
+        self.__existe()
+        
+        try:
+            return self.driver.find_element(by, value)
+        except:
+            facebook_popup(self)
+            return self.driver.find_element(by, value)
+
+
+    def find_elements(self, by=By.CSS_SELECTOR, value="body"):
+        self.__existe()
+
+        try:
+            return self.driver.find_elements(by, value)
+        except:
+            facebook_popup(self)
+            return self.driver.find_elements(by, value)
+
+
+        
 
 
 

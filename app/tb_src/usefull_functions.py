@@ -77,32 +77,53 @@ def elemento_click(scrapper, elemento : tuple, intentos = 3):
                 
 
 
-def facebook_popup(scrapper, user):
+def facebook_popup(scrapper):
     """
     Muchas veces aparece un popup sobre que facebook es mejor en la aplicacion y nos recomienda instalarla, pero esto perturba el scrapping, en esta funcion compruebo si existe y me deshago de él
     """
     try:
+        #div[class="m fixed-container bottom"]
         scrapper.wait_s.until(ec.any_of(
             ec.visibility_of_element_located((By.XPATH, '//*[contains(texto(), "Facebook is better on the app")]')),
-            
-            ))
+            ec.visibility_of_element_located((By.XPATH, '//div[contains(@class,"m fixed-container bottom")]/div/div/div/div/div/div[5]'))
+            ))            
 
     except:
         return "no"
 
-    scrapper.temp_dict[user]["res"] = scrapper.driver.find_element(By.XPATH, '//*[contains(texto(), "Not now")]')
 
-    for i in range(5):
-        try:
-            scrapper.temp_dict[user]["res"].click()
-            break
-        except:
-            if i >= 4:
-                raise Exception("No pude sacar el popup de Facebook")
 
-            scrapper.temp_dict[user]["res"] = scrapper.temp_dict[user]["res"].find_element(By.XPATH, '..')
+    try:
+        scrapper.driver.find_element(By.XPATH, '//div[contains(@class,"m fixed-container bottom")]/div/div/div/div/div/div[5]').click()
+        return "ok"
 
-    return "ok"
+    except:
+        pass
+
+
+
+    try:
+
+        res = scrapper.driver.find_element(By.XPATH, '//*[contains(texto(), "Not now")]')
+
+        for i in range(5):
+            try:
+                res.click()
+                break
+            except:
+                if i >= 4:
+                    raise Exception("No pude sacar el popup de Facebook")
+
+                res = res.find_element(By.XPATH, '..')
+
+        return "ok"
+
+    except:
+        pass
+
+
+
+    raise Exception("No se pudo clickear sobre el elemento para cerrar el popup de Facebook")
 
     
 
@@ -214,7 +235,7 @@ def obtener_grupos(scrapper, user, all: bool = False):
 
 
 
-    scrapper.temp_dict[user]["res"] = scrapper.driver.find_element(By.XPATH, '//*[@id="screen-root"]/div/div[3]/div[5]').find_elements(By.CSS_SELECTOR, 'div[data-mcomponent="MContainer"][data-focusable="true"][data-type="container"]')
+    scrapper.temp_dict[user]["res"] = scrapper.find_element(By.XPATH, '//*[@id="screen-root"]/div/div[3]/div[5]').find_elements(By.CSS_SELECTOR, 'div[data-mcomponent="MContainer"][data-focusable="true"][data-type="container"]')
     
     #le quito 2 porque ese elemento es el de "create a group" y "Sort" que pone de primero facebook
     for i in range(2):                
@@ -252,7 +273,7 @@ def obtener_grupos(scrapper, user, all: bool = False):
 #     scrapper.temp_dict["original"] = numpy.array(pyautogui.screenshot(os.path.join(str(user_folder(user)), "original.png")))
 
     
-#     scrapper.driver.find_element(By.XPATH, '//*[contains(@aria-label, "hotos")]').click()
+#     scrapper.find_element(By.XPATH, '//*[contains(@aria-label, "hotos")]').click()
 
     
     
@@ -275,45 +296,45 @@ def envia_fotos_input(scrapper, user, photo_path):
 
     try:
         scrapper.wait_s.until(ec.visibility_of_element_located((By.XPATH, '//*[contains(text(), "otos")]')))
-        scrapper.driver.find_elements(By.XPATH, '//*[contains(text(), "otos")]')[-1].click()
+        scrapper.find_elements(By.XPATH, '//*[contains(text(), "otos")]')[-1].click()
     except:
         scrapper.wait_s.until(ec.visibility_of_element_located((By.XPATH, '//*[@id="screen-root"]/div/div[2]/div[7]')))
-        scrapper.driver.find_element(By.XPATH, '//*[@id="screen-root"]/div/div[2]/div[7]').click()
+        scrapper.find_element(By.XPATH, '//*[@id="screen-root"]/div/div[2]/div[7]').click()
         
 
-    scrapper.driver.find_element(By.XPATH, '//input').send_keys(photo_path)
+    scrapper.find_element(By.XPATH, '//input').send_keys(photo_path)
 
-    # scrapper.temp_dict[user]["a"].send_keys_to_element(scrapper.driver.find_element(By.XPATH, '//input'), photo_path)
+    # scrapper.temp_dict[user]["a"].send_keys_to_element(scrapper.find_element(By.XPATH, '//input'), photo_path)
     
     return True
     
     try:
-        scrapper.driver.execute_script('arguments[0].removeAttribute("data-client-focused-component")', scrapper.driver.find_element(By.XPATH, '//*[contains(@data-client-focused-component, "true")]'))
+        scrapper.driver.execute_script('arguments[0].removeAttribute("data-client-focused-component")', scrapper.find_element(By.XPATH, '//*[contains(@data-client-focused-component, "true")]'))
     except:
         pass
 
-    scrapper.driver.execute_script('arguments[0].setAttribute("accept", "image/jpeg"); arguments[0].setAttribute("multiple", "true")', scrapper.driver.find_element(By.XPATH, '//input'))
+    scrapper.driver.execute_script('arguments[0].setAttribute("accept", "image/jpeg"); arguments[0].setAttribute("multiple", "true")', scrapper.find_element(By.XPATH, '//input'))
 
 
-    scrapper.driver.execute_script('arguments[0].setAttribute("data-client-focused-component", "true")', scrapper.driver.find_element(By.XPATH, '//*[contains(@aria-label, "hotos")]'))
+    scrapper.driver.execute_script('arguments[0].setAttribute("data-client-focused-component", "true")', scrapper.find_element(By.XPATH, '//*[contains(@aria-label, "hotos")]'))
 
 
-    scrapper.driver.execute_script('arguments[0].setAttribute("width", "50px")', scrapper.driver.find_element(By.XPATH, '//input'))
+    scrapper.driver.execute_script('arguments[0].setAttribute("width", "50px")', scrapper.find_element(By.XPATH, '//input'))
 
-    scrapper.driver.execute_script('arguments[0].setAttribute("height", "50px")', scrapper.driver.find_element(By.XPATH, '//input'))
+    scrapper.driver.execute_script('arguments[0].setAttribute("height", "50px")', scrapper.find_element(By.XPATH, '//input'))
     
-    scrapper.driver.execute_script('arguments[0].setAttribute("display", "block")', scrapper.driver.find_element(By.XPATH, '//input'))
+    scrapper.driver.execute_script('arguments[0].setAttribute("display", "block")', scrapper.find_element(By.XPATH, '//input'))
 
-    scrapper.driver.execute_script('arguments[0].setAttribute("style", "display: block; width: 100px; height: 100px; text: Hola")', scrapper.driver.find_element(By.XPATH, '//input'))
+    scrapper.driver.execute_script('arguments[0].setAttribute("style", "display: block; width: 100px; height: 100px; text: Hola")', scrapper.find_element(By.XPATH, '//input'))
 
-    scrapper.driver.find_element(By.XPATH, '//input').text
+    scrapper.find_element(By.XPATH, '//input').text
 
-    scrapper.driver.find_element(By.CSS_SELECTOR, 'h2').click()
+    scrapper.find_element(By.CSS_SELECTOR, 'h2').click()
 
     time.sleep(1)
 
-    scrapper.temp_dict[user]["a"].send_keys_to_element(scrapper.driver.find_element(By.XPATH, '//input'), photo_path).perform()
-    scrapper.driver.find_element(By.XPATH, '//input').send_keys(photo_path)
+    scrapper.temp_dict[user]["a"].send_keys_to_element(scrapper.find_element(By.XPATH, '//input'), photo_path).perform()
+    scrapper.find_element(By.XPATH, '//input').send_keys(photo_path)
     
     
 
@@ -326,14 +347,9 @@ def load(scrapper, url):
         except:
             pass
         
-        
-        while True:
-            try:
-                WebDriverWait(scrapper.driver, 500).until(ec.visibility_of_element_located((By.CSS_SELECTOR, "body")))
-                break
-            except:
-                pass
-            
+
+        WebDriverWait(scrapper.driver, 500).until(ec.visibility_of_element_located((By.CSS_SELECTOR, "body")))
+
     else:
         scrapper.driver.get(url)
             
