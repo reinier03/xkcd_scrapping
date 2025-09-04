@@ -221,7 +221,6 @@ class scrapping():
 
     @cola.setter
     def cola(self, value):
-        breakpoint()
         self._cola = value
         self.driver._cola = value
 
@@ -229,7 +228,6 @@ class scrapping():
 
     @cola.getter
     def cola(self):
-        breakpoint()
         return self._cola
 
 

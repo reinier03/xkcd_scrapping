@@ -490,7 +490,6 @@ def loguin_cero(scrapper: scrapping, user, bot : telebot.TeleBot, load_url=True,
 
     print("Estoy usando el loguin desde cero")
     
-    breakpoint()
     
     def doble_auth(scrapper: scrapping , user, bot: telebot.TeleBot):
 
@@ -1364,7 +1363,6 @@ def publicacion(scrapper: scrapping, bot:telebot.TeleBot, user, load_url=True, c
 
                         if iteracion_buscar == 0:
                             scrapper.driver.refresh()
-                            breakpoint()
 
                         try:
                             scrapper.driver.find_element(By.CSS_SELECTOR, "body").send_keys(Keys.END)
