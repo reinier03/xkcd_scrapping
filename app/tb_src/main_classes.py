@@ -63,8 +63,8 @@ class uc_class(uc.Chrome):
         if not self._cola["uso"]:
             raise Exception("no")
 
-        elif self.temp_dict.get(self._cola["uso"]):
-            if self.temp_dict[self._cola["uso"]].get("cancelar") or self.temp_dict[self._cola["uso"]].get("cancelar_forzoso"):
+        elif self._temp_dict.get(self._cola["uso"]):
+            if self._temp_dict[self._cola["uso"]].get("cancelar") or self._temp_dict[self._cola["uso"]].get("cancelar_forzoso"):
                 raise Exception("no")
 
         return "ok"
@@ -150,7 +150,7 @@ class scrapping():
         return
 
 
-        
+
 
     @property
     def cola(self):
@@ -209,7 +209,7 @@ class scrapping():
                 del res[elemento]
         
         
-        if res.get("temp_dict"):
+        if res.get("_temp_dict"):
         
             def es_objeto_selenium(obj):
                 """Detecta si es un objeto de Selenium o similar"""
@@ -239,7 +239,7 @@ class scrapping():
                     return obj
             
             
-            return limpiar_objetos(res, dic=res["temp_dict"], key="root")
+            return limpiar_objetos(res, dic=res["_temp_dict"], key="root")
 
         return res
         
