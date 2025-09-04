@@ -82,6 +82,24 @@ class uc_class(uc.Chrome):
         return super().find_elements(by, value)
 
 
+    @property
+    def cola(self):
+        return self._cola
+
+
+    @cola.getter
+    def cola(self):
+        return self._cola
+
+
+    @property
+    def temp_dict(self):
+        return self._temp_dict
+
+    @temp_dict.getter
+    def temp_dict(self):
+        return self._temp_dict
+
 
 
 
@@ -128,12 +146,44 @@ class scrapping():
         #Para tener mas detalles de la estructura de la base de datos consulte el archivo: "../BD structure.txt"
 
         #----------------------------------------------------------------
-        
-
-        
 
         return
 
+
+        
+
+    @property
+    def cola(self):
+        return self._cola
+
+
+    @cola.setter
+    def cola(self, value):
+        self._cola = value
+        self.driver._cola = value
+
+        return
+
+    @cola.getter
+    def cola(self):
+        return self._cola
+
+
+    @property
+    def temp_dict(self):
+        return self._temp_dict
+
+
+    @temp_dict.setter
+    def temp_dict(self, value):
+        self._temp_dict = value
+        self.driver._temp_dict = value
+
+        return
+
+    @temp_dict.getter
+    def temp_dict(self):
+        return self._temp_dict
 
     
     def __str__(self):
@@ -214,38 +264,7 @@ class scrapping():
         return
 
 
-    @property
-    def cola(self):
-        return self._cola
-
-
-    @cola.setter
-    def cola(self, value):
-        self._cola = value
-        self.driver._cola = value
-
-        return
-
-    @cola.getter
-    def cola(self):
-        return self._cola
-
-
-    @property
-    def temp_dict(self):
-        return self._temp_dict
-
-
-    @temp_dict.setter
-    def temp_dict(self, value):
-        self._temp_dict = value
-        self.driver._temp_dict = value
-
-        return
-
-    @temp_dict.getter
-    def temp_dict(self):
-        return self._temp_dict
+    
 
 
 

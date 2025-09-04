@@ -6,7 +6,9 @@ import dill
 import tempfile
 import os
 
-scrapper = uc_driver(True)
+d = scrapping()
+
+driver = d
 
 
 
