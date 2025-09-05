@@ -59,15 +59,15 @@ class uc_class(uc.Chrome):
             
 
 
-    def __existe(self):
-        if not self._cola["uso"]:
-            raise Exception("no")
+    # def __existe(self):
+    #     if not self._cola["uso"]:
+    #         raise Exception("no")
 
-        elif self._temp_dict.get(self._cola["uso"]):
-            if self._temp_dict[self._cola["uso"]].get("cancelar") or self._temp_dict[self._cola["uso"]].get("cancelar_forzoso"):
-                raise Exception("no")
+    #     elif self._temp_dict.get(self._cola["uso"]):
+    #         if self._temp_dict[self._cola["uso"]].get("cancelar") or self._temp_dict[self._cola["uso"]].get("cancelar_forzoso"):
+    #             raise Exception("no")
 
-        return "ok"
+    #     return "ok"
 
 
     # def find_element(self, by=By.ID, value: Optional[str] = None) -> WebElement:
@@ -125,10 +125,12 @@ class scrapping():
 
             if os.name == "nt":
                 self.wait = WebDriverWait(self.driver, 80)
+                self.wait_s = WebDriverWait(self.driver, 13)
             else:
                 self.wait = WebDriverWait(self.driver, 30)
+                self.wait_s = WebDriverWait(self.driver, 8)
 
-            self.wait_s = WebDriverWait(self.driver, 8)
+            
 
 
         
@@ -283,7 +285,7 @@ class scrapping():
         try:
             return self.driver.find_element(by, value)
         except:
-            facebook_popup(self)
+            facebook_popup(self.driver)
             return self.driver.find_element(by, value)
 
 
@@ -293,7 +295,7 @@ class scrapping():
         try:
             return self.driver.find_elements(by, value)
         except:
-            facebook_popup(self)
+            facebook_popup(self.driver)
             return self.driver.find_elements(by, value)
 
 

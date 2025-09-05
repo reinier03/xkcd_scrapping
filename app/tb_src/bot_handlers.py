@@ -42,7 +42,7 @@ def get_codigo(m,bot,user, info, temp_dict):
 def perfil_pregunta(m,bot,user, info, temp_dict):
             
     if not m.text.lower() in ["si", "no"]:
-        temp_dict[user]["msg"]=bot.send_message(m.chat.id, m_texto("Has introducido una respuesta incorrecta...por favor pulse uno de los botones a continuación\n\nEl perfil actual es: " + "<b>" + temp_dict[user]["res"][1] + "</b>" + "\n\n¿Quieres cambiar de perfil?"), reply_markup=temp_dict[user]["teclado"])
+        temp_dict[user]["msg"] = bot.send_message(m.chat.id, "Has introducido una respuesta incorrecta...por favor pulse uno de los botones a continuación\n\nEl perfil actual es: " + "<b>" + temp_dict[user]["res"][1] + "</b>" + "\n\n¿Quieres cambiar de perfil?", reply_markup=temp_dict[user]["teclado"])
         
         bot.register_next_step_handler(temp_dict[user]["msg"], perfil_pregunta,bot,user, info, temp_dict)
     else:
@@ -60,7 +60,7 @@ def captcha_getter(m, bot:telebot.TeleBot ,user, info, temp_dict, file):
     
 def perfil_seleccion(m, bot:telebot.TeleBot ,user, info, temp_dict, teclado):
     if not m.text in temp_dict[user]["lista_perfiles"]:
-        temp_dict[user]["msg"] = bot.send_message(m.chat.id, m_texto("¡Selecciona uno de los perfiles! ¡No ingreses nada por tu cuenta!\n\nVuelve a intentarlo"), reply_markup = teclado)
+        temp_dict[user]["msg"] = bot.send_message(m.chat.id, "¡Selecciona uno de los perfiles! ¡No ingreses nada por tu cuenta!\n\nVuelve a intentarlo", reply_markup = teclado)
         
         bot.register_next_step_handler(temp_dict[user]["msg"], perfil_seleccion, temp_dict[user]["teclado"])
         

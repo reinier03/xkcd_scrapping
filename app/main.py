@@ -555,7 +555,7 @@ def start_publish(bot : telebot.TeleBot, user):
         except Exception as err:
             scrapper.temp_dict[user]["res"] = str(format_exc())
             
-            if not err.args or not str(err.args).startswith("('no',"):
+            if user == scrapper.cola["uso"]:
                 print("Ha ocurrido un error! Revisa el bot, te dará más detalles")
 
                 bot.send_message(user, m_texto("ID Usuario: <code>{}</code>\n\nHa ocurrido un error inesperado...Le notificaré al administrador. <b>Tu operación ha sido cancelada</b> debido a esto, lamentamos las molestias\n👇Igualmente si tienes alguna duda, contacta con él👇\n\n@{}".format(user, bot.get_chat(admin).username)))

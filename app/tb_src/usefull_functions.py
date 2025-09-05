@@ -77,15 +77,15 @@ def elemento_click(scrapper, elemento : tuple, intentos = 3):
                 
 
 
-def facebook_popup(scrapper):
+def facebook_popup(driver, timeout = 3):
     """
     Muchas veces aparece un popup sobre que facebook es mejor en la aplicacion y nos recomienda instalarla, pero esto perturba el scrapping, en esta funcion compruebo si existe y me deshago de él
     """
     try:
         #div[class="m fixed-container bottom"]
-        scrapper.wait_s.until(ec.any_of(
+        WebDriverWait(driver, timeout).until(ec.any_of(
             ec.visibility_of_element_located((By.XPATH, '//*[contains(texto(), "Facebook is better on the app")]')),
-            ec.visibility_of_element_located((By.XPATH, '//div[contains(@class,"m fixed-container bottom")]/div/div/div/div/div/div[5]'))
+            ec.visibility_of_element_located((By.XPATH, '//div[contains(@class,"m fixed-container bottom")]'))
             ))            
 
     except:
@@ -94,9 +94,14 @@ def facebook_popup(scrapper):
 
 
     try:
-        scrapper.driver.find_element(By.XPATH, '//div[contains(@class,"m fixed-container bottom")]/div/div/div/div/div/div[5]').click()
-        return "ok"
+        res = driver.find_element(By.XPATH, '//div[contains(@class,"m fixed-container bottom")]')
 
+        while len(res) >= 5:
+            res = res.find_elements(By.XPATH, './*')
+
+        res[4].click()
+        return "ok"
+        
     except:
         pass
 
@@ -104,7 +109,7 @@ def facebook_popup(scrapper):
 
     try:
 
-        res = scrapper.driver.find_element(By.XPATH, '//*[contains(texto(), "Not now")]')
+        res = driver.find_element(By.XPATH, '//*[contains(texto(), "Not now")]')
 
         for i in range(5):
             try:

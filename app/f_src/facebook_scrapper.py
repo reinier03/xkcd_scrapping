@@ -928,7 +928,7 @@ def publicacion(scrapper: scrapping, bot:telebot.TeleBot, user, load_url=True, c
         scrapper.temp_dict = kwargs["diccionario"]
 
     if scrapper.temp_dict[user].get("repetir") and not scrapper.interrupcion:
-        bot.send_message(user, m_texto("A continuación, comenzaré a publicar en breve...\n\Esta será la vez #<b>{}</b> que publicaré por todos los grupos disponibles". format(scrapper.temp_dict[user]["c_r"])))
+        bot.send_message(user, m_texto("A continuación, comenzaré a publicar en breve...\n\nEsta será la vez #<b>{}</b> que publicaré por todos los grupos disponibles". format(scrapper.temp_dict[user]["c_r"])))
         
 
     
@@ -966,7 +966,7 @@ def publicacion(scrapper: scrapping, bot:telebot.TeleBot, user, load_url=True, c
 
         if contador % 10 == 0 and contador != 0:
             scrapper.driver.refresh()
-            facebook_popup(scrapper)
+            facebook_popup(scrapper.driver)
 
         #Esta variable es para poder luego guardarla en la BD de MongoDB
         scrapper.temp_dict[user]["contador"] = contador
@@ -1312,6 +1312,7 @@ def publicacion(scrapper: scrapping, bot:telebot.TeleBot, user, load_url=True, c
             #     scrapper.driver.refresh()
             #     facebook_popup(scrapper)
 
+
             def comprobar_p(scrapper, espera: int = 8):
                 """
                 True si encuentra la publicacion en el grupo
@@ -1379,7 +1380,7 @@ def publicacion(scrapper: scrapping, bot:telebot.TeleBot, user, load_url=True, c
 
                         if iteracion_buscar == 0:
                             scrapper.driver.refresh()
-                            facebook_popup(scrapper)
+                            facebook_popup(scrapper.driver)
 
                         try:
                             for i in range(iteracion_buscar + 1):
@@ -1649,7 +1650,7 @@ def main(scrapper: scrapping, bot: telebot.TeleBot, user):
 
     scrapper.driver.delete_all_cookies()
     
-    scrapper.temp_dict[user]["texto_r"] = scrapper.temp_dict[user]["texto_p"].splitlines()[0][:90]
+    scrapper.temp_dict[user]["texto_r"] = scrapper.temp_dict[user]["texto_p"].splitlines()[0][:60].strip()
     
 
     comprobar_BD(scrapper.collection)
