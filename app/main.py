@@ -169,7 +169,7 @@ def cmd_cancelar(m):
                 
                 scrapper.temp_dict[int(m.text.split()[1])]["cancelar_forzoso"] = True
 
-                bot.send_message(m.chat.id, m_texto("Muy Bien, Cancelaré la operación actual para ese usuario"))
+                bot.send_message(m.chat.id, m_texto("Muy Bien, Cancelaré la operación actual para ese usuario"),  reply_markup=telebot.types.ReplyKeyboardRemove())
 
 
                 liberar_cola(scrapper, scrapper.cola["uso"], bot)
@@ -182,7 +182,7 @@ def cmd_cancelar(m):
                 bot.send_message(m.from_user.id, m_texto("¡El usuario que ingresaste no existe!\n\nOperación Cancelada"))
         
         else:
-            bot.send_message(m.chat.id, m_texto("Este usuario no está usando las publicaciones"))
+            bot.send_message(m.chat.id, m_texto("Este usuario no está usando las publicaciones"), reply_markup=telebot.types.ReplyKeyboardRemove())
 
     elif scrapper.cola.get("uso") == m.from_user.id:
 
@@ -195,7 +195,7 @@ def cmd_cancelar(m):
         
 
     else:
-        bot.send_message(m.from_user.id, m_texto("¡No tienes ningún proceso activo!"))
+        bot.send_message(m.from_user.id, m_texto("¡No tienes ningún proceso activo!"), reply_markup=telebot.types.ReplyKeyboardRemove())
 
     return
     

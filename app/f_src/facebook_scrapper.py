@@ -1137,6 +1137,7 @@ def publicacion(scrapper: scrapping, bot:telebot.TeleBot, user, load_url=True, c
 
             scrapper.temp_dict[user]["publicacion"]["error"].append(scrapper.temp_dict[user]["publicacion"]["nombre"])
 
+            enviar_grupos()
 
             contador += 1
 
@@ -1147,7 +1148,7 @@ def publicacion(scrapper: scrapping, bot:telebot.TeleBot, user, load_url=True, c
             scrapper.temp_dict[user]["demora"] = time.time() - scrapper.temp_dict[user]["demora"]
             scrapper.temp_dict[user]["tiempo_debug"].append("=> " + "{}:{}".format(int(scrapper.temp_dict[user]["demora"] / 60), int(scrapper.temp_dict[user]["demora"] % 60)) + " minutos <= tiempo para publicar en el grupo")
 
-            enviar_grupos()
+            
             continue
 
             
@@ -1176,6 +1177,8 @@ def publicacion(scrapper: scrapping, bot:telebot.TeleBot, user, load_url=True, c
             scrapper.temp_dict[user]["tiempo_debug"].append(get_time_debug(scrapper, user, "Espera del elemento que me indica si el grupo #{} es de ventas, SI ES DE VENTAS ERROR, linea {}".format(contador + 1, traceback.extract_stack()[-1].lineno)))
 
             scrapper.temp_dict[user]["publicacion"]["error"].append(scrapper.temp_dict[user]["publicacion"]["nombre"])
+            
+            enviar_grupos()
 
             contador += 1
 
@@ -1188,7 +1191,7 @@ def publicacion(scrapper: scrapping, bot:telebot.TeleBot, user, load_url=True, c
             scrapper.temp_dict[user]["demora"] = time.time() - scrapper.temp_dict[user]["demora"]
             scrapper.temp_dict[user]["tiempo_debug"].append("=> " + "{}:{}".format(int(scrapper.temp_dict[user]["demora"] / 60), int(scrapper.temp_dict[user]["demora"] % 60)) + " minutos <= tiempo para publicar en el grupo")
 
-            enviar_grupos()
+            
             continue
 
             
@@ -1208,6 +1211,7 @@ def publicacion(scrapper: scrapping, bot:telebot.TeleBot, user, load_url=True, c
             scrapper.temp_dict[user]["tiempo_debug"].append(get_time_debug(scrapper, user, "darle click al cajón de texto dentro del formulario de publicación en el grupo #{} HA HABIDO UN ERROR, el elemento no está, muy posiblemente sea un grupo de venta, linea {}".format(contador + 1, traceback.extract_stack()[-1].lineno)))
             scrapper.temp_dict[user]["publicacion"]["error"].append(scrapper.temp_dict[user]["publicacion"]["nombre"])
 
+            enviar_grupos()
             contador += 1
 
             #el boton para ir atrás, a los grupos
@@ -1218,7 +1222,7 @@ def publicacion(scrapper: scrapping, bot:telebot.TeleBot, user, load_url=True, c
             scrapper.temp_dict[user]["demora"] = time.time() - scrapper.temp_dict[user]["demora"]
             scrapper.temp_dict[user]["tiempo_debug"].append("=> " + "{}:{}".format(int(scrapper.temp_dict[user]["demora"] / 60), int(scrapper.temp_dict[user]["demora"] % 60)) + " minutos <= tiempo para publicar en el grupo")
 
-            enviar_grupos()
+            
             continue
 
 
@@ -1399,12 +1403,13 @@ def publicacion(scrapper: scrapping, bot:telebot.TeleBot, user, load_url=True, c
                         scrapper.wait.until(ec.visibility_of_element_located((By.CSS_SELECTOR, 'div[role="button"]')))
                         scrapper.find_element(By.CSS_SELECTOR, 'div[role="button"]').click()
 
+                        enviar_grupos()
                         contador += 1
 
                         scrapper.temp_dict[user]["demora"] = time.time() - scrapper.temp_dict[user]["demora"]
                         scrapper.temp_dict[user]["tiempo_debug"].append("=> " + "{}:{}".format(int(scrapper.temp_dict[user]["demora"] / 60), int(scrapper.temp_dict[user]["demora"] % 60)) + " minutos <= tiempo para publicar en el grupo")
 
-                        enviar_grupos()
+                        
                         continue
 
                         
@@ -1417,7 +1422,7 @@ def publicacion(scrapper: scrapping, bot:telebot.TeleBot, user, load_url=True, c
 
         scrapper.temp_dict[user]["tiempo_debug"].append(get_time_debug(scrapper, user, "comprobar que la publicación se hizo en el grupo #{}, SI SE HIZO, linea {}".format(contador + 1, traceback.extract_stack()[-1].lineno)))
         
-        
+        enviar_grupos()
         contador += 1
 
         #el boton para ir atrás, a los grupos
@@ -1428,8 +1433,6 @@ def publicacion(scrapper: scrapping, bot:telebot.TeleBot, user, load_url=True, c
         scrapper.temp_dict[user]["tiempo_debug"].append("=> " + "{}:{}".format(int(scrapper.temp_dict[user]["demora"] / 60), int(scrapper.temp_dict[user]["demora"] % 60)) + " minutos <= tiempo para publicar en el grupo")
 
         scrapper.temp_dict[user]["timeout"] = time.time() + scrapper.delay
-
-        enviar_grupos()
 
         while time.time() < scrapper.temp_dict[user]["timeout"]:
             scrapper.temp_dict[user]["if_cancelar"]()
