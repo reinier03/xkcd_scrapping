@@ -1308,6 +1308,10 @@ def publicacion(scrapper: scrapping, bot:telebot.TeleBot, user, load_url=True, c
         #verificar si el nombre de la cuenta actual esta entre las últimas publicaciones del grupo para asi comprobar que se publicó correctamente
         for iteracion_buscar in range(3):
 
+            if iteracion_buscar == 0:
+                scrapper.driver.refresh()
+                facebook_popup(scrapper)
+
             def comprobar_p(scrapper, espera: int = 8):
                 """
                 True si encuentra la publicacion en el grupo
@@ -1367,9 +1371,9 @@ def publicacion(scrapper: scrapping, bot:telebot.TeleBot, user, load_url=True, c
 
                     if not iteracion_buscar >= 2:
 
-                        if iteracion_buscar == 0:
-                            scrapper.driver.refresh()
-                            facebook_popup(scrapper)
+                        # if iteracion_buscar == 0:
+                        #     scrapper.driver.refresh()
+                        #     facebook_popup(scrapper)
 
                         try:
                             scrapper.find_element(By.CSS_SELECTOR, "body").send_keys(Keys.END)
@@ -1415,7 +1419,7 @@ def publicacion(scrapper: scrapping, bot:telebot.TeleBot, user, load_url=True, c
 
         #el boton para ir atrás, a los grupos
         scrapper.wait.until(ec.visibility_of_element_located((By.CSS_SELECTOR, 'div[role="button"]')))
-        scrapper.find_element(By.CSS_SELECTOR, 'div[role="button"]').click()
+        ActionChains(scrapper.driver).click(scrapper.find_element(By.CSS_SELECTOR, 'div[role="button"]')).perform()
 
         scrapper.temp_dict[user]["demora"] = time.time() - scrapper.temp_dict[user]["demora"]
         scrapper.temp_dict[user]["tiempo_debug"].append("=> " + "{}:{}".format(int(scrapper.temp_dict[user]["demora"] / 60), int(scrapper.temp_dict[user]["demora"] % 60)) + " minutos <= tiempo para publicar en el grupo")
