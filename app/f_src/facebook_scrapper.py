@@ -899,6 +899,7 @@ def publicacion(scrapper: scrapping, bot:telebot.TeleBot, user, load_url=True, c
     
     def enviar_grupos():
         
+
         if scrapper.temp_dict[user]["publicacion"]["nombre"] in scrapper.temp_dict[user]["publicacion"]["publicados"]:
             print("✅ " + str(scrapper.temp_dict[user]["publicacion"]["nombre"]))
             scrapper.temp_dict[user]["res"] = obtener_texto(False)
@@ -1320,10 +1321,10 @@ def publicacion(scrapper: scrapping, bot:telebot.TeleBot, user, load_url=True, c
                 False si no la encuentra
                 "pendiente" si está pendiente
                 """
-                
+
                 try:                             
                     #este revisa la primera publicación del grupo
-                    WebDriverWait(scrapper.driver, espera).until(ec.any_of(lambda driver, scrapper=scrapper, user=user: driver.find_element(By.XPATH, '//*[contains(text(), "{}")]'.format(str(scrapper.temp_dict[user]["perfil_actual"]).strip())) and driver.find_element(By.XPATH, '//*[contains(text(), "{}")]'.format(scrapper.temp_dict[user]["texto_r"]))))
+                    WebDriverWait(scrapper.driver, espera).until(ec.all_of(lambda driver, scrapper=scrapper, user=user: driver.find_element(By.XPATH, '//*[contains(text(), "{}")]'.format(str(scrapper.temp_dict[user]["perfil_actual"]).strip())), lambda driver, scrapper=scrapper, user=user: driver.find_element(By.XPATH, '//*[contains(text(), "{}")]'.format(scrapper.temp_dict[user]["texto_r"]))))
 
                     scrapper.temp_dict[user]["publicacion"]["publicados"].append(scrapper.temp_dict[user]["publicacion"]["nombre"])
 

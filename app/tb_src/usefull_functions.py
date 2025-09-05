@@ -530,7 +530,12 @@ def administrar_BD(scrapper, bot, cargar_cookies=False, user=False, **kwargs):
     El parametro 'guardar' si es True, guardará el estado actual del bot, Si es False lo cargará
     """
 
-    dict_guardar = {"scrapper": scrapper}
+    if os.path.isfile(os.path.join(user_folder(scrapper.cola["uso"]) , "foto_publicacion.png")):
+        with open(os.path.join(user_folder(scrapper.cola["uso"]) , "foto_publicacion.png"), "rb") as file:
+            dict_guardar = {"scrapper": scrapper, "foto_b": file.read()}
+    else:
+        dict_guardar = {"scrapper": scrapper}
+
     for k, v in kwargs.items():
         if not user:
             dict_guardar.update({k: v})
@@ -569,6 +574,7 @@ def administrar_BD(scrapper, bot, cargar_cookies=False, user=False, **kwargs):
 
             with open(os.path.join(gettempdir(), "bot_cookies.pkl"), "wb") as file:
                 dill.dump(dill.loads(scrapper.collection.find_one({"_id": "telegram_bot", "telegram_id": bot.user.id})["cookies"]), file)
+
 
 
         else:

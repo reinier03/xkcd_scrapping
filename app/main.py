@@ -898,6 +898,13 @@ def cmd_any(m):
 #comprobar si habia un proceso activo y el host se calló
 res = administrar_BD(scrapper, bot, True)
 if res[0] == "ok":
+
+    if res[1].get("foto_b"):
+         if not os.path.isfile(os.path.join(user_folder(scrapper.cola["uso"]) , "foto_publicacion.png")):
+                with open(os.path.join(user_folder(scrapper.cola["uso"]) , "foto_publicacion.png"), "wb") as file:
+                    file.write(res[1]["foto_b"])
+
+
     for k, v in res[1].items():
         if k == "scrapper":
             variable = v.__dict__
@@ -909,11 +916,7 @@ if res[0] == "ok":
             globals()[k] = v
 
     if scrapper.cola["uso"]:
-
-        if scrapper.temp_dict[scrapper.cola["uso"]].get("foto_b"):
-            if not os.path.isfile(os.path.join(user_folder(scrapper.cola["uso"]) , "foto_publicacion.png")):
-                with open(os.path.join(user_folder(scrapper.cola["uso"]) , "foto_publicacion.png"), "wb") as file:
-                    file.write(scrapper.temp_dict[scrapper.cola["uso"]]["foto_b"])
+           
 
         scrapper.interrupcion = True #Esta variable la defino como flag para omitir todos los mensajes del bot hasta el punto donde estaba y que no sea repetitivo para el usuario
 
