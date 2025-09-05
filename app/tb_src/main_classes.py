@@ -282,21 +282,24 @@ class scrapping():
     def find_element(self, by=By.CSS_SELECTOR, value="body"):
         self.__existe()
         
-        try:
-            return self.driver.find_element(by, value)
-        except:
-            facebook_popup(self.driver)
-            return self.driver.find_element(by, value)
+
+        return self.driver.find_element(by, value)
+        # try:
+        #     return self.driver.find_element(by, value)
+        # except:
+        #     facebook_popup(self.driver)
+        #     return self.driver.find_element(by, value)
 
 
     def find_elements(self, by=By.CSS_SELECTOR, value="body"):
         self.__existe()
 
-        try:
-            return self.driver.find_elements(by, value)
-        except:
-            facebook_popup(self.driver)
-            return self.driver.find_elements(by, value)
+        return self.driver.find_elements(by, value)
+        # try:
+        #     return self.driver.find_elements(by, value)
+        # except:
+        #     facebook_popup(self.driver)
+        #     return self.driver.find_elements(by, value)
 
 
         
