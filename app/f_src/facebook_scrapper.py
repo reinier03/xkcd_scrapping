@@ -832,15 +832,6 @@ def loguin_cero(scrapper: scrapping, user, bot : telebot.TeleBot, load_url=True,
 
 def publicacion(scrapper: scrapping, bot:telebot.TeleBot, user, load_url=True, contador = 0, **kwargs):
     
-    scrapper.temp_dict[user]["if_cancelar"]()
-
-    if scrapper.temp_dict[user].get("contador"):
-        contador = scrapper.temp_dict[user]["contador"]
-
-    
-
-        
-
     def obtener_texto(error: bool, aprobar=False):
             
         try:
@@ -929,6 +920,11 @@ def publicacion(scrapper: scrapping, bot:telebot.TeleBot, user, load_url=True, c
     # if "bookmarks" in scrapper.driver.current_url:
     #     scrapper.find_element(By.CSS_SELECTOR, 'div[role="button"]').click()
 
+    scrapper.temp_dict[user]["if_cancelar"]()
+
+    if scrapper.temp_dict[user].get("contador"):
+        contador = scrapper.temp_dict[user]["contador"]
+
     if kwargs.get("diccionario"):
         scrapper.temp_dict = kwargs["diccionario"]
 
@@ -967,6 +963,7 @@ def publicacion(scrapper: scrapping, bot:telebot.TeleBot, user, load_url=True, c
     
     while True:
 
+        # breakpoint()
 
         if scrapper.temp_dict[user].get("demora"):
             scrapper.temp_dict[user]["contador"] = contador
@@ -1332,6 +1329,7 @@ def publicacion(scrapper: scrapping, bot:telebot.TeleBot, user, load_url=True, c
                 False si no la encuentra
                 "pendiente" si está pendiente
                 """
+                # breakpoint()
 
                 try:                             
                     #este revisa la primera publicación del grupo
