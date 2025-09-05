@@ -834,9 +834,6 @@ def publicacion(scrapper: scrapping, bot:telebot.TeleBot, user, load_url=True, c
     
     scrapper.temp_dict[user]["if_cancelar"]()
 
-    
-
-
     if scrapper.temp_dict[user].get("contador"):
         contador = scrapper.temp_dict[user]["contador"]
 
@@ -900,13 +897,20 @@ def publicacion(scrapper: scrapping, bot:telebot.TeleBot, user, load_url=True, c
                 return ("no", scrapper.temp_dict[user]["publicacion"]["texto_publicacion"])
 
     
-    def enviar_grupos(error: bool, aprobar=False):
+    def enviar_grupos():
         
-        
-        scrapper.temp_dict[user]["res"] = obtener_texto(error, aprobar)
+        if scrapper.temp_dict[user]["publicacion"]["nombre"] in scrapper.temp_dict[user]["publicacion"]["publicados"]:
+            print("✅ " + str(scrapper.temp_dict[user]["publicacion"]["nombre"]))
+            scrapper.temp_dict[user]["res"] = obtener_texto(False)
 
-        if error:
+        elif scrapper.temp_dict[user]["publicacion"]["nombre"] in scrapper.temp_dict[user]["publicacion"]["pendientes"]:
+            print("⛔️ " + str(scrapper.temp_dict[user]["publicacion"]["nombre"]))
+            scrapper.temp_dict[user]["res"] = obtener_texto(True, True)
+
+        elif scrapper.temp_dict[user]["publicacion"]["nombre"] in scrapper.temp_dict[user]["publicacion"]["error"]:
             print("❌ {}".format(scrapper.temp_dict[user]["publicacion"]["nombre"])) 
+            scrapper.temp_dict[user]["res"] = obtener_texto(True)
+
 
 
         if scrapper.temp_dict[user]["res"][0] == "nuevo":
@@ -962,7 +966,10 @@ def publicacion(scrapper: scrapping, bot:telebot.TeleBot, user, load_url=True, c
     
     while True:
 
-        
+
+        if scrapper.temp_dict[user]["publicacion"].get("nombre"):
+            if not re.search(scrapper.temp_dict[user]["publicacion"]["nombre"] , scrapper.temp_dict[user]["publicacion"]["texto_publicacion"]):
+                enviar_grupos()
 
         if contador % 10 == 0 and contador != 0:
             scrapper.driver.refresh()
@@ -1125,7 +1132,6 @@ def publicacion(scrapper: scrapping, bot:telebot.TeleBot, user, load_url=True, c
 
             scrapper.temp_dict[user]["publicacion"]["error"].append(scrapper.temp_dict[user]["publicacion"]["nombre"])
 
-            enviar_grupos(True)
 
             contador += 1
 
@@ -1165,8 +1171,6 @@ def publicacion(scrapper: scrapping, bot:telebot.TeleBot, user, load_url=True, c
 
             scrapper.temp_dict[user]["publicacion"]["error"].append(scrapper.temp_dict[user]["publicacion"]["nombre"])
 
-            enviar_grupos(True)
-
             contador += 1
 
             for i in range(2):
@@ -1196,8 +1200,6 @@ def publicacion(scrapper: scrapping, bot:telebot.TeleBot, user, load_url=True, c
 
             scrapper.temp_dict[user]["tiempo_debug"].append(get_time_debug(scrapper, user, "darle click al cajón de texto dentro del formulario de publicación en el grupo #{} HA HABIDO UN ERROR, el elemento no está, muy posiblemente sea un grupo de venta, linea {}".format(contador + 1, traceback.extract_stack()[-1].lineno)))
             scrapper.temp_dict[user]["publicacion"]["error"].append(scrapper.temp_dict[user]["publicacion"]["nombre"])
-
-            enviar_grupos(True)
 
             contador += 1
 
@@ -1354,22 +1356,11 @@ def publicacion(scrapper: scrapping, bot:telebot.TeleBot, user, load_url=True, c
             match comprobar_p(scrapper):
                 
                 case True:
-                    
-                    print("✅ " + str(scrapper.temp_dict[user]["publicacion"]["nombre"]))
-
-                    enviar_grupos(False)
 
                     break
 
                 case "pendiente":
-                    
-                    print("⛔️ " + str(scrapper.temp_dict[user]["publicacion"]["nombre"]))
 
-                    # if iteracion_buscar == 0:
-                    #     scrapper.driver.refresh()
-                    #     facebook_popup(scrapper)
-
-                    enviar_grupos(False, True)
 
                     break
 
@@ -1394,9 +1385,6 @@ def publicacion(scrapper: scrapping, bot:telebot.TeleBot, user, load_url=True, c
 
                         print("❌ {}".format(scrapper.temp_dict[user]["publicacion"]["nombre"]))
                         scrapper.temp_dict[user]["publicacion"]["error"].append(scrapper.temp_dict[user]["publicacion"]["nombre"])
-
-
-                        enviar_grupos(True)
 
 
                         #el boton para ir atrás, a los grupos

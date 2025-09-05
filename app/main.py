@@ -522,8 +522,11 @@ def get_work_foto(m):
     elif m.photo:
 
         with open(os.path.join(user_folder(m.from_user.id) , "foto_publicacion.png"), "wb") as file:
-            scrapper.temp_dict[m.from_user.id]["foto_p"] = os.path.join(user_folder(m.from_user.id) , "foto_publicacion.png")
             file.write(bot.download_file(bot.get_file(m.photo[-1].file_id).file_path))
+
+        with open(os.path.join(user_folder(m.from_user.id) , "foto_publicacion.png"), "rb") as file:
+            scrapper.temp_dict[m.from_user.id]["foto_p"] = os.path.join(user_folder(m.from_user.id) , "foto_publicacion.png")
+            scrapper.temp_dict[m.from_user.id]["foto_b"] = file.read()
 
 
     else:
@@ -906,7 +909,12 @@ if res[0] == "ok":
             globals()[k] = v
 
     if scrapper.cola["uso"]:
-        
+
+        if scrapper.temp_dict[scrapper.cola["uso"]].get("foto_b"):
+            if not os.path.isfile(os.path.join(user_folder(scrapper.cola["uso"]) , "foto_publicacion.png")):
+                with open(os.path.join(user_folder(scrapper.cola["uso"]) , "foto_publicacion.png"), "wb") as file:
+                    file.write(scrapper.temp_dict[scrapper.cola["uso"]]["foto_b"])
+
         scrapper.interrupcion = True #Esta variable la defino como flag para omitir todos los mensajes del bot hasta el punto donde estaba y que no sea repetitivo para el usuario
 
         print("Al parecer, habia un proceso de publicación activo, a continuación lo reanudaré")
