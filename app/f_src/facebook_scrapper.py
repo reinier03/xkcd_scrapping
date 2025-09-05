@@ -966,7 +966,6 @@ def publicacion(scrapper: scrapping, bot:telebot.TeleBot, user, load_url=True, c
 
         if contador % 10 == 0 and contador != 0:
             scrapper.driver.refresh()
-            facebook_popup(scrapper.driver)
 
         #Esta variable es para poder luego guardarla en la BD de MongoDB
         scrapper.temp_dict[user]["contador"] = contador
@@ -1380,7 +1379,6 @@ def publicacion(scrapper: scrapping, bot:telebot.TeleBot, user, load_url=True, c
 
                         if iteracion_buscar == 0:
                             scrapper.driver.refresh()
-                            facebook_popup(scrapper.driver)
 
                         try:
                             for i in range(iteracion_buscar + 1):
