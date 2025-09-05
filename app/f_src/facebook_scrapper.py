@@ -1334,7 +1334,9 @@ def publicacion(scrapper: scrapping, bot:telebot.TeleBot, user, load_url=True, c
                 try:
                     # if scrapper.find_element(By.XPATH, '//*[contains(text(), "Your post is pending")]'):
 
-                    if scrapper.wait_s.until(ec.any_of(lambda driver: len(driver.find_element(By.XPATH, '//*[@id="screen-root"]/div/div[3]/div[8]').find_elements(By.XPATH, './*')) == 2, ec.visibility_of_element_located((By.XPATH, '//*[contains(text(), "pendiente")]')), ec.visibility_of_element_located((By.XPATH, '//*[contains(text(), "pending")]')))):
+                    # if WebDriverWait(scrapper.driver, espera).until(ec.any_of(lambda driver: len(driver.find_element(By.XPATH, '//*[@id="screen-root"]/div/div[3]/div[8]').find_elements(By.XPATH, './*')) == 2, ec.visibility_of_element_located((By.XPATH, '//*[contains(text(), "pendiente")]')), ec.visibility_of_element_located((By.XPATH, '//*[contains(text(), "pending")]')))):
+
+                    if WebDriverWait(scrapper.driver, espera).until(ec.any_of(ec.visibility_of_element_located((By.XPATH, '//*[contains(text(), "pendiente")]')), ec.visibility_of_element_located((By.XPATH, '//*[contains(text(), "Your post is pending")]')))):
 
                         scrapper.temp_dict[user]["publicacion"]["pendientes"].append(scrapper.temp_dict[user]["publicacion"]["nombre"])
                             
@@ -1363,15 +1365,13 @@ def publicacion(scrapper: scrapping, bot:telebot.TeleBot, user, load_url=True, c
                     
                     print("⛔️ " + str(scrapper.temp_dict[user]["publicacion"]["nombre"]))
 
-                    if iteracion_buscar == 0:
-                        scrapper.driver.refresh()
-                        facebook_popup(scrapper)
+                    # if iteracion_buscar == 0:
+                    #     scrapper.driver.refresh()
+                    #     facebook_popup(scrapper)
 
-                        
-                    else:
-                        enviar_grupos(False, True)
+                    enviar_grupos(False, True)
 
-                        break
+                    break
 
                 case False:
 
@@ -1382,7 +1382,8 @@ def publicacion(scrapper: scrapping, bot:telebot.TeleBot, user, load_url=True, c
                             facebook_popup(scrapper)
 
                         try:
-                            scrapper.find_element(By.CSS_SELECTOR, "body").send_keys(Keys.END)
+                            for i in range(iteracion_buscar + 1):
+                                scrapper.find_element(By.CSS_SELECTOR, "body").send_keys(Keys.END)
                         except:
                             pass
 
