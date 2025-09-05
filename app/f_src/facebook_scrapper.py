@@ -968,15 +968,19 @@ def publicacion(scrapper: scrapping, bot:telebot.TeleBot, user, load_url=True, c
     while True:
 
 
-        if scrapper.temp_dict[user]["publicacion"].get("nombre"):
-            if not re.search(scrapper.temp_dict[user]["publicacion"]["nombre"] , scrapper.temp_dict[user]["publicacion"]["texto_publicacion"]):
-                enviar_grupos()
+        if scrapper.temp_dict[user].get("demora"):
+            scrapper.temp_dict[user]["contador"] = contador
+
+
+        # if scrapper.temp_dict[user]["publicacion"].get("nombre"):
+        #     if not re.search(scrapper.temp_dict[user]["publicacion"]["nombre"] , scrapper.temp_dict[user]["publicacion"]["texto_publicacion"]):
+        #         enviar_grupos()
 
         if contador % 10 == 0 and contador != 0:
             scrapper.driver.refresh()
 
         #Esta variable es para poder luego guardarla en la BD de MongoDB
-        scrapper.temp_dict[user]["contador"] = contador
+        
 
         administrar_BD(scrapper, bot, user=user, publicacion=scrapper.temp_dict[user]["publicacion"])
 
@@ -1143,6 +1147,7 @@ def publicacion(scrapper: scrapping, bot:telebot.TeleBot, user, load_url=True, c
             scrapper.temp_dict[user]["demora"] = time.time() - scrapper.temp_dict[user]["demora"]
             scrapper.temp_dict[user]["tiempo_debug"].append("=> " + "{}:{}".format(int(scrapper.temp_dict[user]["demora"] / 60), int(scrapper.temp_dict[user]["demora"] % 60)) + " minutos <= tiempo para publicar en el grupo")
 
+            enviar_grupos()
             continue
 
             
@@ -1183,6 +1188,7 @@ def publicacion(scrapper: scrapping, bot:telebot.TeleBot, user, load_url=True, c
             scrapper.temp_dict[user]["demora"] = time.time() - scrapper.temp_dict[user]["demora"]
             scrapper.temp_dict[user]["tiempo_debug"].append("=> " + "{}:{}".format(int(scrapper.temp_dict[user]["demora"] / 60), int(scrapper.temp_dict[user]["demora"] % 60)) + " minutos <= tiempo para publicar en el grupo")
 
+            enviar_grupos()
             continue
 
             
@@ -1212,6 +1218,7 @@ def publicacion(scrapper: scrapping, bot:telebot.TeleBot, user, load_url=True, c
             scrapper.temp_dict[user]["demora"] = time.time() - scrapper.temp_dict[user]["demora"]
             scrapper.temp_dict[user]["tiempo_debug"].append("=> " + "{}:{}".format(int(scrapper.temp_dict[user]["demora"] / 60), int(scrapper.temp_dict[user]["demora"] % 60)) + " minutos <= tiempo para publicar en el grupo")
 
+            enviar_grupos()
             continue
 
 
@@ -1397,6 +1404,7 @@ def publicacion(scrapper: scrapping, bot:telebot.TeleBot, user, load_url=True, c
                         scrapper.temp_dict[user]["demora"] = time.time() - scrapper.temp_dict[user]["demora"]
                         scrapper.temp_dict[user]["tiempo_debug"].append("=> " + "{}:{}".format(int(scrapper.temp_dict[user]["demora"] / 60), int(scrapper.temp_dict[user]["demora"] % 60)) + " minutos <= tiempo para publicar en el grupo")
 
+                        enviar_grupos()
                         continue
 
                         
@@ -1420,6 +1428,8 @@ def publicacion(scrapper: scrapping, bot:telebot.TeleBot, user, load_url=True, c
         scrapper.temp_dict[user]["tiempo_debug"].append("=> " + "{}:{}".format(int(scrapper.temp_dict[user]["demora"] / 60), int(scrapper.temp_dict[user]["demora"] % 60)) + " minutos <= tiempo para publicar en el grupo")
 
         scrapper.temp_dict[user]["timeout"] = time.time() + scrapper.delay
+
+        enviar_grupos()
 
         while time.time() < scrapper.temp_dict[user]["timeout"]:
             scrapper.temp_dict[user]["if_cancelar"]()
