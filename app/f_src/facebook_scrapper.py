@@ -962,6 +962,8 @@ def publicacion(scrapper: scrapping, bot:telebot.TeleBot, user, load_url=True, c
     
     while True:
 
+        
+
         if contador % 10 == 0 and contador != 0:
             scrapper.driver.refresh()
             facebook_popup(scrapper)
@@ -1024,7 +1026,7 @@ def publicacion(scrapper: scrapping, bot:telebot.TeleBot, user, load_url=True, c
                 
                 else:
                     
-                    bot.send_message(user, m_texto("He publicado en " + str(len(scrapper.temp_dict[user]["publicacion"]["publicados"]) + len(scrapper.temp_dict[user]["publicacion"]["pendientes"])) + " grupos\nAhora esperaré {} hora(s) y {} minuto(s) antes de volver a publicar masivamente\n\nCuando quieras cancelar envíame /cancelar".format(int(scrapper.temp_dict[user]["repetir"] / 60 / 60), int(scrapper.temp_dict[user]["repetir"] / 60 % 60))))
+                    bot.send_message(user, m_texto("Publiqué en " + str(len(scrapper.temp_dict[user]["publicacion"]["publicados"]) + len(scrapper.temp_dict[user]["publicacion"]["pendientes"])) + " grupos satisfactoriamente\nAhora esperaré {} hora(s) y {} minuto(s) antes de volver a publicar masivamente\n\nCuando quieras cancelar envíame /cancelar".format(int(scrapper.temp_dict[user]["repetir"] / 60 / 60), int(scrapper.temp_dict[user]["repetir"] / 60 % 60))))
                     
                     return ("repetir", scrapper.temp_dict[user]["c_r"])
 
@@ -1633,6 +1635,8 @@ def main(scrapper: scrapping, bot: telebot.TeleBot, user):
     """
 
     #limpiar el texto
+
+    scrapper.driver.delete_all_cookies()
     
     scrapper.temp_dict[user]["texto_r"] = scrapper.temp_dict[user]["texto_p"].splitlines()[0][:90]
     

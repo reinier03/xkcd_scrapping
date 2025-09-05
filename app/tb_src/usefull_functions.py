@@ -176,7 +176,7 @@ def liberar_cola(scrapper, user, bot):
 
     elif scrapper.temp_dict[user].get("cancelar_forzoso"):
 
-        bot.send_message(int(user), m_texto("El administrador ha finalizado tu proceso\n\n👇Si tienes alguna queja comunícate con él👇\n{}".format(str("@" + bot.get_chat(scrapper.admin).username) if bot.get_chat(scrapper.admin).username else str(" "))), reply_markup=ReplyKeyboardRemove())
+        bot.send_message(int(user), m_texto("ATENCIÓN‼\nEl administrador ha finalizado TU proceso\n\n👇Si tienes alguna queja comunícate con él👇\n{}".format(str("@" + bot.get_chat(scrapper.admin).username) if bot.get_chat(scrapper.admin).username else str(" "))), reply_markup=ReplyKeyboardRemove())
 
     scrapper.cola["uso"] = False
 
