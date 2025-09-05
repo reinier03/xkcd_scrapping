@@ -102,8 +102,8 @@ def repetir_bucle(m, bot, user, info, temp_dict):
         temp_dict[user]["completed"] = True
 
     elif re.search(r"\d", m.text):
-        if re.search(r"\d[.]\d", m.text):
-            temp_dict[user]["res"] = int(float(re.search(r"\d+[.]\d+").group()) * 60 * 60)
+        if re.search(r"\d[.,]\d", m.text):
+            temp_dict[user]["res"] = int(float(re.search(r"\d+[.,]\d+", m.text).group()) * 60 * 60)
             temp_dict[user]["completed"] = True
 
         else:
@@ -112,7 +112,7 @@ def repetir_bucle(m, bot, user, info, temp_dict):
             temp_dict[user]["completed"] = True
 
         
-        bot.send_message(user, "Muy bien, cada {} hora(s) estaré difundiendo la publicación por todos los grupos de esta cuenta\n\nCuando quieras cancelar la difusión por los grupos envíame /cancelar".format(int(temp_dict[user]["res"] / 60 / 60)), reply_markup=telebot.types.ReplyKeyboardRemove())
+        bot.send_message(user, "Muy bien, cada {} hora(s) y {} minuto(s) estaré difundiendo la publicación por todos los grupos de esta cuenta\n\nCuando quieras cancelar la difusión por los grupos envíame /cancelar".format(int(temp_dict[user]["res"] / 60 / 60), int(temp_dict[user]["res"] / 60 % 60)), reply_markup=telebot.types.ReplyKeyboardRemove())
 
     else:
 

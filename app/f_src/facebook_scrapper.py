@@ -928,7 +928,7 @@ def publicacion(scrapper: scrapping, bot:telebot.TeleBot, user, load_url=True, c
         scrapper.temp_dict = kwargs["diccionario"]
 
     if scrapper.temp_dict[user].get("repetir") and not scrapper.interrupcion:
-        bot.send_message(user, m_texto("A continuación, comenzaré a publicar en breve...\n\nYa he publicado <b>{}</b> veces por todos los grupos disponibles". format(scrapper.temp_dict[user]["c_r"])))
+        bot.send_message(user, m_texto("A continuación, comenzaré a publicar en breve...\n\Esta será la vez #<b>{}</b> que publicaré por todos los grupos disponibles". format(scrapper.temp_dict[user]["c_r"])))
         
 
     
@@ -962,7 +962,7 @@ def publicacion(scrapper: scrapping, bot:telebot.TeleBot, user, load_url=True, c
     
     while True:
 
-        if scrapper.temp_dict["publicacion"].get("nombre"):
+        if contador % 10 == 0 and contador != 0:
             scrapper.driver.refresh()
             facebook_popup(scrapper)
 
@@ -1024,7 +1024,7 @@ def publicacion(scrapper: scrapping, bot:telebot.TeleBot, user, load_url=True, c
                 
                 else:
                     
-                    bot.send_message(user, m_texto("He publicado en " + str(len(scrapper.temp_dict[user]["publicacion"]["publicados"]) + len(scrapper.temp_dict[user]["publicacion"]["pendientes"])) + " grupos\nAhora esperaré {} minutos antes de volver a repetir la operación\n\nCuando quieras cancelar envíame /cancelar".format(scrapper.temp_dict[user]["repetir"])))
+                    bot.send_message(user, m_texto("He publicado en " + str(len(scrapper.temp_dict[user]["publicacion"]["publicados"]) + len(scrapper.temp_dict[user]["publicacion"]["pendientes"])) + " grupos\nAhora esperaré {} hora(s) y {} minuto(s) antes de volver a publicar masivamente\n\nCuando quieras cancelar envíame /cancelar".format(int(scrapper.temp_dict[user]["repetir"] / 60 / 60), int(scrapper.temp_dict[user]["repetir"] / 60 % 60))))
                     
                     return ("repetir", scrapper.temp_dict[user]["c_r"])
 
@@ -1050,7 +1050,7 @@ def publicacion(scrapper: scrapping, bot:telebot.TeleBot, user, load_url=True, c
 
         hacer_scroll(scrapper, user,
                      scrapper.temp_dict[user]["publicacion"]["lista_grupos"][contador].size["height"] * contador + scrapper.temp_dict[user]["top"] - scrapper.driver.execute_script("return window.pageYOffset;"),
-                     (scrapper.temp_dict[user]["publicacion"]["lista_grupos"][contador].size["height"] * contador + scrapper.temp_dict[user]["top"] - scrapper.driver.execute_script("return window.pageYOffset;")) // (scrapper.temp_dict[user]["publicacion"]["lista_grupos"][contador].size["height"] * 6 + scrapper.temp_dict[user]["top"]))
+                     (scrapper.temp_dict[user]["publicacion"]["lista_grupos"][contador].size["height"] * contador + scrapper.temp_dict[user]["top"] - scrapper.driver.execute_script("return window.pageYOffset;")) // (scrapper.temp_dict[user]["publicacion"]["lista_grupos"][contador].size["height"] * 8 + scrapper.temp_dict[user]["top"]))
 
         # hacer_scroll(scrapper, user, scrapper.temp_dict[user]["publicacion"]["lista_grupos"][contador], (contador + 1) // 4, contador)
 
@@ -1456,6 +1456,7 @@ def elegir_cuenta(scrapper: scrapping, user, bot: telebot.TeleBot , ver_actual=F
         scrapper.wait.until(ec.element_to_be_clickable(scrapper.find_element(By.CSS_SELECTOR, 'div[role="button"]')))
         #//*[contains(text(), "Your Pages and profiles")]/../../../..
         #//div[contains(@role,"button")][contains(@aria-label, "Switch Profile")]
+        scrapper.temp_dict["url_actual"] = scrapper.driver.current_url
         
         if not scrapper.temp_dict[user]["e"]:
             for i in range(3):
@@ -1472,7 +1473,10 @@ def elegir_cuenta(scrapper: scrapping, user, bot: telebot.TeleBot , ver_actual=F
                         pass
             # scrapper.find_elements(By.CSS_SELECTOR, 'div[data-tti-phase="-1"][role="button"][tabindex="0"][data-focusable="true"][data-mcomponent="MContainer"][data-type="container"]')[2].click()
 
-            
+            scrapper.wait_s.until(ec.url_changes(scrapper.temp_dict["url_actual"]))
+
+            if not scrapper.driver.current_url.endswith("bookmarks/"):
+                load(scrapper, "https://m.facebook.com/bookmarks/")
 
             # #Elemento de Configuracion de cuenta
             scrapper.wait.until(ec.visibility_of_element_located((By.CSS_SELECTOR, 'div[role="list"]')))
@@ -1579,11 +1583,12 @@ def elegir_cuenta(scrapper: scrapping, user, bot: telebot.TeleBot , ver_actual=F
 
         borrar_elemento(scrapper, 'div[role="presentation"]')
         
-        
         for i in range(5):
             try:
                 scrapper.wait_s.until(ec.element_to_be_clickable(scrapper.temp_dict[user]["e"]))
-                scrapper.temp_dict[user]["cuentas"][scrapper.temp_dict[user]["res"]].click()
+                # scrapper.temp_dict[user]["cuentas"][scrapper.temp_dict[user]["res"]].click()
+                # scrapper.temp_dict[user]["e"].find_element(By.CSS_SELECTOR, "img").click()
+                ActionChains(scrapper.driver).click(scrapper.temp_dict[user]["e"].find_element(By.CSS_SELECTOR, "img")).perform()
                 break 
         
             except:
@@ -1636,7 +1641,7 @@ def main(scrapper: scrapping, bot: telebot.TeleBot, user):
     
     scrapper.temp_dict[user]["if_cancelar"] = lambda scrapper=scrapper, user=user, bot=bot: if_cancelar(scrapper, user, bot)
 
-    if not scrapper.interrupcion:
+    if not scrapper.interrupcion and not scrapper.temp_dict[user].get("repetir"):
         scrapper.temp_dict[user]["info"] = bot.send_message(user, m_texto("Empezaré a procesar tu petición..."), reply_markup=telebot.types.ReplyKeyboardRemove())
 
     scrapper.temp_dict[user]["if_cancelar"]()
@@ -1749,6 +1754,8 @@ def main(scrapper: scrapping, bot: telebot.TeleBot, user):
 
         
         del scrapper.temp_dict[user]["publicacion"]
+
+        scrapper.temp_dict[user]["contador"] = 0
 
         scrapper.temp_dict[user]["c_r"] += 1
 

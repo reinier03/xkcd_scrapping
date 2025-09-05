@@ -554,8 +554,6 @@ def start_publish(bot : telebot.TeleBot, user):
             facebook_scrapper.main(scrapper, bot, user)
         except Exception as err:
             scrapper.temp_dict[user]["res"] = str(format_exc())
-
-
             
             if not err.args or not str(err.args).startswith("('no',"):
                 print("Ha ocurrido un error! Revisa el bot, te dará más detalles")
@@ -601,29 +599,29 @@ def start_publish(bot : telebot.TeleBot, user):
             pass
                     
                 
+    if scrapper.temp_dict.get(user):
+        if not scrapper.temp_dict[user].get("cancelar"):
+            bot.send_message(user, m_texto("La Operación ha finalizado") )
+
         
-    if not scrapper.temp_dict[user].get("cancelar"):
-        bot.send_message(user, m_texto("La Operación ha finalizado") )
 
-    
-
-    if scrapper.temp_dict[user].get("mostrar_tiempo_debug"):
-        
-        scrapper.temp_dict[user]["res"] = "\n".join(scrapper.temp_dict[user]["tiempo_debug"])
-
-        with open(os.path.join(user_folder(user), "tiempo_publicacion_" + str(user) + ".txt"), "w", encoding="utf-8") as file:
-            file.write("Log de publicación\nID del usuario: {}\n\n{}".format(user, scrapper.temp_dict[user]["res"]))
+        if scrapper.temp_dict[user].get("mostrar_tiempo_debug"):
             
-        with open(os.path.join(user_folder(user), "tiempo_publicacion_" + str(user) + ".txt"), "r", encoding="utf-8") as file:
-            bot.send_document(user, telebot.types.InputFile(file, file_name="tiempo_publicacion_" + str(user) + ".txt"), "Ha ocurrido un error inesperado! ID usuario: {}".format(user))
+            scrapper.temp_dict[user]["res"] = "\n".join(scrapper.temp_dict[user]["tiempo_debug"])
 
-    
+            with open(os.path.join(user_folder(user), "tiempo_publicacion_" + str(user) + ".txt"), "w", encoding="utf-8") as file:
+                file.write("Log de publicación\nID del usuario: {}\n\n{}".format(user, scrapper.temp_dict[user]["res"]))
+                
+            with open(os.path.join(user_folder(user), "tiempo_publicacion_" + str(user) + ".txt"), "r", encoding="utf-8") as file:
+                bot.send_document(user, telebot.types.InputFile(file, file_name="tiempo_publicacion_" + str(user) + ".txt"), "Ha ocurrido un error inesperado! ID usuario: {}".format(user))
 
-    
-        os.remove(os.path.join(user_folder(user), "tiempo_publicacion_" + str(user) + ".txt"))
+        
+
+        
+            os.remove(os.path.join(user_folder(user), "tiempo_publicacion_" + str(user) + ".txt"))
 
 
-    liberar_cola(scrapper, user, bot)
+        liberar_cola(scrapper, user, bot)
 
     return
 
