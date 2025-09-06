@@ -59,28 +59,43 @@ class uc_class(uc.Chrome):
             
 
 
-    # def __existe(self):
-    #     if not self._cola["uso"]:
-    #         raise Exception("no")
+    def __existe(self, scrapper, **kwargs):
+        def debug_txt(self, scrapper):
+            if self.temp_dict.get(scrapper.admin):
+                if self.temp_dict[scrapper.admin].get("mostrar_tiempo_debug") and self.temp_dict[scrapper.admin].get("tiempo_debug"):
+                    
+                    self.temp_dict[scrapper.admin]["res"] = "\n".join(self.temp_dict[scrapper.admin]["tiempo_debug"])
 
-    #     elif self._temp_dict.get(self._cola["uso"]):
-    #         if self._temp_dict[self._cola["uso"]].get("cancelar") or self._temp_dict[self._cola["uso"]].get("cancelar_forzoso"):
-    #             raise Exception("no")
+                    with open(os.path.join(user_folder(scrapper.admin), "tiempo_publicacion_" + str(scrapper.admin) + ".txt"), "w", encoding="utf-8") as file:
+                        file.write("Log de publicación\nID del usuario: {}\n\n{}".format(scrapper.admin, self.temp_dict[scrapper.admin]["res"]))
+                        
+                    with open(os.path.join(user_folder(scrapper.admin), "tiempo_publicacion_" + str(scrapper.admin) + ".txt"), "r", encoding="utf-8") as file:
+                        self.bot.send_document(scrapper.admin, telebot.types.InputFile(file, file_name="tiempo_publicacion_" + str(scrapper.admin) + ".txt"), caption="Ha ocurrido un error inesperado! ID usuario: {}".format(scrapper.admin))
+                
+                    os.remove(os.path.join(user_folder(scrapper.admin), "tiempo_publicacion_" + str(scrapper.admin) + ".txt"))
 
-    #     return "ok"
+        if not self._cola["uso"]:
+            debug_txt(scrapper)
+            raise Exception("no")
 
+        elif self._temp_dict.get(self._cola["uso"]):
+            if self._temp_dict[self._cola["uso"]].get("cancelar") or self._temp_dict[self._cola["uso"]].get("cancelar_forzoso"):
+                debug_txt(scrapper)
+                raise Exception("no")
 
-    # def find_element(self, by=By.ID, value: Optional[str] = None) -> WebElement:
-    #     self.__existe()
-
-    #     return super().find_element(by, value)
+        return "ok"
 
 
     
-    # def find_elements(self, by=By.ID, value: Optional[str] = None) -> list[WebElement]:
-    #     self.__existe()
+    def find_elements(self, by , value , scrapper ,**kwargs) -> list[WebElement]:
+        self.__existe(scrapper)
 
-    #     return super().find_elements(by, value)
+        return super().find_elements(by, value)
+
+    def find_element(self, by, value , scrapper ,**kwargs) -> WebElement:
+        self.__existe(scrapper)
+
+        return super().find_element(by, value)
 
 
     @property
@@ -191,12 +206,11 @@ class scrapping():
     
     def __str__(self):
         texto = "Clase |scrapping| variables:\n\n"
-
         for k, v in self.__dict__.items():
             if k == "_temp_dict":
                 for usuario, diccionario in v.items():
                     texto += "scrapping._temp_dict.{}:\n".format(usuario)
-                    for diccionario_key, diccionario_value in diccionario.item():
+                    for diccionario_key, diccionario_value in diccionario.items():
                         texto +="{}  =>  {}\n".format(diccionario_key, diccionario_value)
 
                     
@@ -277,31 +291,7 @@ class scrapping():
         return
 
 
-    def __existe(self):
-        def debug_txt(self):
-            if self.temp_dict.get(self.admin):
-                if self.temp_dict[self.admin].get("mostrar_tiempo_debug") and self.temp_dict[self.admin].get("tiempo_debug"):
-                    
-                    self.temp_dict[self.admin]["res"] = "\n".join(self.temp_dict[self.admin]["tiempo_debug"])
-
-                    with open(os.path.join(user_folder(self.admin), "tiempo_publicacion_" + str(self.admin) + ".txt"), "w", encoding="utf-8") as file:
-                        file.write("Log de publicación\nID del usuario: {}\n\n{}".format(self.admin, self.temp_dict[self.admin]["res"]))
-                        
-                    with open(os.path.join(user_folder(self.admin), "tiempo_publicacion_" + str(self.admin) + ".txt"), "r", encoding="utf-8") as file:
-                        self.bot.send_document(self.admin, telebot.types.InputFile(file, file_name="tiempo_publicacion_" + str(self.admin) + ".txt"), caption="Ha ocurrido un error inesperado! ID usuario: {}".format(self.admin))
-                
-                    os.remove(os.path.join(user_folder(self.admin), "tiempo_publicacion_" + str(self.admin) + ".txt"))
-
-        if not self._cola["uso"]:
-            debug_txt(self)
-            raise Exception("no")
-
-        elif self._temp_dict.get(self._cola["uso"]):
-            if self._temp_dict[self._cola["uso"]].get("cancelar") or self._temp_dict[self._cola["uso"]].get("cancelar_forzoso"):
-                debug_txt(self)
-                raise Exception("no")
-
-        return "ok"
+    
 
     def show(self):
         texto = "Clase |<b>scrapping</b>| variables:\n\n"
@@ -315,19 +305,16 @@ class scrapping():
 
                     
                 texto += "\n"
-                    
-                    
+
 
             else:
                 texto += "scrapping.<b>{}</b>  =>  <b>{}</b>\n".format(k, v)
 
         return texto
 
-    def find_element(self, by=By.CSS_SELECTOR, value="body"):
-        self.__existe()
-        
+    def find_element(self, by=By.CSS_SELECTOR, value="body"):       
 
-        return self.driver.find_element(by, value)
+        return self.driver.find_element(by, value, self)
         # try:
         #     return self.driver.find_element(by, value)
         # except:
@@ -336,9 +323,8 @@ class scrapping():
 
 
     def find_elements(self, by=By.CSS_SELECTOR, value="body"):
-        self.__existe()
 
-        return self.driver.find_elements(by, value)
+        return self.driver.find_elements(by, value, self)
         # try:
         #     return self.driver.find_elements(by, value)
         # except:

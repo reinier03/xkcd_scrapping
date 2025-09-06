@@ -93,10 +93,13 @@ def email_verification(m, bot:telebot.TeleBot ,user, info, temp_dict):
     return m.text
 
 
-def repetir_bucle(m, bot, user, info, temp_dict):
+def repetir_bucle(m, bot: telebot.TeleBot, user, info, temp_dict):
     
     if m.text == "No Repetir":
-        bot.send_message(user, "Muy bien, por ahora publicaré solamente 1 vez en todos tus grupos, la repetición está desactivada", reply_markup=telebot.types.ReplyKeyboardRemove())
+        m = bot.send_message(user, m_texto("Muy bien, por ahora publicaré solamente 1 vez en todos tus grupos, la repetición está desactivada\n\n<b>Comenzaré la publicación en breve...</b>"), reply_markup=telebot.types.ReplyKeyboardRemove())
+
+        bot.pin_chat_message(user, m.message_id, True)
+        bot.unpin_all_chat_messages(user)
         
         temp_dict[user]["res"] = False
         temp_dict[user]["completed"] = True
@@ -112,11 +115,14 @@ def repetir_bucle(m, bot, user, info, temp_dict):
             temp_dict[user]["completed"] = True
 
         
-        bot.send_message(user, "Muy bien, cada {} hora(s) y {} minuto(s) estaré difundiendo la publicación por todos los grupos de esta cuenta\n\nCuando quieras cancelar la difusión por los grupos envíame /cancelar".format(int(temp_dict[user]["res"] / 60 / 60), int(temp_dict[user]["res"] / 60 % 60)), reply_markup=telebot.types.ReplyKeyboardRemove())
+        m = bot.send_message(user, "Muy bien, cada {} hora(s) y {} minuto(s) estaré difundiendo la publicación por todos los grupos de esta cuenta\nCuando quieras cancelar la difusión por los grupos envíame /cancelar\n\n<b>Comenzaré la publicación en breve...</b>".format(int(temp_dict[user]["res"] / 60 / 60), int(temp_dict[user]["res"] / 60 % 60)), reply_markup=telebot.types.ReplyKeyboardRemove())
+
+        bot.pin_chat_message(user, m.message_id, True)
+        bot.unpin_all_chat_messages(user)
 
     else:
 
-        temp_dict[user]["msg"] = bot.send_message(user, "Por favor, ingrese un NÚMERO de MINUTOS de espera antes de volver a repetir el envio de esta publicación por los grupos en la cuenta de {}".format(temp_dict[user]["perfil_actual"]))
+        temp_dict[user]["msg"] = bot.send_message(user, "Por favor, ingrese un NÚMERO de MINUTOS de espera antes de volver a repetir el envio de esta publicación por los grupos en la cuenta de <b>{}</b> o presione en '<b>No Repetir</b>'".format(temp_dict[user]["perfil_actual"]))
 
         bot.register_next_step_handler(temp_dict[user]["msg"], bot_handlers.repetir_bucle, bot,user, info, temp_dict)
 

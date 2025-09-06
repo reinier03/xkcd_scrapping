@@ -575,8 +575,10 @@ def loguin_cero(scrapper: scrapping, user, bot : telebot.TeleBot, load_url=True,
             return "ok"
 
 
-        scrapper.wait.until(ec.any_of(ec.visibility_of_element_located((By.XPATH, '//*[contains(text(), "Check your email")]')),
+        scrapper.wait_s.until(ec.any_of(ec.visibility_of_element_located((By.XPATH, '//*[contains(text(), "Check your email")]')),
         ec.visibility_of_element_located((By.XPATH, '//*[contains(text(), "Try another way")]'))))
+
+
 
         try:
             if scrapper.find_element(By.XPATH, '//*[contains(text(), "Try another way")]'):
@@ -758,11 +760,9 @@ def loguin_cero(scrapper: scrapping, user, bot : telebot.TeleBot, load_url=True,
     
 
 
-    
-    
     try:
         #cuando no introduces bien ninguno de tus datos:
-        if scrapper.find_element(By.CSS_SELECTOR, 'div[class="wbloks_73"]'):
+        if scrapper.wait_s.until(ec.any_of(ec.visibility_of_element_located((By.XPATH, '//*[contains(text(), "Wrong Credentials")]')), ec.visibility_of_element_located((By.CSS_SELECTOR, 'div[class="wbloks_73"]')), ec.visibility_of_element_located((By.XPATH, '//*[contains(text(), "Invalid username or password")]')))):
             
             bot.send_photo(user, telebot.types.InputFile(make_screenshoot(scrapper.driver, user)), "Al parecer los datos que me has enviado son incorrectos\nTe he enviado una captura de lo que me muestra Facebook\n\nPor favor ingrese <b>correctamente</b> sus datos otra vez...")
             del scrapper.temp_dict[user]["password"]
@@ -771,7 +771,9 @@ def loguin_cero(scrapper: scrapping, user, bot : telebot.TeleBot, load_url=True,
             
     except:
         pass
+    
 
+    
     
 
     if scrapper.driver.current_url.endswith("#"):
@@ -831,28 +833,17 @@ def loguin_cero(scrapper: scrapping, user, bot : telebot.TeleBot, load_url=True,
 
 
 def publicacion(scrapper: scrapping, bot:telebot.TeleBot, user, load_url=True, contador = 0, **kwargs):
-    
     def obtener_texto(error: bool, aprobar=False):
+        
+        #---------------------------------------------cambiar para futuro-------------------------------------
+        # try:
+        #     scrapper.temp_dict[user]["publicacion"]["info"] = bot.edit_message_text("✅Se ha publicado en: " + str(len(scrapper.temp_dict[user]["publicacion"]["publicados"])) + " grupo(s)" + "\n⛔Han quedado pendientes en: " + str(len(scrapper.temp_dict[user]["publicacion"]["pendientes"])) + " grupo(s)" + "\n❌Se han producido errores en: " + str(len(scrapper.temp_dict[user]["publicacion"]["error"])) + " grupo(s)", user , scrapper.temp_dict[user]["publicacion"]["info"].message_id)
+        # except:
+        #     scrapper.temp_dict[user]["publicacion"]["info"] = bot.send_message(user, "✅Se ha publicado en: " + str(len(scrapper.temp_dict[user]["publicacion"]["publicados"])) + " grupo(s)" + "\n⛔Han quedado pendientes en: " + str(len(scrapper.temp_dict[user]["publicacion"]["pendientes"])) + " grupo(s)" + "\n❌Se han producido errores en: " + str(len(scrapper.temp_dict[user]["publicacion"]["error"])) + " grupo(s)")
+
+        #     bot.pin_chat_message(scrapper.temp_dict[user]["publicacion"]["info"].chat.id , scrapper.temp_dict[user]["publicacion"]["info"].message_id, True)
+        #---------------------------------------------cambiar para futuro-------------------------------------
             
-        try:
-            scrapper.temp_dict[user]["publicacion"]["info"] = bot.edit_message_text("✅Se ha publicado en: " + str(len(scrapper.temp_dict[user]["publicacion"]["publicados"])) + " grupo(s)" + "\n⛔Han quedado pendientes en: " + str(len(scrapper.temp_dict[user]["publicacion"]["pendientes"])) + " grupo(s)" + "\n❌Se han producido errores en: " + str(len(scrapper.temp_dict[user]["publicacion"]["error"])) + " grupo(s)", user , scrapper.temp_dict[user]["publicacion"]["info"].message_id)
-        except:
-            scrapper.temp_dict[user]["publicacion"]["info"] = bot.send_message(user, "✅Se ha publicado en: " + str(len(scrapper.temp_dict[user]["publicacion"]["publicados"])) + " grupo(s)" + "\n⛔Han quedado pendientes en: " + str(len(scrapper.temp_dict[user]["publicacion"]["pendientes"])) + " grupo(s)" + "\n❌Se han producido errores en: " + str(len(scrapper.temp_dict[user]["publicacion"]["error"])) + " grupo(s)")
-
-            bot.pin_chat_message(scrapper.temp_dict[user]["publicacion"]["info"].chat.id , scrapper.temp_dict[user]["publicacion"]["info"].message_id, True)
-            
-            # if scrapper.temp_dict[user]["publicacion"].get("msg_publicacion"):
-            #     try:
-            #         scrapper.temp_dict[user]["publicacion"]["msg_publicacion"] = bot.edit_message_text(scrapper.temp_dict[user]["publicacion"]["texto_publicacion"], user, scrapper.temp_dict[user]["publicacion"]["texto_publicacion"].message_id)
-
-            #     except Exception as err:
-            #         if "specified new message content and reply markup are exactly the same as a current content and reply markup of the message" in str(err.args):
-            #             pass
-
-
-            # else:
-            #     scrapper.temp_dict[user]["publicacion"]["msg_publicacion"] = bot.send_message(user, scrapper.temp_dict[user]["publicacion"]["texto_publicacion"])
-
         
         #4000 caracteres es el limite de telegram para los mensajes, si sobrepasa la cantidad tengo que enviar otro mensaje            
 
@@ -907,15 +898,15 @@ def publicacion(scrapper: scrapping, bot:telebot.TeleBot, user, load_url=True, c
         
 
         if scrapper.temp_dict[user]["publicacion"]["nombre"] in scrapper.temp_dict[user]["publicacion"]["publicados"]:
-            print(str((contador + 1)) + "=> ✅ " + str(scrapper.temp_dict[user]["publicacion"]["nombre"]))
+            print(str((contador + 1)).zfill(3) + "=> ✅ " + str(scrapper.temp_dict[user]["publicacion"]["nombre"]))
             scrapper.temp_dict[user]["res"] = obtener_texto(False)
 
         elif scrapper.temp_dict[user]["publicacion"]["nombre"] in scrapper.temp_dict[user]["publicacion"]["pendientes"]:
-            print(str((contador + 1)) + "=> ⛔️ " + str(scrapper.temp_dict[user]["publicacion"]["nombre"]))
+            print(str((contador + 1)).zfill(3) + "=> ⛔️ " + str(scrapper.temp_dict[user]["publicacion"]["nombre"]))
             scrapper.temp_dict[user]["res"] = obtener_texto(True, True)
 
         elif scrapper.temp_dict[user]["publicacion"]["nombre"] in scrapper.temp_dict[user]["publicacion"]["error"]:
-            print(str((contador + 1)) + "=> ❌ " + scrapper.temp_dict[user]["publicacion"]["nombre"])
+            print(str((contador + 1)).zfill(3) + "=> ❌ " + scrapper.temp_dict[user]["publicacion"]["nombre"])
             scrapper.temp_dict[user]["res"] = obtener_texto(True)
 
 
@@ -933,6 +924,10 @@ def publicacion(scrapper: scrapping, bot:telebot.TeleBot, user, load_url=True, c
                     pass
 
                 scrapper.temp_dict[user]["publicacion"]["msg_publicacion"] = bot.send_message(user, scrapper.temp_dict[user]["res"][1])
+
+                bot.pin_chat_message(user , scrapper.temp_dict[user]["publicacion"]["msg_publicacion"].message_id, True)
+
+        return
 
 
     # if "bookmarks" in scrapper.driver.current_url:
@@ -981,7 +976,6 @@ def publicacion(scrapper: scrapping, bot:telebot.TeleBot, user, load_url=True, c
     
     while True:
 
-        # breakpoint()
 
         if scrapper.temp_dict[user].get("demora"):
             scrapper.temp_dict[user]["contador"] = contador
@@ -1335,7 +1329,7 @@ def publicacion(scrapper: scrapping, bot:telebot.TeleBot, user, load_url=True, c
         # scrapper.temp_dict[user]["a"].scroll_by_amount(0 , scrapper.find_element(By.XPATH, '//*[@id="screen-root"]/div/div[3]/div[6]/div[2]/div').location["y"] + scrapper.find_element(By.XPATH, '//*[@id="screen-root"]/div/div[3]/div[6]/div[2]/div').size["height"]).perform()
 
         scrapper.temp_dict[user]["publicacion"]["publicados"].append(scrapper.temp_dict[user]["publicacion"]["nombre"])
-        #cambiar a futuro
+        #-------------------------------------------------cambiar a futuro-----------------------------------------
         # for iteracion_buscar in range(3):
 
 
@@ -1424,7 +1418,7 @@ def publicacion(scrapper: scrapping, bot:telebot.TeleBot, user, load_url=True, c
                         
         #                 continue
 
-                        
+        #-------------------------------------------------cambiar a futuro-----------------------------------------
                                 
                     
 
@@ -1482,7 +1476,7 @@ def elegir_cuenta(scrapper: scrapping, user, bot: telebot.TeleBot , ver_actual=F
         scrapper.wait.until(ec.visibility_of_element_located((By.CSS_SELECTOR, 'div[role="button"]')))
         #//*[contains(text(), "Your Pages and profiles")]/../../../..
         #//div[contains(@role,"button")][contains(@aria-label, "Switch Profile")]
-        scrapper.temp_dict["url_actual"] = scrapper.driver.current_url
+        scrapper.temp_dict[user]["url_actual"] = scrapper.driver.current_url
         
         if not scrapper.temp_dict[user]["e"]:
             for i in range(3):
@@ -1502,7 +1496,7 @@ def elegir_cuenta(scrapper: scrapping, user, bot: telebot.TeleBot , ver_actual=F
                         pass
             # scrapper.find_elements(By.CSS_SELECTOR, 'div[data-tti-phase="-1"][role="button"][tabindex="0"][data-focusable="true"][data-mcomponent="MContainer"][data-type="container"]')[2].click()
 
-            scrapper.wait_s.until(ec.url_changes(scrapper.temp_dict["url_actual"]))
+            scrapper.wait_s.until(ec.url_changes(scrapper.temp_dict[user]["url_actual"]))
 
             if not scrapper.driver.current_url.endswith("bookmarks/"):
                 load(scrapper, "https://m.facebook.com/bookmarks/")

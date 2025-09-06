@@ -225,11 +225,9 @@ def cmd_cancelar(m):
     if len(m.text.split()) > 1 and m.from_user.id == admin and m.text.split()[1].isdigit():
         if scrapper.cola["uso"] == int(m.text.split()[1]):
             if bot.get_chat(int(m.text.split()[1])):
-                
-                scrapper.temp_dict[int(m.text.split()[1])]["cancelar_forzoso"] = True
-
                 bot.send_message(m.chat.id, m_texto("Muy Bien, Cancelaré la operación actual para ese usuario"),  reply_markup=telebot.types.ReplyKeyboardRemove())
 
+                scrapper.temp_dict[int(m.text.split()[1])]["cancelar_forzoso"] = True
 
                 liberar_cola(scrapper, scrapper.cola["uso"], bot)
 
@@ -265,6 +263,8 @@ def cmd_delete(m):
     if not scrapper.collection.find_one({"telegram_id": m.from_user.id}):
         bot.send_message(m.chat.id, m_texto("Ni siquiera me has usado aún!\n\nNo tengo datos tuyos los cuales restablecer\nEnviame /info para comenzar a usarme :D"))
         return
+
+
     
     msg = bot.send_message(m.chat.id, m_texto("La opción actual borrará la información que tengo de tu cuenta y tendrías que volver a ingresar todo desde cero nuevamente...\n\nEstás seguro que deseas hacerlo?", True), reply_markup=ReplyKeyboardMarkup(True, True).add("Si", "No"))
     
@@ -1075,7 +1075,7 @@ def webhook():
             except:
                 pass
             
-            bot.process_new_updates([update])       
+            bot.process_new_updates([update])
     else:
         return "<a href='https://t.me/{}'>Contáctame</a>".format(bot.user.username)
         
