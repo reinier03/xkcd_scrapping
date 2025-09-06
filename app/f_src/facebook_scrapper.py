@@ -1466,7 +1466,7 @@ def elegir_cuenta(scrapper: scrapping, user, bot: telebot.TeleBot , ver_actual=F
         #este elemento es el de los ajustes del perfil (las 3 rayas de la derecha superior)
         scrapper.wait.until(ec.any_of(lambda driver: len(driver.find_elements(By.CSS_SELECTOR, 'div[role="button"]')) > 3))
 
-        scrapper.wait.until(ec.visibility_of_element_located(scrapper.find_element(By.CSS_SELECTOR, 'div[role="button"]')))
+        scrapper.wait.until(ec.visibility_of_element_located((By.CSS_SELECTOR, 'div[role="button"]')))
         #//*[contains(text(), "Your Pages and profiles")]/../../../..
         #//div[contains(@role,"button")][contains(@aria-label, "Switch Profile")]
         scrapper.temp_dict["url_actual"] = scrapper.driver.current_url
