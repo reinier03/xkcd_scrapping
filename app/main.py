@@ -506,6 +506,9 @@ def get_work(m: telebot.types.Message):
             if "-t" in m.text and m.from_user.id == admin:
                 scrapper.temp_dict[m.from_user.id]["mostrar_tiempo_debug"] = True
 
+            else:
+                scrapper.temp_dict[m.from_user.id]["mostrar_tiempo_debug"] = False
+
         
         #cambiar
         
