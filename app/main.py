@@ -668,7 +668,7 @@ def start_publish(bot : telebot.TeleBot, user):
 
         
         if scrapper.temp_dict.get(user):
-            if scrapper.temp_dict[user].get("mostrar_tiempo_debug"):
+            if scrapper.temp_dict[user].get("mostrar_tiempo_debug") and scrapper.temp_dict[user].get("tiempo_debug"):
                 
                 scrapper.temp_dict[user]["res"] = "\n".join(scrapper.temp_dict[user]["tiempo_debug"])
 
