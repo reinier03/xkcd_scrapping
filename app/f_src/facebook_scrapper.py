@@ -438,7 +438,7 @@ def cookies_caducadas(scrapper: scrapping, user, bot):
 
         
         #le resto uno para coincidir con el índice
-        scrapper.temp_dict[user]["perfiles"][scrapper.temp_dict[user]["res"]].click()
+        ActionChains(scrapper.driver).click(scrapper.temp_dict[user]["perfiles"][scrapper.temp_dict[user]["res"]]).perform()
         
         while True:
             handlers(bot, user, "Introduce la contraseña de esta cuenta a continuación", "password" ,scrapper.temp_dict)
@@ -465,7 +465,7 @@ def cookies_caducadas(scrapper: scrapping, user, bot):
             
             try:
                 #click para recordar contraseña
-                scrapper.find_element(By.CSS_SELECTOR, 'span[class="_9ai8"]').click()
+                ActionChains(scrapper.driver).click(scrapper.find_element(By.CSS_SELECTOR, 'span[class="_9ai8"]')).perform()
             
             except NoSuchElementException:
                 pass
@@ -503,10 +503,10 @@ def loguin_cero(scrapper: scrapping, user, bot : telebot.TeleBot, load_url=True,
             scrapper.wait.until(ec.any_of(lambda driver: driver.find_element(By.XPATH, '//*[contains(text(), "Backup code")]')))
 
             #aqui le doy click a el metodo de auth que en este caso sería por codigo de respaldo
-            scrapper.find_element(By.XPATH, '//*[contains(text(), "Backup code")]').click()
+            ActionChains(scrapper.driver).click(scrapper.find_element(By.XPATH, '//*[contains(text(), "Backup code")]')).perform()
 
             #le doy click a continuar
-            scrapper.find_element(By.XPATH, '//*[contains(text(), "Continue")]').click()
+            ActionChains(scrapper.driver).click(scrapper.find_element(By.XPATH, '//*[contains(text(), "Continue")]')).perform()
             # scrapper.find_elements(By.CSS_SELECTOR, 'div[data-bloks-name="bk.components.Flexbox"][role="button"][tabindex="0"]')[1].click()
 
             #el siguiente elemento es el input en el que va el código
