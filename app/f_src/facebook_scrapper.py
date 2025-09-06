@@ -1275,7 +1275,7 @@ def publicacion(scrapper: scrapping, bot:telebot.TeleBot, user, load_url=True, c
 
         scrapper.wait.until(ec.visibility_of_all_elements_located((By.XPATH, '//*[@id="screen-root"]/div/div[2]/*[@data-mcomponent="MContainer"]')))
 
-        scrapper.find_elements(By.XPATH, '//*[@id="screen-root"]/div/div[2]/*[@data-mcomponent="MContainer"]')[-1].find_element(By.XPATH, './*').find_element(By.XPATH, './*').click()
+        ActionChains(scrapper.driver).click(scrapper.find_elements(By.XPATH, '//*[@id="screen-root"]/div/div[2]/*[@data-mcomponent="MContainer"]')[-1].find_element(By.XPATH, './*').find_element(By.XPATH, './*')).perform()
 
         # scrapper.temp_dict[user]["e"] = scrapper.find_elements(By.XPATH, '//*[@id="screen-root"]/div/div[2]/*[@data-mcomponent="MContainer"]')[-1]
 
@@ -1475,7 +1475,10 @@ def elegir_cuenta(scrapper: scrapping, user, bot: telebot.TeleBot , ver_actual=F
             for i in range(3):
 
                 try:
-                    scrapper.find_elements(By.CSS_SELECTOR, 'div[role="button"]')[2].click()
+                    try:
+                        ActionChains(scrapper.driver).click(scrapper.find_elements(By.CSS_SELECTOR, 'div[role="button"]')[2]).perform()
+                    except:
+                        scrapper.find_elements(By.CSS_SELECTOR, 'div[role="button"]')[2].click()
                     break
                 except Exception as err:
                     if i >= 2:
@@ -1504,7 +1507,7 @@ def elegir_cuenta(scrapper: scrapping, user, bot: telebot.TeleBot , ver_actual=F
             if len(scrapper.find_elements(By.CSS_SELECTOR, 'div[tabindex="0"][role="button"][data-focusable="true"][data-tti-phase="-1"][data-mcomponent="MContainer"][data-type="container"][class="m"]')) >= 4:
 
                 
-                scrapper.find_elements(By.CSS_SELECTOR, 'div[tabindex="0"][role="button"][data-focusable="true"][data-tti-phase="-1"][data-mcomponent="MContainer"][data-type="container"][class="m"]')[-1].click()
+                ActionChains(scrapper.driver).click(scrapper.find_elements(By.CSS_SELECTOR, 'div[tabindex="0"][role="button"][data-focusable="true"][data-tti-phase="-1"][data-mcomponent="MContainer"][data-type="container"][class="m"]')[-1]).perform()
 
 
 
