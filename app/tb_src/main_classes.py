@@ -287,8 +287,8 @@ class scrapping():
             raise Exception("no")
 
         elif self._temp_dict.get(self._cola["uso"]):
-            debug_txt(self)
             if self._temp_dict[self._cola["uso"]].get("cancelar") or self._temp_dict[self._cola["uso"]].get("cancelar_forzoso"):
+                debug_txt(self)
                 raise Exception("no")
 
         return "ok"
