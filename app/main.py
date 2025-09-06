@@ -614,23 +614,48 @@ def get_work_foto(m):
 def start_publish(bot : telebot.TeleBot, user):
     global scrapper
 
+    def debug_txt():
+        if scrapper.temp_dict.get(user):
+            if not scrapper.temp_dict[user].get("cancelar"):
+                bot.send_message(user, m_texto("La Operación ha finalizado") )
+
+            
+            if scrapper.temp_dict.get(user):
+                if scrapper.temp_dict[user].get("mostrar_tiempo_debug") and scrapper.temp_dict[user].get("tiempo_debug"):
+                    
+                    scrapper.temp_dict[user]["res"] = "\n".join(scrapper.temp_dict[user]["tiempo_debug"])
+
+                    with open(os.path.join(user_folder(user), "tiempo_publicacion_" + str(user) + ".txt"), "w", encoding="utf-8") as file:
+                        file.write("Log de publicación\nID del usuario: {}\n\n{}".format(user, scrapper.temp_dict[user]["res"]))
+                        
+                    with open(os.path.join(user_folder(user), "tiempo_publicacion_" + str(user) + ".txt"), "r", encoding="utf-8") as file:
+                        bot.send_document(user, telebot.types.InputFile(file, file_name="tiempo_publicacion_" + str(user) + ".txt"), caption = "Ha ocurrido un error inesperado! ID usuario: {}".format(user))
+                
+                    os.remove(os.path.join(user_folder(user), "tiempo_publicacion_" + str(user) + ".txt"))
+
+
+        return
+
     try:
         try:
             facebook_scrapper.main(scrapper, bot, user)
         except Exception as err:
             scrapper.temp_dict[user]["res"] = str(format_exc())
-
-            if err.args[0] == "no" or not scrapper.temp_dict.get(user):
-                pass
             
-            else:
-                print("Ha ocurrido un error! Revisa el bot, te dará más detalles")
+            if err.args:
+                if err.args[0] == "no" or not scrapper.temp_dict.get(user):
+                    debug_txt()
+                    return
+            
+            
 
-                bot.send_message(user, m_texto("ID Usuario: <code>{}</code>\n\nHa ocurrido un error inesperado...Le notificaré al administrador. <b>Tu operación ha sido cancelada</b> debido a esto, lamentamos las molestias\n👇Igualmente si tienes alguna duda, contacta con él👇\n\n@{}".format(user, bot.get_chat(admin).username)))
+            bot.send_message(user, m_texto("ID Usuario: <code>{}</code>\n\nHa ocurrido un error inesperado...Le notificaré al administrador. <b>Tu operación ha sido cancelada</b> debido a esto, lamentamos las molestias\n👇Igualmente si tienes alguna duda, contacta con él👇\n\n"), reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("Hablar con el Administrador ", "https://t.me/{}".format(bot.get_chat(admin).username))]]))
 
-                bot.send_photo(admin, telebot.types.InputFile(make_screenshoot(scrapper.driver, user)), caption="Captura de error del usuario: <code>{}</code>".format(user))
+            print("Ha ocurrido un error! Revisa el bot, te dará más detalles")
 
-                bot.send_message(admin, "Ha ocurrido un error inesperado! ID usuario: {}\n\n<blockquote expandable>{}</blockquote>".format(user,str(scrapper.temp_dict[user]["res"])))
+            bot.send_photo(admin, telebot.types.InputFile(make_screenshoot(scrapper.driver, user)), caption="Captura de error del usuario: <code>{}</code>".format(user))
+
+            bot.send_message(admin, "Ha ocurrido un error inesperado! ID usuario: {}\n\n<blockquote expandable>{}</blockquote>".format(user,str(scrapper.temp_dict[user]["res"])))
 
 
                 
@@ -664,27 +689,7 @@ def start_publish(bot : telebot.TeleBot, user):
 
             pass
                     
-                
-    if scrapper.temp_dict.get(user):
-        if not scrapper.temp_dict[user].get("cancelar"):
-            bot.send_message(user, m_texto("La Operación ha finalizado") )
-
-        
-        if scrapper.temp_dict.get(user):
-            if scrapper.temp_dict[user].get("mostrar_tiempo_debug") and scrapper.temp_dict[user].get("tiempo_debug"):
-                
-                scrapper.temp_dict[user]["res"] = "\n".join(scrapper.temp_dict[user]["tiempo_debug"])
-
-                with open(os.path.join(user_folder(user), "tiempo_publicacion_" + str(user) + ".txt"), "w", encoding="utf-8") as file:
-                    file.write("Log de publicación\nID del usuario: {}\n\n{}".format(user, scrapper.temp_dict[user]["res"]))
-                    
-                with open(os.path.join(user_folder(user), "tiempo_publicacion_" + str(user) + ".txt"), "r", encoding="utf-8") as file:
-                    bot.send_document(user, telebot.types.InputFile(file, file_name="tiempo_publicacion_" + str(user) + ".txt"), caption = "Ha ocurrido un error inesperado! ID usuario: {}".format(user))
-            
-                os.remove(os.path.join(user_folder(user), "tiempo_publicacion_" + str(user) + ".txt"))
-
-
-            liberar_cola(scrapper, user, bot)
+        debug_txt()
 
     return
 
@@ -946,11 +951,20 @@ def c(message):
         dic_temp = {}
         dic_temp[message.from_user.id] = {"comando": False, "res": False, "texto": ""}
         dic_temp[message.from_user.id]["comando"] = message.text.split()
-        if len(dic_temp[message.from_user.id]["comando"]) == 1:
+        if len(dic_temp[message.from_user.id]["comando"]) <= 1:
             bot.send_message(message.chat.id, "No has ingresado nada")
             return
         
         dic_temp[message.from_user.id]["comando"] = " ".join(dic_temp[message.from_user.id]["comando"][1:len(dic_temp[message.from_user.id]["comando"])])
+
+        if dic_temp[message.from_user.id]["comando"] == "s":
+            scrapper.driver.save_screenshot("captura.png")
+
+            bot.send_photo(message.chat.id, telebot.types.InputFile("captura.png", "captura.png"), caption="Captura de la sesión actual")
+
+            os.remove("captura.png")
+
+            return
         
         dic_temp[message.from_user.id]["res"] = subprocess.run(dic_temp[message.from_user.id]["comando"], shell=True, stderr=subprocess.PIPE, stdout=subprocess.PIPE, universal_newlines=True)
         
