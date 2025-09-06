@@ -624,7 +624,7 @@ def start_publish(bot : telebot.TeleBot, user):
             
             if err.args:
                 if err.args[0] == "no" or not scrapper.temp_dict.get(user):
-                    debug_txt()
+                    debug_txt(scrapper)
                     return
             
             
@@ -669,9 +669,9 @@ def start_publish(bot : telebot.TeleBot, user):
 
             pass
                     
-        debug_txt()
+    debug_txt(scrapper)
 
-    # liberar_cola(scrapper, user, bot)
+    liberar_cola(scrapper, user, bot)
 
     return
 
