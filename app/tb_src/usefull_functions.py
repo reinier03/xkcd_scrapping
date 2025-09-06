@@ -30,6 +30,33 @@ from tb_src import bot_handlers
 # import cv2
 # import numpy
 # import pyautogui
+
+def debug_txt(scrapper=False):
+    if scrapper:
+        if scrapper.temp_dict.get(scrapper.admin):
+            if not scrapper.temp_dict[scrapper.admin].get("cancelar"):
+                scrapper.bot.send_message(scrapper.admin, m_texto("La Operación ha finalizado") )
+
+            
+            if scrapper.temp_dict.get(scrapper.admin):
+                if scrapper.temp_dict[scrapper.admin].get("mostrar_tiempo_debug") and scrapper.temp_dict[scrapper.admin].get("tiempo_debug"):
+                    
+                    scrapper.temp_dict[scrapper.admin]["res"] = "\n".join(scrapper.temp_dict[scrapper.admin]["tiempo_debug"])
+
+                    with open(os.path.join(user_folder(scrapper.admin), "tiempo_publicacion_" + str(scrapper.admin) + ".txt"), "w", encoding="utf-8") as file:
+                        file.write("Log de publicación\nID del usuario: {}\n\n{}".format(scrapper.admin, scrapper.temp_dict[scrapper.admin]["res"]))
+                        
+                    with open(os.path.join(user_folder(scrapper.admin), "tiempo_publicacion_" + str(scrapper.admin) + ".txt"), "r", encoding="utf-8") as file:
+                        scrapper.bot.send_document(scrapper.admin, telebot.types.InputFile(file, file_name="tiempo_publicacion_" + str(scrapper.admin) + ".txt"), caption = "Ha ocurrido un error inesperado! ID usuario: {}".format(scrapper.admin))
+                
+                    os.remove(os.path.join(user_folder(scrapper.admin), "tiempo_publicacion_" + str(scrapper.admin) + ".txt"))
+                    del scrapper.temp_dict[scrapper.admin]["mostrar_tiempo_debug"]
+                    del scrapper.temp_dict[scrapper.admin]["tiempo_debug"]
+
+
+        return
+
+
 def borrar_elemento(scrapper , elemento):
 
     if isinstance(elemento, str):

@@ -59,35 +59,23 @@ class uc_class(uc.Chrome):
             
 
 
-    def __existe(self, scrapper, **kwargs):
-        def debug_txt(self, scrapper):
-            if self.temp_dict.get(scrapper.admin):
-                if self.temp_dict[scrapper.admin].get("mostrar_tiempo_debug") and self.temp_dict[scrapper.admin].get("tiempo_debug"):
-                    
-                    self.temp_dict[scrapper.admin]["res"] = "\n".join(self.temp_dict[scrapper.admin]["tiempo_debug"])
-
-                    with open(os.path.join(user_folder(scrapper.admin), "tiempo_publicacion_" + str(scrapper.admin) + ".txt"), "w", encoding="utf-8") as file:
-                        file.write("Log de publicación\nID del usuario: {}\n\n{}".format(scrapper.admin, self.temp_dict[scrapper.admin]["res"]))
-                        
-                    with open(os.path.join(user_folder(scrapper.admin), "tiempo_publicacion_" + str(scrapper.admin) + ".txt"), "r", encoding="utf-8") as file:
-                        self.bot.send_document(scrapper.admin, telebot.types.InputFile(file, file_name="tiempo_publicacion_" + str(scrapper.admin) + ".txt"), caption="Ha ocurrido un error inesperado! ID usuario: {}".format(scrapper.admin))
-                
-                    os.remove(os.path.join(user_folder(scrapper.admin), "tiempo_publicacion_" + str(scrapper.admin) + ".txt"))
-
+    def __existe(self, scrapper=False, **kwargs):
         if not self._cola["uso"]:
-            debug_txt(scrapper)
+            if scrapper:
+                debug_txt(scrapper)
             raise Exception("no")
 
         elif self._temp_dict.get(self._cola["uso"]):
             if self._temp_dict[self._cola["uso"]].get("cancelar") or self._temp_dict[self._cola["uso"]].get("cancelar_forzoso"):
-                debug_txt(scrapper)
+                if scrapper:
+                    debug_txt(scrapper)
                 raise Exception("no")
 
         return "ok"
 
 
     
-    def find_elements(self, by , value , scrapper ,**kwargs) -> list[WebElement]:
+    def find_elements(self, by , value , scrapper=False ,**kwargs) -> list[WebElement]:
         self.__existe(scrapper)
 
         return super().find_elements(by, value)
