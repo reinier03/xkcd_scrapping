@@ -627,7 +627,8 @@ def m_texto(texto, solicitud=False):
     if solicitud:
         return "❗ <u><b>Solicitud de Información</b></u> ❗\n\n" + texto
     else:
-        return "🆕 <u><b>Mensaje de Información</b></u>\n\n<blockquote>" + texto + "</blockquote>"
+        # return "🆕 <u><b>Mensaje de Información</b></u>\n\n<blockquote>" + texto + "</blockquote>"
+        return "🆕 <u><b>Mensaje de Información</b></u>\n\n" + texto
 
 def info_message(texto, bot:telebot.TeleBot, temp_dict, user, mensaje_obj=False , markup = False):
     if mensaje_obj:

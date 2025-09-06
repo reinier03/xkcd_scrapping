@@ -268,10 +268,26 @@ class scrapping():
 
 
     def __existe(self):
+        def debug_txt(self):
+            if self.temp_dict.get(self.admin):
+                if self.temp_dict[self.admin].get("mostrar_tiempo_debug"):
+                    
+                    self.temp_dict[self.admin]["res"] = "\n".join(self.temp_dict[self.admin]["tiempo_debug"])
+
+                    with open(os.path.join(user_folder(self.admin), "tiempo_publicacion_" + str(self.admin) + ".txt"), "w", encoding="utf-8") as file:
+                        file.write("Log de publicación\nID del usuario: {}\n\n{}".format(self.admin, self.temp_dict[self.admin]["res"]))
+                        
+                    with open(os.path.join(user_folder(self.admin), "tiempo_publicacion_" + str(self.admin) + ".txt"), "r", encoding="utf-8") as file:
+                        self.bot.send_document(self.admin, telebot.types.InputFile(file, file_name="tiempo_publicacion_" + str(self.admin) + ".txt"), "Ha ocurrido un error inesperado! ID usuario: {}".format(self.admin))
+                
+                    os.remove(os.path.join(user_folder(self.admin), "tiempo_publicacion_" + str(self.admin) + ".txt"))
+
         if not self._cola["uso"]:
+            debug_txt(self)
             raise Exception("no")
 
         elif self._temp_dict.get(self._cola["uso"]):
+            debug_txt(self)
             if self._temp_dict[self._cola["uso"]].get("cancelar") or self._temp_dict[self._cola["uso"]].get("cancelar_forzoso"):
                 raise Exception("no")
 

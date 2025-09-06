@@ -34,22 +34,81 @@ Para dudas o sugerencias contactarme a https://t.me/mistakedelalaif
 """
 
 
+#------------------declaring main class--------------------------
+scrapper = s()
+#--------------------------END--------------------------
+
 
 
 # media_group_clases = {}
 # usuarios = {}
 ## usuarios = {id_usuario_telegram : main_classes.Usuario()}
 
-admin = int(os.environ["admin"])
-
-#------------------declaring main class--------------------------
-scrapper = s()
-scrapper.admin = admin
-#--------------------------END--------------------------
-
 telebot.apihelper.ENABLE_MIDDLEWARE = True
-
 bot = telebot.TeleBot(os.environ["token"], parse_mode="html", disable_web_page_preview=True)
+scrapper.bot = bot
+
+
+def get_env_vars():
+
+    TEXTO = """Enviame el archivo.env a continuación con las siguientes variables de entorno y sus respectivos valores:
+
+    admin=<ID del administrador del bot>
+    MONGO_URL=<Enlace del cluster de MongoDB (Atlas)>
+    webhook_url=<[OPCIONAL]Si esta variable es definida se usará el metodo webhook, sino pues se usara el método polling>"""
+
+    msg = bot.send_message(1413725506, TEXTO)
+
+    bot.register_next_step_handler(msg, set_env_vars, TEXTO)
+
+    return
+
+
+def set_env_vars(m: telebot.types.Message, TEXTO):
+    if m.document:
+        with open("variables_entorno.env", "wb") as file:
+            try:
+                file.write(bot.download_file(bot.get_file(m.document.file_id).file_path))
+
+            except:
+                msg = bot.send_message(m.chat.id, "Ese archivo no es de las variables de entorno!\nEnvía el adecuado!\n\n{}".format(TEXTO))
+                
+                bot.register_next_step_handler(msg, set_env_vars, TEXTO)
+                return
+
+        with open("variables_entorno.env", "r") as file:
+            texto = file.read()
+
+        os.remove("variables_entorno.env")
+        
+        if "admin=" in texto and "MONGO_URL=" in texto:
+            for i in texto.splitlines():
+                os.environ[re.search(r".*=", i).group().replace("=", "")] = re.search(r"=.*", i).group().replace("=", "")
+            
+
+            
+        else:
+            msg = bot.send_message(m.chat.id, "No has enviado el formato correcto del archivo!\nPor favor siga el formato adecuado\n\n{}".format(TEXTO))
+
+                
+            bot.register_next_step_handler(msg, set_env_vars, TEXTO)
+
+
+    else:
+        msg = bot.send_message(m.chat.id, "Ese archivo no es de las variables de entorno!\nEnvía el adecuado!\n\n{}".format(TEXTO))
+
+        bot.register_next_step_handler(msg, set_env_vars, TEXTO)
+
+    return
+            
+
+
+
+
+admin = int(os.environ["admin"]) if os.environ.get("admin") else get_env_vars()
+
+scrapper.admin = admin
+
 
 bot.set_my_commands([
     BotCommand("/start", "Información sobre el bot"),
@@ -558,7 +617,7 @@ def start_publish(bot : telebot.TeleBot, user):
         except Exception as err:
             scrapper.temp_dict[user]["res"] = str(format_exc())
 
-            if err.args[0] == "no":
+            if err.args[0] == "no" or not scrapper.temp_dict.get(user):
                 pass
             
             else:
@@ -618,9 +677,6 @@ def start_publish(bot : telebot.TeleBot, user):
                     
                 with open(os.path.join(user_folder(user), "tiempo_publicacion_" + str(user) + ".txt"), "r", encoding="utf-8") as file:
                     bot.send_document(user, telebot.types.InputFile(file, file_name="tiempo_publicacion_" + str(user) + ".txt"), "Ha ocurrido un error inesperado! ID usuario: {}".format(user))
-
-            
-
             
                 os.remove(os.path.join(user_folder(user), "tiempo_publicacion_" + str(user) + ".txt"))
 

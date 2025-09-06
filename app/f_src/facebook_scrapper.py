@@ -336,7 +336,7 @@ def captcha(scrapper: scrapping, user, bot: telebot.TeleBot):
                                 
                                 # scrapper.temp_dict[user]["info"] = bot.edit_message_text(text="🆕 Mensaje de Información\n\nEl codigo que introduciste es incorrecto! :( \n\nVuelve a intentarlo", chat_id=user, message_id=scrapper.temp_dict[user]["info"].message_id)
                                 
-                                bot.send_message(user, "🆕 Mensaje de Información\n\nEl codigo que introduciste es incorrecto! :( \n\nVuelve a intentarlo")
+                                bot.send_message(user, m_texto("El codigo que introduciste es incorrecto! :( \n\nVuelve a intentarlo"))
                                 
                                 continue
                             
@@ -344,7 +344,7 @@ def captcha(scrapper: scrapping, user, bot: telebot.TeleBot):
                                                 
                             # scrapper.temp_dict[user]["info"] = bot.edit_message_text(text="🆕 Mensaje de Información\n\nEl código introducido es correcto :)\n\nSeguiré procediendo...", chat_id=user, message_id=scrapper.temp_dict[user]["info"].message_id)
                             
-                            bot.send_message(user, "🆕 Mensaje de Información\n\nEl código introducido es correcto :)\n\nSeguiré procediendo...")
+                            bot.send_message(user, m_texto("El código introducido es correcto :)\n\nSeguiré procediendo..."))
                             
                             return ("ok", "captcha resuelto!")    
                             
@@ -647,7 +647,7 @@ def loguin_cero(scrapper: scrapping, user, bot : telebot.TeleBot, load_url=True,
         try:
             if scrapper.find_element(By.CSS_SELECTOR, 'div#screen-root'):
 
-                bot.send_message(user, "🆕 Mensaje de Información\n\nOk, el codigo introducido es correcto")
+                bot.send_message(user, m_texto("Ok, el codigo introducido es correcto"))
         
                 return ("ok", "se ha dado click en confiar dispositivo")
         
@@ -674,7 +674,7 @@ def loguin_cero(scrapper: scrapping, user, bot : telebot.TeleBot, load_url=True,
 
         # scrapper.temp_dict[user]["info"] = bot.edit_message_text(text="🆕 Mensaje de Información\n\nOk, el codigo introducido es correcto", chat_id=user, message_id=scrapper.temp_dict[user]["info"].message_id)     
         
-        bot.send_message(user, "🆕 Mensaje de Información\n\nOk, el codigo introducido es correcto")
+        bot.send_message(user, m_texto("Ok, el codigo introducido es correcto"))
         
         return ("ok", "se ha dado click en confiar dispositivo")
             
@@ -820,7 +820,7 @@ def loguin_cero(scrapper: scrapping, user, bot : telebot.TeleBot, load_url=True,
         
     except:
         
-        bot.send_photo(user, telebot.types.InputFile(make_screenshoot(scrapper.driver, user)) , "🆕 Mensaje de Información\n\nNo has introducido tus datos correctamente, vuelve a intentarlo")
+        bot.send_photo(user, telebot.types.InputFile(make_screenshoot(scrapper.driver, user)) , m_texto("No has introducido tus datos correctamente, vuelve a intentarlo"))
 
         del scrapper.temp_dict[user]["password"]
         del scrapper.temp_dict[user]["user"]
