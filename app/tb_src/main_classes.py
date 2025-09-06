@@ -278,7 +278,7 @@ class scrapping():
                         file.write("Log de publicación\nID del usuario: {}\n\n{}".format(self.admin, self.temp_dict[self.admin]["res"]))
                         
                     with open(os.path.join(user_folder(self.admin), "tiempo_publicacion_" + str(self.admin) + ".txt"), "r", encoding="utf-8") as file:
-                        self.bot.send_document(self.admin, telebot.types.InputFile(file, file_name="tiempo_publicacion_" + str(self.admin) + ".txt"), "Ha ocurrido un error inesperado! ID usuario: {}".format(self.admin))
+                        self.bot.send_document(self.admin, telebot.types.InputFile(file, file_name="tiempo_publicacion_" + str(self.admin) + ".txt"), caption="Ha ocurrido un error inesperado! ID usuario: {}".format(self.admin))
                 
                     os.remove(os.path.join(user_folder(self.admin), "tiempo_publicacion_" + str(self.admin) + ".txt"))
 
