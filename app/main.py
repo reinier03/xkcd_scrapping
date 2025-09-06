@@ -690,7 +690,7 @@ def start_publish(bot : telebot.TeleBot, user):
                     
         debug_txt()
 
-    liberar_cola(scrapper, user, bot)
+    # liberar_cola(scrapper, user, bot)
 
     return
 

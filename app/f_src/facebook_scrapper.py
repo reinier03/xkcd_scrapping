@@ -835,17 +835,23 @@ def publicacion(scrapper: scrapping, bot:telebot.TeleBot, user, load_url=True, c
     def obtener_texto(error: bool, aprobar=False):
             
         try:
-            scrapper.temp_dict[user]["publicacion"]["info"] = bot.edit_message_text("✅Se ha publicado en: " + str(len(scrapper.temp_dict[user]["publicacion"]["publicados"])) + " grupo(s)" + "\n⛔Han quedado pendientes en: " + str(len(scrapper.temp_dict[user]["publicacion"]["pendientes"])) + " grupo(s)" + "\n❌Se han producido errores en: " + str(len(scrapper.temp_dict[user]["publicacion"]["error"])) + " grupo(s)", user, scrapper.temp_dict[user]["publicacion"]["info"].message_id)
+            scrapper.temp_dict[user]["publicacion"]["info"] = bot.edit_message_text("✅Se ha publicado en: " + str(len(scrapper.temp_dict[user]["publicacion"]["publicados"])) + " grupo(s)" + "\n⛔Han quedado pendientes en: " + str(len(scrapper.temp_dict[user]["publicacion"]["pendientes"])) + " grupo(s)" + "\n❌Se han producido errores en: " + str(len(scrapper.temp_dict[user]["publicacion"]["error"])) + " grupo(s)", user , scrapper.temp_dict[user]["publicacion"]["info"].message_id)
         except:
             scrapper.temp_dict[user]["publicacion"]["info"] = bot.send_message(user, "✅Se ha publicado en: " + str(len(scrapper.temp_dict[user]["publicacion"]["publicados"])) + " grupo(s)" + "\n⛔Han quedado pendientes en: " + str(len(scrapper.temp_dict[user]["publicacion"]["pendientes"])) + " grupo(s)" + "\n❌Se han producido errores en: " + str(len(scrapper.temp_dict[user]["publicacion"]["error"])) + " grupo(s)")
 
             bot.pin_chat_message(scrapper.temp_dict[user]["publicacion"]["info"].chat.id , scrapper.temp_dict[user]["publicacion"]["info"].message_id, True)
             
-            if scrapper.temp_dict[user]["publicacion"].get("msg_publicacion"):
-                scrapper.temp_dict[user]["publicacion"]["msg_publicacion"] = bot.edit_message_text(scrapper.temp_dict[user]["publicacion"]["texto_publicacion"], scrapper.temp_dict[user]["publicacion"]["texto_publicacion"].chat.id, scrapper.temp_dict[user]["publicacion"]["texto_publicacion"].message_id)
+            # if scrapper.temp_dict[user]["publicacion"].get("msg_publicacion"):
+            #     try:
+            #         scrapper.temp_dict[user]["publicacion"]["msg_publicacion"] = bot.edit_message_text(scrapper.temp_dict[user]["publicacion"]["texto_publicacion"], user, scrapper.temp_dict[user]["publicacion"]["texto_publicacion"].message_id)
 
-            else:
-                scrapper.temp_dict[user]["publicacion"]["msg_publicacion"] = bot.send_message(user, scrapper.temp_dict[user]["publicacion"]["texto_publicacion"])
+            #     except Exception as err:
+            #         if "specified new message content and reply markup are exactly the same as a current content and reply markup of the message" in str(err.args):
+            #             pass
+
+
+            # else:
+            #     scrapper.temp_dict[user]["publicacion"]["msg_publicacion"] = bot.send_message(user, scrapper.temp_dict[user]["publicacion"]["texto_publicacion"])
 
         
         #4000 caracteres es el limite de telegram para los mensajes, si sobrepasa la cantidad tengo que enviar otro mensaje            
@@ -922,7 +928,10 @@ def publicacion(scrapper: scrapping, bot:telebot.TeleBot, user, load_url=True, c
             try:
                 scrapper.temp_dict[user]["publicacion"]["msg_publicacion"] = bot.edit_message_text(scrapper.temp_dict[user]["res"][1] , user, scrapper.temp_dict[user]["publicacion"]["msg_publicacion"].message_id)
 
-            except:
+            except Exception as e:
+                if "specified new message content and reply markup are exactly the same as a current content and reply markup of the message" in e.args:
+                    pass
+
                 scrapper.temp_dict[user]["publicacion"]["msg_publicacion"] = bot.send_message(user, scrapper.temp_dict[user]["res"][1])
 
 
