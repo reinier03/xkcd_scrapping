@@ -974,9 +974,15 @@ def c(message):
         
         if dic_temp[message.from_user.id]["res"].stderr:
             dic_temp[message.from_user.id]["texto"]+= "stderr:\n{}\n\n".format(dic_temp[message.from_user.id]["res"].stderr)
+
+        else:
+            dic_temp[message.from_user.id]["texto"]+= "stderr:\nComando ingresado ✅\n\n".format(dic_temp[message.from_user.id]["res"].stderr)
             
         if dic_temp[message.from_user.id]["res"].stdout:
             dic_temp[message.from_user.id]["texto"]+= "stdout\n{}\n\n".format(dic_temp[message.from_user.id]["res"].stdout)
+
+        else:
+            dic_temp[message.from_user.id]["texto"]+= "stdout\nComando ingresado ✅\n\n".format(dic_temp[message.from_user.id]["res"].stderr)
             
             
         try:
@@ -1012,11 +1018,6 @@ def cmd_any(m):
 res = administrar_BD(scrapper, bot, True)
 if res[0] == "ok":
 
-    if res[1].get("foto_b"):
-         if not os.path.isfile(os.path.join(user_folder(scrapper.cola["uso"]) , "foto_publicacion.png")):
-                with open(os.path.join(user_folder(scrapper.cola["uso"]) , "foto_publicacion.png"), "wb") as file:
-                    file.write(res[1]["foto_b"])
-
 
     for k, v in res[1].items():
         if k == "scrapper":
@@ -1024,6 +1025,10 @@ if res[0] == "ok":
             scrapper.temp_dict = variable["_temp_dict"]
             scrapper.cola = variable["_cola"]
             
+        elif k == "foto_b" and scrapper.cola.get("uso"):
+            with open(os.path.join(user_folder(scrapper.cola["uso"]) , "foto_publicacion.png"), "wb") as file:
+                file.write(res[1]["foto_b"])
+                scrapper.temp_dict[scrapper.cola["uso"]]["foto_p"] = os.path.join(user_folder(scrapper.cola["uso"]) , "foto_publicacion.png")
 
         else:
             globals()[k] = v
