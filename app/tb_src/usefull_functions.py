@@ -203,6 +203,9 @@ def get_time(scrapper, user , tz_country = "America/Havana"):
 
 def liberar_cola(scrapper, user, bot):
 
+    if not scrapper.temp_dict.get(user):
+        return
+
     if scrapper.temp_dict[user].get("cancelar"):
         bot.send_message(user, m_texto("Operación cancelada :("), reply_markup=ReplyKeyboardRemove())
 

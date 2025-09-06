@@ -1621,7 +1621,10 @@ def elegir_cuenta(scrapper: scrapping, user, bot: telebot.TeleBot , ver_actual=F
                 else:
                     scrapper.temp_dict[user]["e"] = scrapper.temp_dict[user]["e"].find_element(By.XPATH, '..')
 
-        scrapper.wait.until(ec.visibility_of_element_located((By.CSS_SELECTOR, "div#screen-root")))
+        try:
+            scrapper.wait.until(ec.visibility_of_element_located((By.CSS_SELECTOR, "div#screen-root")))
+        except:
+            pass
 
         
 
