@@ -958,10 +958,10 @@ def c(message):
             dic_temp[message.from_user.id]["texto"]+= "❌ Ha ocurrido un error usando el comando...\n\n"
         
         if dic_temp[message.from_user.id]["res"].stderr:
-            dic_temp[message.from_user.id]["texto"]+= f"stderr:\n{dic_temp[message.from_user.id]["res"].stderr}\n\n"
+            dic_temp[message.from_user.id]["texto"]+= "stderr:\n{}\n\n".format(dic_temp[message.from_user.id]["res"].stderr)
             
         if dic_temp[message.from_user.id]["res"].stdout:
-            dic_temp[message.from_user.id]["texto"]+= f"stdout\n{dic_temp[message.from_user.id]["res"].stdout}\n\n"
+            dic_temp[message.from_user.id]["texto"]+= "stdout\n{}\n\n".format(dic_temp[message.from_user.id]["res"].stdout)
             
             
         try:
@@ -977,7 +977,7 @@ def c(message):
                 
     
     except Exception as e:
-        bot.send_message(message.chat.id, f"Error:\n{e.args}")
+        bot.send_message(message.chat.id, "Error:\n{}".format(e.args))
     
 @bot.message_handler(func=lambda x: True)
 def cmd_any(m):
