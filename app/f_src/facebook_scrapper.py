@@ -1671,8 +1671,6 @@ def main(scrapper: scrapping, bot: telebot.TeleBot, user):
     print("Voy a hacer el loguin")
     scrapper.temp_dict[user]["res"] = loguin(scrapper, user, bot)        
 
-    print("Empezaré a comprobar si hay algún error luego del loguin")
-
     
             
     try:
