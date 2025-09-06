@@ -80,7 +80,7 @@ class uc_class(uc.Chrome):
 
         return super().find_elements(by, value)
 
-    def find_element(self, by, value , scrapper ,**kwargs) -> WebElement:
+    def find_element(self, by, value , scrapper=False ,**kwargs) -> WebElement:
         self.__existe(scrapper)
 
         return super().find_element(by, value)
@@ -303,21 +303,13 @@ class scrapping():
     def find_element(self, by=By.CSS_SELECTOR, value="body"):       
 
         return self.driver.find_element(by, value, self)
-        # try:
-        #     return self.driver.find_element(by, value)
-        # except:
-        #     facebook_popup(self.driver)
-        #     return self.driver.find_element(by, value)
+
 
 
     def find_elements(self, by=By.CSS_SELECTOR, value="body"):
 
         return self.driver.find_elements(by, value, self)
-        # try:
-        #     return self.driver.find_elements(by, value)
-        # except:
-        #     facebook_popup(self.driver)
-        #     return self.driver.find_elements(by, value)
+
 
 
         
