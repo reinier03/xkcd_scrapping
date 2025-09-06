@@ -270,7 +270,7 @@ class scrapping():
     def __existe(self):
         def debug_txt(self):
             if self.temp_dict.get(self.admin):
-                if self.temp_dict[self.admin].get("mostrar_tiempo_debug"):
+                if self.temp_dict[self.admin].get("mostrar_tiempo_debug") and self.temp_dict[self.admin].get("tiempo_debug"):
                     
                     self.temp_dict[self.admin]["res"] = "\n".join(self.temp_dict[self.admin]["tiempo_debug"])
 
