@@ -1275,23 +1275,27 @@ def publicacion(scrapper: scrapping, bot:telebot.TeleBot, user, load_url=True, c
 
         scrapper.wait.until(ec.visibility_of_all_elements_located((By.XPATH, '//*[@id="screen-root"]/div/div[2]/*[@data-mcomponent="MContainer"]')))
 
-        ActionChains(scrapper.driver).click(scrapper.find_elements(By.XPATH, '//*[@id="screen-root"]/div/div[2]/*[@data-mcomponent="MContainer"]')[-1].find_element(By.XPATH, './*').find_element(By.XPATH, './*')).perform()
 
-        # scrapper.temp_dict[user]["e"] = scrapper.find_elements(By.XPATH, '//*[@id="screen-root"]/div/div[2]/*[@data-mcomponent="MContainer"]')[-1]
+        # try:
+        #     ActionChains(scrapper.driver).click(scrapper.find_elements(By.XPATH, '//*[@id="screen-root"]/div/div[2]/*[@data-mcomponent="MContainer"]')[-1].find_element(By.XPATH, './*').find_element(By.XPATH, './*')).perform()
+        # except:
+        #     scrapper.find_elements(By.XPATH, '//*[@id="screen-root"]/div/div[2]/*[@data-mcomponent="MContainer"]')[-1].find_element(By.XPATH, './*').find_element(By.XPATH, './*').click()
 
-        # for i in range(5):
+        scrapper.temp_dict[user]["e"] = scrapper.find_elements(By.XPATH, '//*[@id="screen-root"]/div/div[2]/*[@data-mcomponent="MContainer"]')[-1]
+
+        for i in range(5):
         
-        #     try:
-        #         scrapper.temp_dict[user]["e"].click()
-        #         break
+            try:
+                scrapper.temp_dict[user]["e"].click()
+                break
 
-        #     except:
-        #         if i >= 4:
-        #             raise Exception("")
+            except Exception as err:
+                if i >= 4:
+                    raise err
 
-        #         scrapper.temp_dict[user]["e"] = scrapper.temp_dict[user]["e"].find_element(By.XPATH, './*')
+                scrapper.temp_dict[user]["e"] = scrapper.temp_dict[user]["e"].find_element(By.XPATH, './*')
                 
-        #         time.sleep(2)
+                time.sleep(2)
 
         #esperar a regresar..
         scrapper.wait.until(ec.visibility_of_all_elements_located((By.XPATH, '//*[@id="screen-root"]/div/div[3]/div[6]/div[2]/div')))
