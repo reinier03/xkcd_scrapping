@@ -190,11 +190,21 @@ class scrapping():
 
     
     def __str__(self):
-        texto = "Clase |<b>scrapping</b>| variables:\n\n"
+        texto = "Clase |scrapping| variables:\n\n"
 
         for k, v in self.__dict__.items():
-            texto += "scrapping.<b>{}</b>  =>  {}\n".format(k, v)
-        
+            if k == "_temp_dict":
+                for usuario, diccionario in v.items():
+                    texto += "scrapping._temp_dict.{}:\n".format(usuario)
+                    for diccionario_key, diccionario_value in diccionario.item():
+                        texto +="{}  =>  {}\n".format(diccionario_key, diccionario_value)
+
+                    
+                texto += "\n"
+
+            else:
+                texto += "scrapping.{}  =>  {}\n".format(k, v)
+
         return texto
 
 
@@ -293,7 +303,25 @@ class scrapping():
 
         return "ok"
 
+    def show(self):
+        texto = "Clase |<b>scrapping</b>| variables:\n\n"
 
+        for k, v in self.__dict__.items():
+            if k == "_temp_dict":
+                for usuario, diccionario in v.items():
+                    texto += "scrapping._temp_dict.<code>{}</code>:\n".format(usuario)
+                    for diccionario_key, diccionario_value in diccionario.items():
+                        texto +="<b>{}</b>  =>  {}\n".format(diccionario_key, diccionario_value)
+
+                    
+                texto += "\n"
+                    
+                    
+
+            else:
+                texto += "scrapping.<b>{}</b>  =>  <b>{}</b>\n".format(k, v)
+
+        return texto
 
     def find_element(self, by=By.CSS_SELECTOR, value="body"):
         self.__existe()

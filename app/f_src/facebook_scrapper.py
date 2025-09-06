@@ -901,15 +901,15 @@ def publicacion(scrapper: scrapping, bot:telebot.TeleBot, user, load_url=True, c
         
 
         if scrapper.temp_dict[user]["publicacion"]["nombre"] in scrapper.temp_dict[user]["publicacion"]["publicados"]:
-            print("✅ " + str(scrapper.temp_dict[user]["publicacion"]["nombre"]))
+            print((contador + 1) + "=> ✅ " + str(scrapper.temp_dict[user]["publicacion"]["nombre"]))
             scrapper.temp_dict[user]["res"] = obtener_texto(False)
 
         elif scrapper.temp_dict[user]["publicacion"]["nombre"] in scrapper.temp_dict[user]["publicacion"]["pendientes"]:
-            print("⛔️ " + str(scrapper.temp_dict[user]["publicacion"]["nombre"]))
+            print((contador + 1) + "=> ⛔️ " + str(scrapper.temp_dict[user]["publicacion"]["nombre"]))
             scrapper.temp_dict[user]["res"] = obtener_texto(True, True)
 
         elif scrapper.temp_dict[user]["publicacion"]["nombre"] in scrapper.temp_dict[user]["publicacion"]["error"]:
-            print("❌ {}".format(scrapper.temp_dict[user]["publicacion"]["nombre"])) 
+            print((contador + 1) + "=> ❌ " + scrapper.temp_dict[user]["publicacion"]["nombre"])
             scrapper.temp_dict[user]["res"] = obtener_texto(True)
 
 

@@ -588,7 +588,6 @@ def get_work_foto(m):
 
         with open(os.path.join(user_folder(m.from_user.id) , "foto_publicacion.png"), "rb") as file:
             scrapper.temp_dict[m.from_user.id]["foto_p"] = os.path.join(user_folder(m.from_user.id) , "foto_publicacion.png")
-            scrapper.temp_dict[m.from_user.id]["foto_b"] = file.read()
 
 
     else:
