@@ -59,29 +59,25 @@ class uc_class(uc.Chrome):
             
 
 
-    def __existe(self, scrapper=False, **kwargs):
+    def __existe(self, **kwargs):
         if not self._cola["uso"]:
-            if scrapper:
-                debug_txt(scrapper)
             raise Exception("no")
 
         elif self._temp_dict.get(self._cola["uso"]):
             if self._temp_dict[self._cola["uso"]].get("cancelar") or self._temp_dict[self._cola["uso"]].get("cancelar_forzoso"):
-                if scrapper:
-                    debug_txt(scrapper)
                 raise Exception("no")
 
         return "ok"
 
 
     
-    def find_elements(self, by , value , scrapper=False ,**kwargs) -> list[WebElement]:
-        self.__existe(scrapper)
+    def find_elements(self, by , value ,**kwargs) -> list[WebElement]:
+        self.__existe()
 
         return super().find_elements(by, value)
 
-    def find_element(self, by, value , scrapper=False ,**kwargs) -> WebElement:
-        self.__existe(scrapper)
+    def find_element(self, by, value , **kwargs) -> WebElement:
+        self.__existe()
 
         return super().find_element(by, value)
 
@@ -302,13 +298,13 @@ class scrapping():
 
     def find_element(self, by=By.CSS_SELECTOR, value="body"):       
 
-        return self.driver.find_element(by, value, self)
+        return self.driver.find_element(by, value)
 
 
 
     def find_elements(self, by=By.CSS_SELECTOR, value="body"):
 
-        return self.driver.find_elements(by, value, self)
+        return self.driver.find_elements(by, value)
 
 
 

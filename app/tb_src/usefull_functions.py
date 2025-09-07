@@ -54,7 +54,7 @@ def debug_txt(scrapper=False):
                     del scrapper.temp_dict[scrapper.admin]["tiempo_debug"]
 
 
-        return
+    return
 
 
 def borrar_elemento(scrapper , elemento):
@@ -796,7 +796,6 @@ def handlers(bot, user , msg ,info, diccionario: dict , **kwargs):
             
 
         case "bucle_publicacion":
-
             bot.register_next_step_handler(temp_dict[user]["msg"], bot_handlers.repetir_bucle, bot,user, info, temp_dict)
             
             

@@ -2,6 +2,9 @@ import telebot
 from telebot.types import ForceReply
 from tb_src.usefull_functions import *
 
+
+sys.path.append(os.path.dirname(os.path.dirname(__file__)))
+
 def get_user(m , bot , user , info, temp_dict, **kwargs):
 
     temp_dict[user][info] = m.text
@@ -96,7 +99,7 @@ def email_verification(m, bot:telebot.TeleBot ,user, info, temp_dict):
 def repetir_bucle(m, bot: telebot.TeleBot, user, info, temp_dict):
     
     if m.text == "No Repetir":
-        m = bot.send_message(user, m_texto("Muy bien, por ahora publicaré solamente 1 vez en todos tus grupos, la repetición está desactivada\n\n<b>Comenzaré la publicación en breve...</b>"), reply_markup=telebot.types.ReplyKeyboardRemove())
+        m = bot.send_message(user, "Muy bien, por ahora publicaré solamente 1 vez en todos tus grupos, la repetición está desactivada\n\n<b>Comenzaré la publicación en breve...</b>", reply_markup=telebot.types.ReplyKeyboardRemove())
 
         bot.pin_chat_message(user, m.message_id, True)
         bot.unpin_all_chat_messages(user)
@@ -115,7 +118,7 @@ def repetir_bucle(m, bot: telebot.TeleBot, user, info, temp_dict):
             temp_dict[user]["completed"] = True
 
         
-        m = bot.send_message(user, "Muy bien, cada {} hora(s) y {} minuto(s) estaré difundiendo la publicación por todos los grupos de esta cuenta\nCuando quieras cancelar la difusión por los grupos envíame /cancelar\n\n<b>Comenzaré la publicación en breve...</b>".format(int(temp_dict[user]["res"] / 60 / 60), int(temp_dict[user]["res"] / 60 % 60)), reply_markup=telebot.types.ReplyKeyboardRemove())
+        m = bot.send_message(user, "Muy bien, cada {} hora(s) y {} minuto(s) estaré difundiendo la publicación por todos los grupos de esta cuenta\n\nCuando quieras cancelar la difusión por los grupos envíame /cancelar\n\n<b>Comenzaré la publicación en breve...</b>".format(int(temp_dict[user]["res"] / 60 / 60), int(temp_dict[user]["res"] / 60 % 60)), reply_markup=telebot.types.ReplyKeyboardRemove())
 
         bot.pin_chat_message(user, m.message_id, True)
         bot.unpin_all_chat_messages(user)

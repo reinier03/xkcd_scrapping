@@ -14,6 +14,7 @@ import subprocess
 
 from f_src import facebook_scrapper
 from tb_src.usefull_functions import *
+from tb_src.usefull_functions import m_texto
 from tb_src.main_classes import scrapping as s
 from tb_src.main_classes import *
 from telebot.types import *
