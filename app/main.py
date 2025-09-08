@@ -54,7 +54,7 @@ scrapper.bot = bot
 reestablecer_BD(scrapper)
             
 
-if not os.environ.get("admin") and not scrapper.env:
+if (not os.environ.get("admin") or not os.environ.get("MONGO_URL")) and not scrapper.env:
     env_vars(1413725506, bot, scrapper)
 
 elif not os.environ.get("admin") and scrapper.env:
@@ -117,7 +117,7 @@ def not_private(m):
     return
 
 
-@bot.message_handler(func=lambda m: not os.environ.get("admin") and m.chat.type == "private")
+@bot.message_handler(func=lambda m: (not os.environ.get("admin") or not os.environ.get("MONGO_URL"))  and m.chat.type == "private")
 def cmd_set_variables(m):
     try:
         env_vars(1413725506, bot, scrapper)
