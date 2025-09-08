@@ -198,12 +198,96 @@ def get_time(scrapper, user , tz_country = "America/Havana"):
         return "{}:{}".format(str(int((time.time() - horario) // 60)).zfill(2), str(int((time.time() - horario) % 60)).zfill(2))  
 
     
+def reestablecer_BD(scrapper):
+    # res = administrar_BD(scrapper, bot, True)
+    res = ("fail", "lol")
+    if res[0] == "ok":
 
 
+        for k, v in res[1].items():
+            if k == "scrapper":
+                variable = v.__dict__
+                scrapper.temp_dict = variable["_temp_dict"]
+                scrapper.cola = variable["_cola"]
+                
+            elif k == "foto_b" and scrapper.cola.get("uso"):
+                with open(os.path.join(user_folder(scrapper.cola["uso"]) , "foto_publicacion.png"), "wb") as file:
+                    file.write(res[1]["foto_b"])
+                    scrapper.temp_dict[scrapper.cola["uso"]]["foto_p"] = os.path.join(user_folder(scrapper.cola["uso"]) , "foto_publicacion.png")
+
+            else:
+                globals()[k] = v
+
+        return "ok"
+
+    else:
+
+        return "no"
+
+
+def env_vars(user, bot, scrapper):
+    TEXTO = """
+Enviame el archivo.env a continuación con las siguientes variables de entorno y sus respectivos valores:
+
+admin=<ID del administrador del bot>
+MONGO_URL=<Enlace del cluster de MongoDB (Atlas)>
+webhook_url=<[OPCIONAL]Si esta variable es definida se usará el metodo webhook, sino pues se usara el método polling>""".strip()
+
+    msg = bot.send_message(user, TEXTO, False)
+
+    bot.register_next_step_handler(msg, set_env_vars, TEXTO, bot, scrapper)
+
+    return
+
+
+def set_env_vars(m: telebot.types.Message, TEXTO, bot, scrapper):
+    breakpoint()
+    if m.document:
+        if not m.document.file_name.endswith(".env"):
+            msg = bot.send_message(m.chat.id, m_texto("Ese archivo no es de las variables de entorno!\nEnvía el adecuado!\n\n{}", True).format(TEXTO), False)
+                
+            bot.register_next_step_handler(msg, set_env_vars, TEXTO)
+            return
+
+        with open("variables_entorno.env", "wb") as file:
+            try:
+                file.write(bot.download_file(bot.get_file(m.document.file_id).file_path))
+
+            except:
+                msg = bot.send_message(m.chat.id, m_texto("Ese archivo no es de las variables de entorno!\nEnvía el adecuado!\n\n{}".format(TEXTO), True), False)
+                
+                bot.register_next_step_handler(msg, set_env_vars, TEXTO)
+                return
+
+        with open("variables_entorno.env", "r") as file:
+            texto = file.read()
+
+        os.remove("variables_entorno.env")
+        
+        if "admin=" in texto and "MONGO_URL=" in texto:
+            for i in texto.splitlines():
+                os.environ[re.search(r".*=", i).group().replace("=", "")] = re.search(r"=.*", i).group().replace("=", "")
+                scrapper.env[re.search(r".*=", i).group().replace("=", "")] = re.search(r"=.*", i).group().replace("=", "")
+            
+
+            
+        else:
+            msg = bot.send_message(m.chat.id, m_texto("No has enviado el formato correcto del archivo!\nPor favor envie a continuacion un archivo .env que siga el formato adecuado\n\n{}", True).format(TEXTO), False)
+
+                
+            bot.register_next_step_handler(msg, set_env_vars, TEXTO)
+
+
+    else:
+        msg = bot.send_message(m.chat.id, m_texto("No has enviado el archivo variables de entorno!\nEnvía el adecuado!\n\n{}", True).format(TEXTO), False)
+
+        bot.register_next_step_handler(msg, set_env_vars, TEXTO)
+
+    return scrapper.env
 
 def liberar_cola(scrapper, user, bot):
 
-    if not scrapper.temp_dict.get(user):
+    if not user in list(scrapper._temp_dict):
         return
 
     if scrapper.temp_dict[user].get("cancelar"):

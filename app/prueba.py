@@ -6,15 +6,18 @@ import dill
 import tempfile
 import os
 
-s = scrapping()
-
-s.temp_dict = {123: {"algo": 13245}}
-s.cola = {"uso": 123}
-
-
+os.chdir(os.path.dirname(os.path.abspath(__file__)))
 breakpoint()
 
-print("hola")
+with open("variables_entorno_copia.env", "wb") as file:
+    file.write()
 
+with open("variables_entorno.env", "r") as file:
+    texto = file.read()
 
+os.remove("variables_entorno.env")
+
+if "admin=" in texto and "MONGO_URL=" in texto:
+    for i in texto.splitlines():
+        os.environ[re.search(r".*=", i).group().replace("=", "")] = re.search(r"=.*", i).group().replace("=", "")
 

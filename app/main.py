@@ -15,7 +15,7 @@ import subprocess
 from f_src import facebook_scrapper
 from tb_src.usefull_functions import *
 from tb_src.usefull_functions import m_texto
-from tb_src.main_classes import scrapping as s
+from tb_src.main_classes import scrapping as scrapping
 from tb_src.main_classes import *
 from telebot.types import *
 from tb_src import callbacks
@@ -37,7 +37,7 @@ Para dudas o sugerencias contactarme a https://t.me/mistakedelalaif
 
 
 #------------------declaring main class--------------------------
-scrapper = s()
+scrapper = scrapping(False)
 #--------------------------END------------------------------
 
 
@@ -50,76 +50,30 @@ telebot.apihelper.ENABLE_MIDDLEWARE = True
 bot = telebot.TeleBot(os.environ["token"], parse_mode="html", disable_web_page_preview=True)
 scrapper.bot = bot
 
-
-def get_env_vars():
-
-    TEXTO = """
-Enviame el archivo.env a continuación con las siguientes variables de entorno y sus respectivos valores:
-
-admin=<ID del administrador del bot>
-MONGO_URL=<Enlace del cluster de MongoDB (Atlas)>
-webhook_url=<[OPCIONAL]Si esta variable es definida se usará el metodo webhook, sino pues se usara el método polling>""".strip()
-
-    msg = bot.send_message(1413725506, TEXTO, False)
-
-    bot.register_next_step_handler(msg, set_env_vars, TEXTO)
-
-    return
-
-
-def set_env_vars(m: telebot.types.Message, TEXTO):
-    global admin
-    if m.document:
-        with open("variables_entorno.env", "wb") as file:
-            try:
-                file.write(bot.download_file(bot.get_file(m.document.file_id).file_path))
-
-            except:
-                msg = bot.send_message(m.chat.id, "Ese archivo no es de las variables de entorno!\nEnvía el adecuado!\n\n{}".format(TEXTO), False)
-                
-                bot.register_next_step_handler(msg, set_env_vars, TEXTO)
-                return
-
-        with open("variables_entorno.env", "r") as file:
-            texto = file.read()
-
-        os.remove("variables_entorno.env")
-        
-        if "admin=" in texto and "MONGO_URL=" in texto:
-            for i in texto.splitlines():
-                os.environ[re.search(r".*=", i).group().replace("=", "")] = re.search(r"=.*", i).group().replace("=", "")
+#en caso de que haya pausado la sesión, se reestablece
+reestablecer_BD(scrapper)
             
 
-            
-        else:
-            msg = bot.send_message(m.chat.id, "No has enviado el formato correcto del archivo!\nPor favor siga el formato adecuado\n\n{}".format(TEXTO), False)
+if not os.environ.get("admin") and not scrapper.env:
+    env_vars(1413725506, bot, scrapper)
 
-                
-            bot.register_next_step_handler(msg, set_env_vars, TEXTO)
+elif not os.environ.get("admin") and scrapper.env:
+    for k, v in scrapper.env.items():
+        os.environ[k] = v
 
-
-    else:
-        msg = bot.send_message(m.chat.id, "Ese archivo no es de las variables de entorno!\nEnvía el adecuado!\n\n{}".format(TEXTO), False)
-
-        bot.register_next_step_handler(msg, set_env_vars, TEXTO)
-
-    return
-            
-
-    
-admin = int(os.environ["admin"]) 
-
+admin = int(os.environ["admin"])
 scrapper.admin = admin
-
 
 bot.set_my_commands([
     BotCommand("/start", "Información sobre el bot"),
     BotCommand("/cancelar", "Cancela el proceso actual"),
     BotCommand("/publicar", "Comienza a publicar"),
     BotCommand("/cambiar", "Cambiar de cuenta"),
-    BotCommand("/panel", "Panel de administrador")
+    BotCommand("/panel", "Panel de administrador")], 
+    BotCommandScopeChat(admin))
 
-], BotCommandScopeChat(admin))
+
+
 
 
 bot.set_my_commands([
@@ -129,6 +83,9 @@ bot.set_my_commands([
     BotCommand("/cambiar", "Cambiar de cuenta"),
 
 ], BotCommandScopeAllPrivateChats())
+
+
+
 
 #para evitar repeticion
 comun_handlers = lambda m: m.chat.id != admin and m.from_user.id != scrapper.cola["uso"] and not m.from_user.id in scrapper.entrada.usuarios_permitidos
@@ -151,12 +108,23 @@ def cmd_middleware(bot: telebot.TeleBot, update: telebot.types.Update):
 
     
             bot.send_message(admin, m_texto("El tiempo de vigencia de la contraseña ha caducado"))
+    
+
     return
-
-
 
 @bot.message_handler(func=lambda message: not message.chat.type == "private")
 def not_private(m):
+    return
+
+
+@bot.message_handler(func=lambda m: not os.environ.get("admin") and m.chat.type == "private")
+def cmd_set_variables(m):
+    try:
+        env_vars(1413725506, bot, scrapper)
+
+    except:
+        bot.send_message(m.chat.id, "👇Contacta con mi creador @{} para que te dé acceso a mi👇".format(bot.get(1413725506).username), reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("Contactar 👨‍💻", "https://t.me/{}".format(bot.get_chat(1413725506).username))]]))
+
     return
 
 @bot.message_handler(func=lambda m: scrapper.entrada.contrasena == True and comun_handlers(m))
@@ -547,6 +515,7 @@ def get_work_texto(m: telebot.types.Message):
 
     if m.text == "Cancelar Operación":
         bot.send_message(m.chat.id, "Muy bien, la operación ha sido cancelada", reply_markup=ReplyKeyboardRemove())
+        breakpoint()
         liberar_cola(scrapper, m.from_user.id, bot)
         return
         
@@ -996,33 +965,15 @@ def cmd_any(m):
     return
 
 #comprobar si habia un proceso activo y el host se calló
-res = administrar_BD(scrapper, bot, True)
-if res[0] == "ok":
+if scrapper.cola["uso"]:
+        
+    scrapper.interrupcion = True #Esta variable la defino como flag para omitir todos los mensajes del bot hasta el punto donde estaba y que no sea repetitivo para el usuario
+
+    print("Al parecer, habia un proceso de publicación activo, a continuación lo reanudaré")
+    threading.Thread(name="Hilo usuario: {}".format(scrapper.cola["uso"]), target=start_publish, args=(bot, scrapper.cola["uso"])).start()
 
 
-    for k, v in res[1].items():
-        if k == "scrapper":
-            variable = v.__dict__
-            scrapper.temp_dict = variable["_temp_dict"]
-            scrapper.cola = variable["_cola"]
-            
-        elif k == "foto_b" and scrapper.cola.get("uso"):
-            with open(os.path.join(user_folder(scrapper.cola["uso"]) , "foto_publicacion.png"), "wb") as file:
-                file.write(res[1]["foto_b"])
-                scrapper.temp_dict[scrapper.cola["uso"]]["foto_p"] = os.path.join(user_folder(scrapper.cola["uso"]) , "foto_publicacion.png")
-
-        else:
-            globals()[k] = v
-
-    if scrapper.cola["uso"]:
-           
-
-        scrapper.interrupcion = True #Esta variable la defino como flag para omitir todos los mensajes del bot hasta el punto donde estaba y que no sea repetitivo para el usuario
-
-        print("Al parecer, habia un proceso de publicación activo, a continuación lo reanudaré")
-        threading.Thread(name="Hilo usuario: {}".format(scrapper.cola["uso"]), target=start_publish, args=(bot, scrapper.cola["uso"])).start()
-
-if not scrapper.interrupcion:
+if not scrapper.interrupcion and os.environ.get("admin"):
     bot.send_message(admin, "El bot de publicaciones de Facebook está listo :)")
     
 

@@ -117,6 +117,7 @@ class scrapping():
         self.interrupcion = False
         self.admin = None
         self.usuarios_permitidos = []
+        self.env = {}
 
         if iniciar_web:
 
