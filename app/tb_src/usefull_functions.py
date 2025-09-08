@@ -199,8 +199,7 @@ def get_time(scrapper, user , tz_country = "America/Havana"):
 
     
 def reestablecer_BD(scrapper):
-    # res = administrar_BD(scrapper, bot, True)
-    res = ("fail", "lol")
+    res = administrar_BD(scrapper, bot, True)
     if res[0] == "ok":
 
 
