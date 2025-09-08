@@ -51,7 +51,7 @@ bot = telebot.TeleBot(os.environ["token"], parse_mode="html", disable_web_page_p
 scrapper.bot = bot
 
 #en caso de que haya pausado la sesión, se reestablece
-reestablecer_BD(scrapper)
+reestablecer_BD(scrapper, bot)
             
 
 if (not os.environ.get("admin") or not os.environ.get("MONGO_URL")) and not scrapper.env:

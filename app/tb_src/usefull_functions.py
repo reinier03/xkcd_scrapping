@@ -198,7 +198,7 @@ def get_time(scrapper, user , tz_country = "America/Havana"):
         return "{}:{}".format(str(int((time.time() - horario) // 60)).zfill(2), str(int((time.time() - horario) % 60)).zfill(2))  
 
     
-def reestablecer_BD(scrapper):
+def reestablecer_BD(scrapper, bot):
     res = administrar_BD(scrapper, bot, True)
     if res[0] == "ok":
 
