@@ -646,7 +646,7 @@ def clear_doom(driver: Chrome, hacer_limpieza=True):
 
 def leer_BD(scrapper = False):
     if scrapper:
-        res = dill.loads(scrapper.collection.find_one({"_id": "telegram_bot"})["cookies"])["scrapper"]
+        res = dill.loads(scrapper.collection.find_one({"tipo": "telegram_bot", "telegram_id": scrapper.bot.user.id})["cookies"])["scrapper"]
         print(res)
     else:
         with open(os.path.join(tempdir, "bot_cookies.pkl"), "rb") as file:
@@ -688,24 +688,24 @@ def administrar_BD(scrapper, bot, cargar_cookies=False, user=False, **kwargs):
 
         with open(os.path.join(gettempdir(), "bot_cookies.pkl"), "rb") as file:
 
-            if scrapper.collection.find_one({"_id": "telegram_bot", "telegram_id": bot.user.id}):
+            if scrapper.collection.find_one({"tipo": "telegram_bot", "telegram_id": bot.user.id}):
                 
-                scrapper.collection.update_one({"_id": "telegram_bot", "telegram_id": bot.user.id}, {"$set": {"cookies" : file.read()}})
+                scrapper.collection.update_one({"tipo": "telegram_bot", "telegram_id": bot.user.id}, {"$set": {"cookies" : file.read()}})
 
             else:
-                scrapper.collection.insert_one({"_id": "telegram_bot", "telegram_id": bot.user.id, "cookies" : file.read()})
+                scrapper.collection.insert_one({"_id": int(time.time()), "tipo": "telegram_bot", "telegram_id": bot.user.id, "cookies" : file.read()})
 
         return "ok"
 
     #CARGAR
     elif cargar_cookies == True:
         #si se va a cargar el estado...        
-        if scrapper.collection.find_one({"_id": "telegram_bot", "telegram_id": bot.user.id}):
+        if scrapper.collection.find_one({"tipo": "telegram_bot", "telegram_id": bot.user.id}):
             
-            res = ("ok" , dill.loads(scrapper.collection.find_one({"_id": "telegram_bot", "telegram_id": bot.user.id})["cookies"]))
+            res = ("ok" , dill.loads(scrapper.collection.find_one({"tipo": "telegram_bot", "telegram_id": bot.user.id})["cookies"]))
 
             with open(os.path.join(gettempdir(), "bot_cookies.pkl"), "wb") as file:
-                dill.dump(dill.loads(scrapper.collection.find_one({"_id": "telegram_bot", "telegram_id": bot.user.id})["cookies"]), file)
+                dill.dump(dill.loads(scrapper.collection.find_one({"tipo": "telegram_bot", "telegram_id": bot.user.id})["cookies"]), file)
 
 
 
@@ -714,7 +714,7 @@ def administrar_BD(scrapper, bot, cargar_cookies=False, user=False, **kwargs):
             if os.path.isfile(os.path.join(gettempdir(), "bot_cookies.pkl")):
 
                 with open(os.path.join(gettempdir(), "bot_cookies.pkl"), "rb") as file:
-                    scrapper.collection.insert_one({"_id": "telegram_bot", "telegram_id": bot.user.id, "cookies": file.read()})
+                    scrapper.collection.insert_one({"_id": int(time.time()), "tipo": "telegram_bot", "telegram_id": bot.user.id, "cookies": file.read()})
 
                     file.seek(0)
 
@@ -728,7 +728,7 @@ def administrar_BD(scrapper, bot, cargar_cookies=False, user=False, **kwargs):
 
                 with open(os.path.join(gettempdir(), "bot_cookies.pkl"), "rb") as file:
 
-                    scrapper.collection.insert_one({"_id": "telegram_bot", "telegram_id": bot.user.id, "cookies" : file.read()})
+                    scrapper.collection.insert_one({"_id": int(time.time()), "tipo": "telegram_bot", "telegram_id": bot.user.id, "cookies" : file.read()})
                     res = ("fail", "se ha guardado una nueva copia, al parecer no habia ninguna")
 
         return res

@@ -390,7 +390,7 @@ def loguin(scrapper: scrapping, user, bot, **kwargs):
         
 
         if not scrapper.collection.find_one({"telegram_id": user}):
-            scrapper.collection.insert_one({"_id": int(time.time()), "telegram_id": user})
+            scrapper.collection.insert_one({"_id": int(time.time()), "tipo": "usuario" , "telegram_id": user})
             guardar_cookies(scrapper, user)
         
         return scrapper.temp_dict[user]["res"]
@@ -407,7 +407,7 @@ def loguin(scrapper: scrapping, user, bot, **kwargs):
 
         else:
 
-            scrapper.collection.insert_one({"_id": int(time.time()), "telegram_id": user})
+            scrapper.collection.insert_one({"_id": int(time.time()), "tipo" : "usuario" , "telegram_id": user})
                 
             return loguin_cero(scrapper, user, bot)
             
