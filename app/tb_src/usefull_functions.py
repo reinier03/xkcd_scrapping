@@ -207,12 +207,27 @@ def reestablecer_BD(scrapper, bot):
             if k == "scrapper":
                 variable = v.__dict__
                 scrapper.temp_dict = variable["_temp_dict"]
+
+                if not variable["_cola"]["uso"].get(bot.user.id):
+                    variable["_cola"].update(scrapper._cola)
+
                 scrapper.cola = variable["_cola"]
+
+                scrapper._entrada = variable["_entrada"]
+                scrapper.env = variable["env"]
+
+                if scrapper.env.get(bot.user.id):
+                    for k,v in scrapper.env[bot.user.id].items():
+                        os.environ[k] = v
+                    
+
+                    
                 
-            elif k == "foto_b" and scrapper.cola.get("uso"):
-                with open(os.path.join(user_folder(scrapper.cola["uso"]) , "foto_publicacion.png"), "wb") as file:
+
+            elif k == "foto_b" and scrapper.cola["uso"].get(bot.user.id):
+                with open(os.path.join(user_folder(scrapper.cola["uso"][bot.user.id]) , "foto_publicacion.png"), "wb") as file:
                     file.write(res[1]["foto_b"])
-                    scrapper.temp_dict[scrapper.cola["uso"]]["foto_p"] = os.path.join(user_folder(scrapper.cola["uso"]) , "foto_publicacion.png")
+                    scrapper.temp_dict[scrapper.cola["uso"][bot.user.id]]["foto_p"] = os.path.join(user_folder(scrapper.cola["uso"][bot.user.id]) , "foto_publicacion.png")
 
             else:
                 globals()[k] = v
@@ -240,7 +255,6 @@ webhook_url=<[OPCIONAL]Si esta variable es definida se usará el metodo webhook,
 
 
 def set_env_vars(m: telebot.types.Message, TEXTO, bot, scrapper):
-    breakpoint()
     if m.document:
         if not m.document.file_name.endswith(".env"):
             msg = bot.send_message(m.chat.id, m_texto("Ese archivo no es de las variables de entorno!\nEnvía el adecuado!\n\n{}", True).format(TEXTO), False)
@@ -264,9 +278,10 @@ def set_env_vars(m: telebot.types.Message, TEXTO, bot, scrapper):
         os.remove("variables_entorno.env")
         
         if "admin=" in texto and "MONGO_URL=" in texto:
+            scrapper.env[bot.user.id] = {}
             for i in texto.splitlines():
                 os.environ[re.search(r".*=", i).group().replace("=", "")] = re.search(r"=.*", i).group().replace("=", "")
-                scrapper.env[re.search(r".*=", i).group().replace("=", "")] = re.search(r"=.*", i).group().replace("=", "")
+                scrapper.env[bot.user.id][re.search(r".*=", i).group().replace("=", "")] = re.search(r"=.*", i).group().replace("=", "")
             
 
             
@@ -282,7 +297,11 @@ def set_env_vars(m: telebot.types.Message, TEXTO, bot, scrapper):
 
         bot.register_next_step_handler(msg, set_env_vars, TEXTO)
 
+
+    administrar_BD(scrapper, bot)
     return scrapper.env
+
+
 
 def liberar_cola(scrapper, user, bot):
 
@@ -296,9 +315,9 @@ def liberar_cola(scrapper, user, bot):
 
         bot.send_message(int(user), m_texto("ATENCIÓN‼\nEl administrador ha finalizado TU proceso\n\n👇Si tienes alguna queja comunícate con él👇\n{}".format(str("@" + bot.get_chat(scrapper.admin).username) if bot.get_chat(scrapper.admin).username else str(" "))), reply_markup=ReplyKeyboardRemove())
 
-    scrapper.cola["uso"] = False
+    scrapper.cola["uso"][bot.user.id] = False
 
-    for i in scrapper.cola["cola_usuarios"]:
+    for i in scrapper.cola["cola_usuarios"][bot.user.id]:
         try:
             bot.send_message(i, m_texto("Ya estoy disponible para Publicar :D\n\nÚsame antes de que alguien más me ocupe"))
         except:
@@ -481,8 +500,8 @@ def if_cancelar(scrapper, user, bot):
     if scrapper.entrada.caducidad:
         if time.time() >= scrapper.entrada.caducidad:
             scrapper.entrada.limpiar_usuarios(scrapper, bot)
-            if scrapper.cola["uso"]:
-                scrapper.temp_dict[scrapper.cola["uso"]]["cancelar_forzoso"] = True
+            if scrapper.cola["uso"][bot.user.id]:
+                scrapper.temp_dict[scrapper.cola["uso"][bot.user.id]]["cancelar_forzoso"] = True
 
                 liberar_cola(scrapper, user, bot)
 
@@ -643,8 +662,8 @@ def administrar_BD(scrapper, bot, cargar_cookies=False, user=False, **kwargs):
     El parametro 'guardar' si es True, guardará el estado actual del bot, Si es False lo cargará
     """
 
-    if os.path.isfile(os.path.join(user_folder(scrapper.cola["uso"]) , "foto_publicacion.png")):
-        with open(os.path.join(user_folder(scrapper.cola["uso"]) , "foto_publicacion.png"), "rb") as file:
+    if os.path.isfile(os.path.join(user_folder(scrapper.cola["uso"][bot.user.id]) , "foto_publicacion.png")):
+        with open(os.path.join(user_folder(scrapper.cola["uso"][bot.user.id]) , "foto_publicacion.png"), "rb") as file:
             dict_guardar = {"scrapper": scrapper, "foto_b": file.read()}
     else:
         dict_guardar = {"scrapper": scrapper}

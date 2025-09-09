@@ -986,7 +986,12 @@ def publicacion(scrapper: scrapping, bot:telebot.TeleBot, user, load_url=True, c
         #         enviar_grupos()
 
         if contador % 10 == 0 and contador != 0:
-            scrapper.driver.refresh()
+            try:
+                scrapper.driver.refresh()
+            except:
+                pass
+
+            scrapper.wait.until(ec.visibility_of_element_located((By.CSS_SELECTOR, "body")))
 
         #Esta variable es para poder luego guardarla en la BD de MongoDB
         

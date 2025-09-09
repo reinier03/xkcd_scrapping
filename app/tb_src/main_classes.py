@@ -24,6 +24,7 @@ class uc_class(uc.Chrome):
 
         self._temp_dict = {}
         self._cola = {}
+        self.bot = False #<telebot.TeleBot> instancia
 
         o = uc.ChromeOptions()
         
@@ -63,8 +64,8 @@ class uc_class(uc.Chrome):
         if not self._cola["uso"]:
             raise Exception("no")
 
-        elif self._temp_dict.get(self._cola["uso"]):
-            if self._temp_dict[self._cola["uso"]].get("cancelar") or self._temp_dict[self._cola["uso"]].get("cancelar_forzoso"):
+        elif self._temp_dict.get(self._cola["uso"][self.bot.user.id]):
+            if self._temp_dict[self._cola["uso"][self.bot.user.id]].get("cancelar") or self._temp_dict[self._cola["uso"][self.bot.user.id]].get("cancelar_forzoso"):
                 raise Exception("no")
 
         return "ok"
@@ -108,20 +109,21 @@ class uc_class(uc.Chrome):
 
 class scrapping():
 
-    def __init__(self, iniciar_web=True):
-
+    def __init__(self, bot, iniciar_web=True):
         self._temp_dict = {}
-        self._cola = {"uso": False, "cola_usuarios": []}
+        self._cola = {"uso": {bot.user.id: False}, "cola_usuarios": {bot.user.id: []}}
         self.delay = 60
-        self.entrada = Entrada(True)
+        self._entrada = {bot.user.id: Entrada(bot, True)}
         self.interrupcion = False
         self.admin = None
         self.usuarios_permitidos = []
+        self.bot = bot
         self.env = {}
 
         if iniciar_web:
 
             self.driver = uc_class()
+            self.driver.bot = bot
 
             if os.name == "nt":
                 self.wait = WebDriverWait(self.driver, 80)
@@ -153,7 +155,18 @@ class scrapping():
         return
 
 
+    @property
+    def entrada(self):
+        return self._entrada
 
+    @entrada.getter
+    def entrada(self):
+        return self._entrada[self.bot.user.id]
+
+    @entrada.setter
+    def entrada(self, value):
+        self._entrada[self.bot.user.id] = value
+        return self._entrada[self.bot.user.id]
 
     @property
     def cola(self):
@@ -315,25 +328,35 @@ class scrapping():
 
 
 class Entrada():
-    def __init__(self, contrasena):
+    def __init__(self, bot, contrasena):
         """
         Clase para administrar el metodo de entrada al bot
 
         Si self.contrasena = False entonces todo el mundo podrá acceder al bot
         Si self.contrasena = True entonces NADIE podria acceder excepto los que estan en self.usuarios_permitidos: list
         """
+        self.bot = bot
         self.contrasena = contrasena 
         self.caducidad = False
         self.usuarios_permitidos = []
         self.usuarios_permitidos_permanente = []
+        self.usuarios_baneados = False
 
 
     def __str__(self):
         texto = "Clase |Entrada| variables:\n\n"
         for k, v in self.__dict__.items():
+            texto += "Entrada.{}  =>  {}\n".format(k, v)
+
+        return texto
+
+    def show(self):
+        texto = "Clase |Entrada| variables:\n\n"
+        for k, v in self.__dict__.items():
             texto += "Entrada.<b>{}</b>  =>  {}\n".format(k, v)
 
         return texto
+
 
     def limpiar_usuarios(self, scrapper, bot = False, excepciones=[]):
 
@@ -347,7 +370,7 @@ class Entrada():
             if not i in excepciones:
 
                 if bot:
-                    if not scrapper.cola["uso"] == i:
+                    if not scrapper.cola["uso"][bot.user.id] == i:
                         
                         try:
                             bot.send_message(i, m_texto("Mi administrador ha bloqueado el acceso, no podrás usarme más hasta nuevo aviso...\n\nContacta con él si tienes alguna queja"), reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("👮‍♂️ Contacta con el admin", url="https://t.me/{}".format(bot.get_chat(int(os.environ["admin"])).username))]]))

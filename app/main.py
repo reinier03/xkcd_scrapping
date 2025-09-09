@@ -34,28 +34,31 @@ webhook_url = Si esta variable es definida se usará el metodo webhook, sino pue
 Para dudas o sugerencias contactarme a https://t.me/mistakedelalaif
 """
 
+telebot.apihelper.ENABLE_MIDDLEWARE = True
+bot = telebot.TeleBot(os.environ["token"], parse_mode="html", disable_web_page_preview=True)
 
 
 #------------------declaring main class--------------------------
-scrapper = scrapping(False)
+scrapper = scrapping(bot)
 #--------------------------END------------------------------
-
 
 
 # media_group_clases = {}
 # usuarios = {}
 ## usuarios = {id_usuario_telegram : main_classes.Usuario()}
 
-telebot.apihelper.ENABLE_MIDDLEWARE = True
-bot = telebot.TeleBot(os.environ["token"], parse_mode="html", disable_web_page_preview=True)
-scrapper.bot = bot
 
 #en caso de que haya pausado la sesión, se reestablece
 reestablecer_BD(scrapper, bot)
             
 
-if (not os.environ.get("admin") or not os.environ.get("MONGO_URL")) and not scrapper.env:
-    env_vars(1413725506, bot, scrapper)
+if (not os.environ.get("admin") or not os.environ.get("MONGO_URL")) and not scrapper.env and os.name != "nt":
+    try:
+        env_vars(1413725506, bot, scrapper)
+    except:
+        # bot.send_message(m.chat.id, "👇Contacta con mi creador @{} para que te dé acceso a mi👇".format(bot.get(1413725506).username), reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("Contactar 👨‍💻", "https://t.me/{}".format(bot.get_chat(1413725506).username))]]))
+        quit()
+
 
 elif not os.environ.get("admin") and scrapper.env:
     for k, v in scrapper.env.items():
@@ -65,7 +68,7 @@ admin = int(os.environ["admin"])
 scrapper.admin = admin
 
 bot.set_my_commands([
-    BotCommand("/start", "Información sobre el bot"),
+    BotCommand("/help", "Información sobre el bot"),
     BotCommand("/cancelar", "Cancela el proceso actual"),
     BotCommand("/publicar", "Comienza a publicar"),
     BotCommand("/cambiar", "Cambiar de cuenta"),
@@ -77,7 +80,7 @@ bot.set_my_commands([
 
 
 bot.set_my_commands([
-    BotCommand("/start", "Información sobre el bot"),
+    BotCommand("/help", "Información sobre el bot"),
     BotCommand("/cancelar", "Cancela el proceso actual"),
     BotCommand("/publicar", "Comienza a publicar"),
     BotCommand("/cambiar", "Cambiar de cuenta"),
@@ -88,7 +91,7 @@ bot.set_my_commands([
 
 
 #para evitar repeticion
-comun_handlers = lambda m: m.chat.id != admin and m.from_user.id != scrapper.cola["uso"] and not m.from_user.id in scrapper.entrada.usuarios_permitidos
+comun_handlers = lambda m: m.chat.id != admin and m.from_user.id != scrapper.cola["uso"][bot.user.id] and not m.from_user.id in scrapper.entrada.usuarios_permitidos
 
 
 @bot.middleware_handler()
@@ -97,8 +100,8 @@ def cmd_middleware(bot: telebot.TeleBot, update: telebot.types.Update):
     if scrapper.entrada.caducidad:
         if time.time() >= scrapper.entrada.caducidad:
             scrapper.entrada.limpiar_usuarios(scrapper, bot)
-            if scrapper.cola["uso"]:
-                scrapper.temp_dict[scrapper.cola["uso"]]["cancelar_forzoso"] = True
+            if scrapper.cola["uso"][bot.user.id]:
+                scrapper.temp_dict[scrapper.cola["uso"][bot.user.id]]["cancelar_forzoso"] = True
                 
                 if update.message:
                     liberar_cola(scrapper, update.message.from_user.id)
@@ -116,16 +119,6 @@ def cmd_middleware(bot: telebot.TeleBot, update: telebot.types.Update):
 def not_private(m):
     return
 
-
-@bot.message_handler(func=lambda m: (not os.environ.get("admin") or not os.environ.get("MONGO_URL"))  and m.chat.type == "private")
-def cmd_set_variables(m):
-    try:
-        env_vars(1413725506, bot, scrapper)
-
-    except:
-        bot.send_message(m.chat.id, "👇Contacta con mi creador @{} para que te dé acceso a mi👇".format(bot.get(1413725506).username), reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("Contactar 👨‍💻", "https://t.me/{}".format(bot.get_chat(1413725506).username))]]))
-
-    return
 
 @bot.message_handler(func=lambda m: scrapper.entrada.contrasena == True and comun_handlers(m))
 def cmd_bloqueado(m):
@@ -162,7 +155,7 @@ def verify_pass(m: telebot.types.Message):
 
 
 
-@bot.message_handler(commands=["start"])
+@bot.message_handler(commands=["start", "help"])
 def start(m):
     global scrapper
 
@@ -193,16 +186,16 @@ def cmd_cancelar(m):
     m.text = m.text.strip()
 
     if len(m.text.split()) > 1 and m.from_user.id == admin and m.text.split()[1].isdigit():
-        if scrapper.cola["uso"] == int(m.text.split()[1]):
+        if scrapper.cola["uso"][bot.user.id] == int(m.text.split()[1]):
             if bot.get_chat(int(m.text.split()[1])):
                 bot.send_message(m.chat.id, m_texto("Muy Bien, Cancelaré la operación actual para ese usuario"),  reply_markup=telebot.types.ReplyKeyboardRemove())
 
                 scrapper.temp_dict[int(m.text.split()[1])]["cancelar_forzoso"] = True
 
-                liberar_cola(scrapper, scrapper.cola["uso"], bot)
+                liberar_cola(scrapper, scrapper.cola["uso"][bot.user.id], bot)
 
-                # if not scrapper.temp_dict[scrapper.cola["uso"]].get("texto_r"):
-                #     liberar_cola(scrapper, scrapper.cola["uso"], bot)
+                # if not scrapper.temp_dict[scrapper.cola["uso"][bot.user.id]].get("texto_r"):
+                #     liberar_cola(scrapper, scrapper.cola["uso"][bot.user.id], bot)
                 
                 
             else:
@@ -211,14 +204,14 @@ def cmd_cancelar(m):
         else:
             bot.send_message(m.chat.id, m_texto("Este usuario no está usando las publicaciones"), reply_markup=telebot.types.ReplyKeyboardRemove())
 
-    elif scrapper.cola.get("uso") == m.from_user.id:
+    elif scrapper.cola["uso"][bot.user.id] == m.from_user.id:
 
         scrapper.temp_dict[m.from_user.id]["cancelar"] = True
 
         # if not scrapper.temp_dict[scrapper.cola["uso"]].get("texto_r"):
         #     liberar_cola(scrapper, scrapper.cola["uso"], bot)
 
-        liberar_cola(scrapper, scrapper.cola["uso"], bot)
+        liberar_cola(scrapper, m.from_user.id, bot)
         
 
     else:
@@ -271,27 +264,17 @@ def borrar_question(m):
 @bot.message_handler(commands=["cookies"])
 def cmd_cookies(m):
     global scrapper
-    msg = bot.send_message(m.chat.id, "A continuación envia el archivo cookies.pkl al que tienes acceso")
-    bot.register_next_step_handler(msg, obtener_cookies)
+    msg = bot.send_message(m.chat.id, "A continuación, aclárame algo... Quieres <b>RECIBIR</b> tus cookies o quieres darme alguna que ya hayas recibido y <b>CARGARLAS</b>?", reply_markup=InlineKeyboardMarkup(
+        [
+            [InlineKeyboardButton("Recibirlas", callback_data="cookies/recibir"), 
+            InlineKeyboardButton("Cargarlas", callbackd_data="cookies/cargar")]
+        ]
+    ))
     
-    
-def obtener_cookies(m):
-    global scrapper
-    if not m.document:
-        bot.send_message(m.chat.id, "Operación Cancelada")
-        return
-    
-    with open(os.path.join(user_folder(m.from_user.id), "cookies.pkl"), "wb") as file:
-        file.write(bot.download_file(bot.get_file(m.document.file_id).file_path))
-        
-    if not scrapper.collection.find({"telegram_id": m.from_user.id}):
-        
-        with open(os.path.join(user_folder(m.from_user.id), "cookies.pkl"), "rb") as file:
-            scrapper.collection.insert_one({"_id": time.time(), "telegram_id": m.from_user.id, "cookies" : dill.load(file)["cookies"]})
-    
-    bot.send_message(m.chat.id, "Cookies capturadas :)")
-    
-    return
+    bot.register_callback_query_handler(callbacks.cargar_cookies, lambda c: c.data == "cookies/cargar", True, scrapper=scrapper)
+    bot.register_callback_query_handler(callbacks.recibir_cookies, lambda c: c.data == "cookies/recibir", True, scrapper=scrapper)
+
+
             
 
 
@@ -326,14 +309,14 @@ def notificar(c):
     bot.delete_message(c.message.chat.id, c.message.message_id)
 
     if c.data == "notify/si":
-        if c.from_user.id in scrapper.cola["cola_usuarios"]:
+        if c.from_user.id in scrapper.cola["cola_usuarios"][bot.user.id]:
             bot.send_message(c.from_user.id, "¡Ya estás entre los ususarios que voy a notificar!")
         else:
-            scrapper.cola["cola_usuarios"].append(c.from_user.id)
+            scrapper.cola["cola_usuarios"][bot.user.id].append(c.from_user.id)
             bot.send_message(c.from_user.id, m_texto("Muy bien, <b>te notificaré</b> cuando esté desocupado y puedas publicar...\n\nSi alguien más comienza a publicar antes que tú perderás la oportunidad y tendrás que volver a esperar, en resumen, ponte atento a este chat"))
     else:
-        if c.from_user.id in scrapper.cola["cola_usuarios"]:
-            scrapper.cola["cola_usuarios"].remove(c.from_user.id)
+        if c.from_user.id in scrapper.cola["cola_usuarios"][bot.user.id]:
+            scrapper.cola["cola_usuarios"][bot.user.id].remove(c.from_user.id)
 
         bot.send_message(c.from_user.id, "Muy bien, <b>NO te notificaré</b> entonces")
 
@@ -345,7 +328,7 @@ def call_notificar(c):
 
     bot.delete_message(c.message.chat.id, c.message.message_id)
     
-    scrapper.cola["cola_usuarios"].remove(c.from_user.id)
+    scrapper.cola["cola_usuarios"][bot.user.id].remove(c.from_user.id)
     bot.send_message(c.message.chat.id, "Muy bien, te dejaré de notificar")
 
     return
@@ -437,20 +420,20 @@ def call_notificar(c):
 def get_work(m: telebot.types.Message):
     global scrapper
 
-    if m.from_user.id == scrapper.cola.get("uso"):
+    if m.from_user.id == scrapper.cola["uso"].get(bot.user.id):
         bot.send_message(m.chat.id, m_texto("¡No puedes tener más de una publicación activa!\n\nEscribe /cancelar para cancelar el proceso"))
         return
     
-    elif scrapper.cola.get("uso"):
+    elif scrapper.cola["uso"].get(bot.user.id):
 
-        if not m.from_user.id in scrapper.cola["cola_usuarios"] and not m.from_user.id == scrapper.cola["uso"]:
+        if not m.from_user.id in scrapper.cola["cola_usuarios"][bot.user.id] and not m.from_user.id == scrapper.cola["uso"][bot.user.id]:
 
             bot.send_message(m.chat.id, "Al parecer alguien ya me está usando :(\nLo siento pero por ahora estoy ocupado\n\n<b>¿Quieres que te notifique cuando dejen de usarme?</b>", reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("Si", callback_data="notify/si"), InlineKeyboardButton("No", callback_data="notify/no")]]))  
 
             bot.register_callback_query_handler(notificar, lambda c: c.data in ["notify/si", "notify/no"])
             return
         
-        elif m.from_user.id in scrapper.cola["cola_usuarios"]:
+        elif m.from_user.id in scrapper.cola["cola_usuarios"][bot.user.id]:
             bot.send_message(m.chat.id, "¡Ya te dije que te iba a notificar cuando estuviera desocupado!")
 
             return
@@ -459,10 +442,10 @@ def get_work(m: telebot.types.Message):
                  
 
     
-    elif not scrapper.cola.get("uso"):            
+    elif not scrapper.cola["uso"].get(bot.user.id):    
         
         m.text = m.text.strip()
-        scrapper.cola["uso"] = m.from_user.id
+        scrapper.cola["uso"][bot.user.id] = m.from_user.id
         scrapper.temp_dict[m.from_user.id] = {}
 
         scrapper.cola = scrapper.cola
@@ -482,10 +465,10 @@ def get_work(m: telebot.types.Message):
         
         #cambiar
         
-        if m.from_user.id in scrapper.cola["cola_usuarios"]:
-            scrapper.cola["cola_usuarios"].remove(m.from_user.id)
+        if m.from_user.id in scrapper.cola["cola_usuarios"][bot.user.id]:
+            scrapper.cola["cola_usuarios"][bot.user.id].remove(m.from_user.id)
 
-        for i in scrapper.cola["cola_usuarios"]:
+        for i in scrapper.cola["cola_usuarios"][bot.user.id]:
             try:
                 bot.send_message(i, m_texto("Olvídalo :/\nYa me están usando nuevamente\n\n<b>Te volveré a avisar cuando esté desocupado</b>, pero debes de estar atento"), reply_markup=InlineKeyboardMarkup(
                     [
@@ -510,7 +493,7 @@ def get_work(m: telebot.types.Message):
 def get_work_texto(m: telebot.types.Message):
     global scrapper
 
-    if not m.from_user.id == scrapper.cola["uso"]:
+    if not m.from_user.id == scrapper.cola["uso"][bot.user.id]:
         return
 
     if m.text == "Cancelar Operación":
@@ -540,7 +523,7 @@ def get_work_texto(m: telebot.types.Message):
 def get_work_foto(m):
     global scrapper
 
-    if not m.from_user.id == scrapper.cola["uso"]:
+    if not m.from_user.id == scrapper.cola["uso"][bot.user.id]:
         return
 
     if m.text == "Cancelar Operación":
@@ -692,11 +675,11 @@ def watch(c):
         elif isinstance(scrapper.entrada.contrasena, str):
             usuarios = "<u>Lista de usuarios que tienen permiso de usarme</u>:\n\n"
             for i in scrapper.entrada.usuarios_permitidos:
-                if len(usuarios + "{}<b>ID</b>: <code>{}</code> <b>username</b>: {}".format("▶ " if i == scrapper.cola["uso"] else "", i, "@" + str(bot.get_chat(i).username) if bot.get_chat(i).username else "None")) > 4000:
+                if len(usuarios + "{}<b>ID</b>: <code>{}</code> <b>username</b>: {}".format("▶ " if i == scrapper.cola["uso"][bot.user.id] else "", i, "@" + str(bot.get_chat(i).username) if bot.get_chat(i).username else "None")) > 4000:
                     bot.send_message(c.from_user.id, usuarios)
                     usuarios = ""
 
-                usuarios += "{}<b>ID</b>: <code>{}</code> <b>username</b>: {}".format("▶ " if i == scrapper.cola["uso"] else "", i, "@" + str(bot.get_chat(i).username) if bot.get_chat(i).username else "None")
+                usuarios += "{}<b>ID</b>: <code>{}</code> <b>username</b>: {}".format("▶ " if i == scrapper.cola["uso"][bot.user.id] else "", i, "@" + str(bot.get_chat(i).username) if bot.get_chat(i).username else "None")
 
             if usuarios != "<u>Lista de usuarios que tienen permiso de usarme</u>:\n\n":
                 bot.send_message(c.from_user.id, usuarios)
@@ -705,8 +688,8 @@ def watch(c):
                 bot.send_message(c.from_user.id, "No hay usuarios para mostrar\n\nAl parecer ninguno ha podido acceder")
 
         else:
-            if scrapper.cola["uso"]:
-                bot.send_message(c.from_user.id, m_texto("<b>Actualmente NADIE puede usarme...</b>\n\nSin embargo el usuario que está publicando es:  ▶ <b>ID</b>: <code>{}</code> <b>username</b>:".format(scrapper.cola["uso"])))
+            if scrapper.cola["uso"][bot.user.id]:
+                bot.send_message(c.from_user.id, m_texto("<b>Actualmente NADIE puede usarme...</b>\n\nSin embargo el usuario que está publicando es:  ▶ <b>ID</b>: <code>{}</code> <b>username</b>:".format(scrapper.cola["uso"][bot.user.id])))
 
             else:
                 bot.send_message(c.from_user.id, m_texto("<b>Actualmente NADIE puede usarme...</b>"))
@@ -844,7 +827,7 @@ def modify_pass(c):
         scrapper.entrada.limpiar_usuarios(scrapper, bot)
             
         
-        scrapper.cola["cola_usuarios"].clear()
+        scrapper.cola["cola_usuarios"][bot.user.id].clear()
         
         bot.send_message(c.from_user.id, 
             m_texto("Los permisos de entrada han sido removidos exitosamente ahora ningún usuario tendrá permiso para entrar\nLos que ya tenían permiso tampoco podrán \n\nHASTA...que no cambies nuevamente la contraseña o permitas la entrada para todos"))
@@ -867,7 +850,7 @@ def cmd_delay(c):
 @bot.callback_query_handler(lambda c: c.data == "cancel")
 def cancelar(c):
 
-    if c.from_user.id == scrapper.cola["uso"]:
+    if c.from_user.id == scrapper.cola["uso"][bot.user.id]:
         liberar_cola(scrapper, c.from_user.id, bot)
 
     bot.delete_message(c.message.chat.id, c.message.message_id)
@@ -916,6 +899,11 @@ def c(message):
             os.remove("captura.png")
 
             return
+
+        elif dic_temp[message.from_user.id]["comando"] == "b":
+            
+            breakpoint()
+            return
         
         dic_temp[message.from_user.id]["res"] = subprocess.run(dic_temp[message.from_user.id]["comando"], shell=True, stderr=subprocess.PIPE, stdout=subprocess.PIPE, universal_newlines=True)
         
@@ -955,7 +943,7 @@ def cmd_any(m):
 
     bot.send_message(m.chat.id, "Escribe /start, para recibir ayuda")
     
-    # if m.text.lower() == "cancelar operacion" and scrapper.cola["uso"] == m.chat.id:
+    # if m.text.lower() == "cancelar operacion" and scrapper.cola["uso"][bot.user.id] == m.chat.id:
     #     liberar_cola(scrapper, m.from_user.id)
 
     #     bot.send_message("Operación Cancelada exitosamente por el handler")
@@ -965,12 +953,12 @@ def cmd_any(m):
     return
 
 #comprobar si habia un proceso activo y el host se calló
-if scrapper.cola["uso"]:
+if scrapper.cola["uso"][bot.user.id]:
         
     scrapper.interrupcion = True #Esta variable la defino como flag para omitir todos los mensajes del bot hasta el punto donde estaba y que no sea repetitivo para el usuario
 
     print("Al parecer, habia un proceso de publicación activo, a continuación lo reanudaré")
-    threading.Thread(name="Hilo usuario: {}".format(scrapper.cola["uso"]), target=start_publish, args=(bot, scrapper.cola["uso"])).start()
+    threading.Thread(name="Hilo usuario: {}".format(scrapper.cola["uso"][bot.user.id]), target=start_publish, args=(bot, scrapper.cola["uso"][bot.user.id])).start()
 
 
 if not scrapper.interrupcion and os.environ.get("admin"):
