@@ -206,12 +206,12 @@ def reestablecer_BD(scrapper, bot):
         for k, v in res[1].items():
             if k == "scrapper":
                 variable = v.__dict__
-                scrapper.temp_dict = variable["_temp_dict"]
+                scrapper._temp_dict = variable["_temp_dict"]
 
-                if not variable["_cola"]["uso"].get(bot.user.id):
-                    variable["_cola"].update(scrapper._cola)
+                if not variable["cola"]["uso"].get(bot.user.id):
+                    variable["cola"].update(scrapper.cola)
 
-                scrapper.cola = variable["_cola"]
+                scrapper.cola = variable["cola"]
 
                 scrapper._entrada = variable["_entrada"]
                 scrapper.env = variable["env"]
@@ -305,7 +305,7 @@ def set_env_vars(m: telebot.types.Message, TEXTO, bot, scrapper):
 
 def liberar_cola(scrapper, user, bot):
 
-    if not user in list(scrapper._temp_dict):
+    if not user in list(scrapper.temp_dict):
         return
 
     if scrapper.temp_dict[user].get("cancelar"):
@@ -661,10 +661,12 @@ def administrar_BD(scrapper, bot, cargar_cookies=False, user=False, **kwargs):
     """
     El parametro 'guardar' si es True, guardará el estado actual del bot, Si es False lo cargará
     """
-
-    if os.path.isfile(os.path.join(user_folder(scrapper.cola["uso"][bot.user.id]) , "foto_publicacion.png")):
-        with open(os.path.join(user_folder(scrapper.cola["uso"][bot.user.id]) , "foto_publicacion.png"), "rb") as file:
-            dict_guardar = {"scrapper": scrapper, "foto_b": file.read()}
+    if scrapper.cola["uso"].get(bot.user.id):
+        if os.path.isfile(os.path.join(user_folder(scrapper.cola["uso"][bot.user.id]) , "foto_publicacion.png")):
+            with open(os.path.join(user_folder(scrapper.cola["uso"][bot.user.id]) , "foto_publicacion.png"), "rb") as file:
+                dict_guardar = {"scrapper": scrapper, "foto_b": file.read()}
+        else:
+            dict_guardar = {"scrapper": scrapper}
     else:
         dict_guardar = {"scrapper": scrapper}
 
@@ -680,7 +682,7 @@ def administrar_BD(scrapper, bot, cargar_cookies=False, user=False, **kwargs):
     if cargar_cookies == False:
         #si va a guardarse el estado...
 
-        
+
 
         with open(os.path.join(gettempdir(), "bot_cookies.pkl"), "wb") as file:
 

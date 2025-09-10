@@ -733,6 +733,7 @@ def loguin_cero(scrapper: scrapping, user, bot : telebot.TeleBot, load_url=True,
     if not scrapper.temp_dict[user].get("password"):
         handlers(bot, user, "Introduce a continuación la contraseña", "password", scrapper.temp_dict)
     
+    bot.send_message(user, m_texto("Muy bien, a continuación comprobaré si los datos son correctos\n\nPor favor, espera un momento..."))
 
     scrapper.temp_dict[user]["url_actual"] = scrapper.driver.current_url
 
@@ -791,12 +792,15 @@ def loguin_cero(scrapper: scrapping, user, bot : telebot.TeleBot, load_url=True,
 
     if scrapper.temp_dict[user]["res"]:
 
-        scrapper.wait.until(ec.visibility_of_element_located((By.CSS_SELECTOR, 'div[data-bloks-name="bk.components.Flexbox"][role="button"]')))
+        try:
+            scrapper.wait.until(ec.visibility_of_element_located((By.CSS_SELECTOR, 'div[data-bloks-name="bk.components.Flexbox"][role="button"]')))
 
-        scrapper.find_element(By.CSS_SELECTOR, 'div[data-bloks-name="bk.components.Flexbox"][role="button"]').click()
+            scrapper.find_element(By.CSS_SELECTOR, 'div[data-bloks-name="bk.components.Flexbox"][role="button"]').click()
 
-        scrapper.wait.until(ec.invisibility_of_element_located((By.CSS_SELECTOR, 'div[data-bloks-name="bk.components.Flexbox"][role="button"]')))
+            scrapper.wait.until(ec.invisibility_of_element_located((By.CSS_SELECTOR, 'div[data-bloks-name="bk.components.Flexbox"][role="button"]')))
 
+        except:
+            scrapper.driver.get("https://m.facebook.com/bookmarks/")
 
             
         
@@ -948,7 +952,7 @@ def publicacion(scrapper: scrapping, bot:telebot.TeleBot, user, load_url=True, c
     
     
     if not scrapper.temp_dict[user].get("repetir") and not scrapper.interrupcion:
-        handlers(bot, user, "A continuación, establece un tiempo de espera luego de finalizada la publicación masiva para volver a repetir el proceso en bucle\nIngresa el tiempo de repetición en HORAS\n\nSi solo deseas que no se repita y se publique solamente esta vez en todos tus grupos pulsa en '<b>No Repetir</b>'", "bucle_publicacion", scrapper._temp_dict, markup=ReplyKeyboardMarkup(True, True).add("No Repetir"))
+        handlers(bot, user, "A continuación, establece un tiempo de espera luego de finalizada la publicación masiva para volver a repetir el proceso en bucle\nIngresa el tiempo de repetición en HORAS\n\nSi solo deseas que no se repita y se publique solamente esta vez en todos tus grupos pulsa en '<b>No Repetir</b>'", "bucle_publicacion", scrapper.temp_dict, markup=ReplyKeyboardMarkup(True, True).add("No Repetir"))
 
         if scrapper.temp_dict[user]["res"]:
 
@@ -1680,19 +1684,11 @@ def main(scrapper: scrapping, bot: telebot.TeleBot, user):
     scrapper.temp_dict[user]["if_cancelar"]()
 
     print("Voy a hacer el loguin")
-    scrapper.temp_dict[user]["res"] = loguin(scrapper, user, bot)        
-
     
-            
-    try:
-        #comprobando estar en el inicio de la mainpage de facebook
-        scrapper.temp_dict[user]["e"] = scrapper.wait.until(ec.visibility_of_element_located((By.CSS_SELECTOR, 'div#screen-root')))
+    loguin(scrapper, user, bot)        
 
-    except:
-        scrapper.temp_dict[user]["e"] = None
-
-        give_error(bot, scrapper.driver, user, "ID usuario: " + str(user) + "\nFaltó algo :(",)
-    
+    #comprobando estar en el inicio de la mainpage de facebook
+    scrapper.wait.until(ec.visibility_of_element_located((By.CSS_SELECTOR, 'div#screen-root')))
 
     administrar_BD(scrapper, bot)
 

@@ -21,9 +21,7 @@ from f_src.chrome_driver import *
 class uc_class(uc.Chrome):
 
     def __init__(self):
-
-        self._temp_dict = {}
-        self._cola = {}
+        
         self.bot = False #<telebot.TeleBot> instancia
 
         o = uc.ChromeOptions()
@@ -60,58 +58,39 @@ class uc_class(uc.Chrome):
             
 
 
-    def __existe(self, **kwargs):
-        if not self._cola["uso"]:
+    def __existe(self, scrapper, **kwargs):
+        if not scrapper.cola["uso"]:
             raise Exception("no")
 
-        elif self._temp_dict.get(self._cola["uso"][self.bot.user.id]):
-            if self._temp_dict[self._cola["uso"][self.bot.user.id]].get("cancelar") or self._temp_dict[self._cola["uso"][self.bot.user.id]].get("cancelar_forzoso"):
+        elif scrapper.temp_dict.get(scrapper.cola["uso"][scrapper.bot.user.id]):
+            if scrapper.temp_dict[scrapper.cola["uso"][scrapper.bot.user.id]].get("cancelar") or scrapper.temp_dict[scrapper.cola["uso"][scrapper.bot.user.id]].get("cancelar_forzoso"):
                 raise Exception("no")
 
         return "ok"
 
 
     
-    def find_elements(self, by , value ,**kwargs) -> list[WebElement]:
-        self.__existe()
+    def find_elements(self, by, value, **kwargs) -> list[WebElement]:
+        self.__existe(self.scrapper)
 
         return super().find_elements(by, value)
 
-    def find_element(self, by, value , **kwargs) -> WebElement:
-        self.__existe()
+    def find_element(self, by, value, **kwargs) -> WebElement:
+        self.__existe(self.scrapper)
 
         return super().find_element(by, value)
 
 
-    @property
-    def cola(self):
-        return self._cola
-
-
-    @cola.getter
-    def cola(self):
-        return self._cola
-
-
-    @property
-    def temp_dict(self):
-        return self._temp_dict
-
-    @temp_dict.getter
-    def temp_dict(self):
-        return self._temp_dict
 
 
 
 
-
-
-
+#---------------------------scrapper-------------------------------------
 class scrapping():
 
     def __init__(self, bot, iniciar_web=True):
-        self._temp_dict = {}
-        self._cola = {"uso": {bot.user.id: False}, "cola_usuarios": {bot.user.id: []}}
+        self._temp_dict = {bot.user.id: {}}
+        self.cola = {"uso": {bot.user.id: False}, "cola_usuarios": {bot.user.id: []}}
         self.delay = 60
         self._entrada = {bot.user.id: Entrada(bot, True)}
         self.interrupcion = False
@@ -132,21 +111,25 @@ class scrapping():
                 self.wait = WebDriverWait(self.driver, 30)
                 self.wait_s = WebDriverWait(self.driver, 8)
 
-            
+
+            self.driver.scrapper = self
 
 
-        
+
+        # if os.name == "nt" and os.environ.get("MONGO_HOST"):
+        #     print("Host local a la nube")
+        #     self.MONGO_URL = os.environ.get("MONGO_HOST")
 
         if not "MONGO_URL" in os.environ:
             self.MONGO_URL = "mongodb://localhost:27017"
+
         else:
-            self.MONGO_URL = os.environ["MONGO_URL"]
+            self.MONGO_URL = os.environ.get("MONGO_URL")
 
         self.cliente = MongoClient(self.MONGO_URL)
         self.db = self.cliente["face"]
-
-
         self.collection = self.db["usuarios"] 
+
         
         #Para tener mas detalles de la estructura de la base de datos consulte el archivo: "../BD structure.txt"
 
@@ -168,21 +151,6 @@ class scrapping():
         self._entrada[self.bot.user.id] = value
         return self._entrada[self.bot.user.id]
 
-    @property
-    def cola(self):
-        return self._cola
-
-
-    @cola.setter
-    def cola(self, value):
-        self._cola = value
-        self.driver._cola = value
-
-        return
-
-    @cola.getter
-    def cola(self):
-        return self._cola
 
 
     @property
@@ -192,24 +160,22 @@ class scrapping():
 
     @temp_dict.setter
     def temp_dict(self, value):
-        self._temp_dict = value
-        self.driver._temp_dict = value
-
-        return
+        self._temp_dict[self.bot.user.id] = value
+        return self._temp_dict[self.bot.user.id]
 
     @temp_dict.getter
     def temp_dict(self):
-        return self._temp_dict
+        return self._temp_dict[self.bot.user.id]
 
     
     def __str__(self):
         texto = "Clase |scrapping| variables:\n\n"
         for k, v in self.__dict__.items():
             if k == "_temp_dict":
-                for usuario, diccionario in v.items():
-                    texto += "scrapping._temp_dict.{}:\n".format(usuario)
+                for usuario, diccionario in v[self.bot.user.id].items():
+                    texto += "scrapping.temp_dict.{}:\n".format(usuario)
                     for diccionario_key, diccionario_value in diccionario.items():
-                        texto +="{}  =>  {}\n".format(diccionario_key, diccionario_value)
+                        texto +="scrapping.temp_dict.{}.{}.{}  =>  {}\n\n".format(self.bot.user.id, usuario, diccionario_key, diccionario_value)
 
                     
                 texto += "\n"
@@ -226,7 +192,7 @@ class scrapping():
         # Eliminar TODOS los objetos no serializables
         elementos_a_eliminar = [
             "driver", "wait", "wait_s", 
-            "collection", "db", "cliente"  # ← ¡MongoDB también tiene sockets!
+            "collection", "db", "cliente" 
         ]
         
         for elemento in elementos_a_eliminar:
@@ -292,21 +258,19 @@ class scrapping():
     
 
     def show(self):
-        texto = "Clase |<b>scrapping</b>| variables:\n\n"
-
+        texto = "Clase |scrapping| variables:\n\n"
         for k, v in self.__dict__.items():
             if k == "_temp_dict":
-                for usuario, diccionario in v.items():
-                    texto += "scrapping._temp_dict.<code>{}</code>:\n".format(usuario)
+                for usuario, diccionario in v[self.bot.user.id].items():
+                    texto += "scrapping.temp_dict.{}:\n".format(usuario)
                     for diccionario_key, diccionario_value in diccionario.items():
-                        texto +="<b>{}</b>  =>  {}\n".format(diccionario_key, diccionario_value)
+                        texto +="scrapping.temp_dict.{}.{}.{}  =>  {}\n\n".format(self.bot.user.id, usuario, diccionario_key, diccionario_value)
 
                     
                 texto += "\n"
 
-
             else:
-                texto += "scrapping.<b>{}</b>  =>  <b>{}</b>\n".format(k, v)
+                texto += "scrapping.{}  =>  {}\n".format(k, v)
 
         return texto
 
@@ -331,6 +295,8 @@ class Entrada():
     def __init__(self, bot, contrasena):
         """
         Clase para administrar el metodo de entrada al bot
+        Manipula la cantidad de usuarios permitidos por el bot, las contraseñas, la caducidad de las mismas.
+        Cada bot tiene un objeto de Entrada() diferente
 
         Si self.contrasena = False entonces todo el mundo podrá acceder al bot
         Si self.contrasena = True entonces NADIE podria acceder excepto los que estan en self.usuarios_permitidos: list

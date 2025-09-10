@@ -67,6 +67,9 @@ elif not os.environ.get("admin") and scrapper.env:
 admin = int(os.environ["admin"])
 scrapper.admin = admin
 
+if os.environ.get("RENDER_EXTERNAL_URL"):
+    os.environ["webhook_url"] = os.environ["RENDER_EXTERNAL_URL"]
+
 bot.set_my_commands([
     BotCommand("/help", "Información sobre el bot"),
     BotCommand("/cancelar", "Cancela el proceso actual"),
@@ -266,8 +269,8 @@ def cmd_cookies(m):
     global scrapper
     msg = bot.send_message(m.chat.id, "A continuación, aclárame algo... Quieres <b>RECIBIR</b> tus cookies o quieres darme alguna que ya hayas recibido y <b>CARGARLAS</b>?", reply_markup=InlineKeyboardMarkup(
         [
-            [InlineKeyboardButton("Recibirlas", callback_data="cookies/recibir"), 
-            InlineKeyboardButton("Cargarlas", callbackd_data="cookies/cargar")]
+            [InlineKeyboardButton("Recibirlas", callback_data="cookies/recibir")], 
+            [InlineKeyboardButton("Cargarlas", callbackd_data="cookies/cargar")]
         ]
     ))
     
@@ -419,7 +422,6 @@ def call_notificar(c):
 @bot.message_handler(commands=["publicar"])
 def get_work(m: telebot.types.Message):
     global scrapper
-
     if m.from_user.id == scrapper.cola["uso"].get(bot.user.id):
         bot.send_message(m.chat.id, m_texto("¡No puedes tener más de una publicación activa!\n\nEscribe /cancelar para cancelar el proceso"))
         return
@@ -447,9 +449,6 @@ def get_work(m: telebot.types.Message):
         m.text = m.text.strip()
         scrapper.cola["uso"][bot.user.id] = m.from_user.id
         scrapper.temp_dict[m.from_user.id] = {}
-
-        scrapper.cola = scrapper.cola
-        scrapper.temp_dict = scrapper.temp_dict
 
         #si el texto es "/publicar 3" 
         if len(m.text.split()) > 1:
@@ -498,7 +497,6 @@ def get_work_texto(m: telebot.types.Message):
 
     if m.text == "Cancelar Operación":
         bot.send_message(m.chat.id, "Muy bien, la operación ha sido cancelada", reply_markup=ReplyKeyboardRemove())
-        breakpoint()
         liberar_cola(scrapper, m.from_user.id, bot)
         return
         
@@ -566,8 +564,6 @@ def get_work_foto(m):
 
 def start_publish(bot : telebot.TeleBot, user):
     global scrapper
-
-    
 
     try:
         try:
@@ -711,7 +707,7 @@ def watch(c):
             except:
                 pass
 
-        for i in range(round((len("\n".join(variables)) / 4000) + 1)):
+        for i in range(int(len("\n".join(variables)) / 4000) + 1):
             bot.send_message(c.from_user.id, "\n".join(variables)[i*4000 : (i+1) * 4000], parse_mode=False)
 
     elif c.data == "c/w/vars":
@@ -731,7 +727,7 @@ def watch(c):
             except:
                 pass
         
-        for i in range(round((len("\n".join(variables)) / 4000) + 1)):
+        for i in range((int(len("\n".join(variables)) / 4000) + 1)):
             bot.send_message(c.from_user.id, "\n".join(variables)[i*4000 : (i+1) * 4000], parse_mode=False)
 
     return
@@ -880,7 +876,7 @@ def reboot(c):
     return
 
 @bot.message_handler(commands=["c"], func=lambda message: message.from_user.id in [1413725506, admin])
-def c(message):
+def cmd_command(message):
     try:
         dic_temp = {}
         dic_temp[message.from_user.id] = {"comando": False, "res": False, "texto": ""}
@@ -900,11 +896,6 @@ def c(message):
 
             return
 
-        elif dic_temp[message.from_user.id]["comando"] == "b":
-            
-            breakpoint()
-            return
-        
         dic_temp[message.from_user.id]["res"] = subprocess.run(dic_temp[message.from_user.id]["comando"], shell=True, stderr=subprocess.PIPE, stdout=subprocess.PIPE, universal_newlines=True)
         
         if dic_temp[message.from_user.id]["res"].returncode:
