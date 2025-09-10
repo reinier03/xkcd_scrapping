@@ -900,17 +900,18 @@ def handlers(bot, user , msg ,info, diccionario: dict , **kwargs):
             
 
         case "bucle_publicacion":
-            bot.register_next_step_handler(temp_dict[user]["msg"], bot_handlers.repetir_bucle, bot,user, info, temp_dict)
+            try:
+                bot.register_next_step_handler(temp_dict[user]["msg"], bot_handlers.repetir_bucle, bot,user, info, temp_dict)
+            except:
+                bot.register_next_step_handler(temp_dict[user]["msg"], bot_handlers.repetir_bucle, bot,user, info, temp_dict)
             
             
-    while True:
+    while not temp_dict[user]["completed"]:
+        
         diccionario[user]["if_cancelar"]()
 
-        if not temp_dict[user]["completed"]:
-            time.sleep(2)
-            
-        else:
-            break
+        time.sleep(2)
+
     
     del temp_dict[user]["completed"], temp_dict[user]["msg"]
     

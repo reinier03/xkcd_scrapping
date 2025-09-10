@@ -290,13 +290,19 @@ def cmd_publish(m):
     bot.send_message(m.chat.id,
 """
 A continuación sigue estos pasos para compartir una publicación en Facebook:
+(Toca sobre el recuadro para desplegar el mensaje completo)
 
-<blockquote>1 - Envíame /publicar
+<blockquote expandable>1 - Envíame /publicar
 2 - Luego de requerirtelo, envíame un texto para la publicación
+
 3 - (Opcional, lo puedes omitir) Luego de requerirtelo, envia una foto que ira adjunta en la publicación (actualmente solo soportamos 1, pero en versiones futuras intentaré incluir más) 
+
 4 - Introduce tu usuario y luego la contraseña de facebook. Si tienes la doble autenticación configurada (o también llamado : <b>2FA</b>) tambien deberás ingresar los codigos de respaldo.
+
 5 - A continuación, si la cuenta con la que te logueaste tiene varios perfiles entonces deberás seleccionar con cual de todos tus perfiles publicarás
+
 6 - (Opcional, lo puedes omitir) Luego puedes seleccionar si quieres que la publicación se vuelva a publicar en todos tus grupos de nuevo luego de un tiempo de espera. Si es lo que quieres debes definir el tiempo en HORAS o simplemente darle en 'No repetir' para que solamente se publique 1 vez
+
 7 - Disfrutar de tu día mientras yo me encargo de publicar :D</blockquote>
 
 {}
@@ -466,7 +472,7 @@ def get_work(m: telebot.types.Message):
         
         if m.from_user.id in scrapper.cola["cola_usuarios"][bot.user.id]:
             scrapper.cola["cola_usuarios"][bot.user.id].remove(m.from_user.id)
-
+        
         for i in scrapper.cola["cola_usuarios"][bot.user.id]:
             try:
                 bot.send_message(i, m_texto("Olvídalo :/\nYa me están usando nuevamente\n\n<b>Te volveré a avisar cuando esté desocupado</b>, pero debes de estar atento"), reply_markup=InlineKeyboardMarkup(

@@ -455,7 +455,7 @@ def cookies_caducadas(scrapper: scrapping, user, bot):
                 e = None
                 
             if e:
-                handlers(bot, user, "Introduce a continuación tu <b>Correo</b> o <b>Número de Teléfono</b> (agregando el código de tu país por delante ej: +53, +01, +52, etc) con el que te autenticas en Facebook: ", "user", scrapper.temp_dict)
+                handlers(bot, user, "Introduce a continuación tu <b>Correo</b> o <b>Número de Teléfono</b> con el que te autenticas en Facebook (En caso de ser el número de teléfono el que usarás, agrega también código de tu país por delante, ejemplos: +53, +01, +52, etc)", "user", scrapper.temp_dict)
                 
 
                 
@@ -733,7 +733,7 @@ def loguin_cero(scrapper: scrapping, user, bot : telebot.TeleBot, load_url=True,
     if not scrapper.temp_dict[user].get("password"):
         handlers(bot, user, "Introduce a continuación la contraseña", "password", scrapper.temp_dict)
     
-    bot.send_message(user, m_texto("Muy bien, a continuación comprobaré si los datos son correctos\n\nPor favor, espera un momento..."))
+    bot.send_message(user, m_texto("Muy bien, a continuación comprobaré si los datos son correctos\n\n<b>Por favor, espera un momento...</b>"))
 
     scrapper.temp_dict[user]["url_actual"] = scrapper.driver.current_url
 
@@ -1684,7 +1684,7 @@ def main(scrapper: scrapping, bot: telebot.TeleBot, user):
     scrapper.temp_dict[user]["if_cancelar"]()
 
     print("Voy a hacer el loguin")
-    
+
     loguin(scrapper, user, bot)        
 
     #comprobando estar en el inicio de la mainpage de facebook
