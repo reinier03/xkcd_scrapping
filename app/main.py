@@ -222,7 +222,7 @@ def cmd_cancelar(m):
 
     return
     
-@bot.message_handler(commands=["cambiar"])
+@bot.message_handler(commands=["cambiar"], func=lambda m: m.from_user.id != scrapper.cola["uso"][bot.user.id])
 def cmd_delete(m):
     global scrapper
 
@@ -264,7 +264,7 @@ def borrar_question(m):
     return
 
 
-@bot.message_handler(commands=["cookies"])
+@bot.message_handler(commands=["cookies"], func=lambda m: m.from_user.id != scrapper.cola["uso"][bot.user.id])
 def cmd_cookies(m):
     global scrapper
     msg = bot.send_message(m.chat.id, "A continuación, aclárame algo... Quieres <b>RECIBIR</b> tus cookies o quieres darme alguna que ya hayas recibido y <b>CARGARLAS</b>?", reply_markup=InlineKeyboardMarkup(
