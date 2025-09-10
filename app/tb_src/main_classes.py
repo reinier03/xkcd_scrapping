@@ -192,7 +192,7 @@ class scrapping():
         # Eliminar TODOS los objetos no serializables
         elementos_a_eliminar = [
             "driver", "wait", "wait_s", 
-            "collection", "db", "cliente" 
+            "collection", "db", "cliente", "bot"
         ]
         
         for elemento in elementos_a_eliminar:
