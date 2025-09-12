@@ -173,6 +173,7 @@ No te preocupes, yo me encargo por ti ;)
 <b>/publicar</b> - Comienza a publicar
 <b>/cancelar</b> - Para CANCELAR la operación y no publicar (esto solo funciona si estás publicando)
 <b>/cambiar</b> - Para cerrar la cuenta actual y poder hacer loguin con una diferente
+<b>/cookies</b> - Para administrar las cookies de la sesión, esto es para recuperar o recibir los datos de la sesión y así omitir el loguin cada vez que vayas a cambiar de cuenta
 
 
 
@@ -226,7 +227,7 @@ def cmd_cancelar(m):
 def cmd_delete(m):
     global scrapper
 
-    if not scrapper.collection.find_one({"telegram_id": m.from_user.id}):
+    if not scrapper.collection.find_one({"telegram_id": m.from_user.id}) and not user_folder(m.from_user.id, True):
         bot.send_message(m.chat.id, m_texto("Ni siquiera me has usado aún!\n\nNo tengo datos tuyos los cuales restablecer\nEnviame /info para comenzar a usarme :D"))
         return
 
@@ -264,15 +265,25 @@ def borrar_question(m):
     return
 
 
-@bot.message_handler(commands=["cookies"], func=lambda m: m.from_user.id != scrapper.cola["uso"][bot.user.id])
+@bot.message_handler(commands=["cookies"])
 def cmd_cookies(m):
     global scrapper
-    msg = bot.send_message(m.chat.id, "A continuación, aclárame algo... Quieres <b>RECIBIR</b> tus cookies o quieres darme alguna que ya hayas recibido y <b>CARGARLAS</b>?", reply_markup=InlineKeyboardMarkup(
-        [
-            [InlineKeyboardButton("Recibirlas", callback_data="cookies/recibir")], 
-            [InlineKeyboardButton("Cargarlas", callbackd_data="cookies/cargar")]
-        ]
-    ))
+    if m.from_user.id != scrapper.cola["uso"][bot.user.id]:
+        markup = InlineKeyboardMarkup(
+                [
+                    [InlineKeyboardButton("Recibirlas", callback_data="cookies/recibir")], 
+                    [InlineKeyboardButton("Cargarlas", callbackd_data="cookies/cargar")]
+                ]
+            )
+    else:
+        markup = InlineKeyboardMarkup(
+                [
+                    [InlineKeyboardButton("Recibirlas", callback_data="cookies/recibir")]
+                ]
+            )
+            
+    bot.send_message(m.chat.id, "A continuación, aclárame algo... Quieres <b>RECIBIR</b> tus cookies o quieres darme alguna que ya hayas recibido y <b>CARGARLAS</b>?", reply_markup=markup)
+    
     
     bot.register_callback_query_handler(callbacks.cargar_cookies, lambda c: c.data == "cookies/cargar", True, scrapper=scrapper)
     bot.register_callback_query_handler(callbacks.recibir_cookies, lambda c: c.data == "cookies/recibir", True, scrapper=scrapper)

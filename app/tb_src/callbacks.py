@@ -24,7 +24,7 @@ def set_delay(m, scrapper ,bot: telebot.TeleBot):
 
     scrapper.delay = int(m.text)
 
-    bot.send_message(m.chat.id, m_texto("Muy bien, el tiempo de espera es de {} segundos".format(scrapper.delay)), reply_markp=telebot.types.ReplyKeyboardRemove())
+    bot.send_message(m.chat.id, m_texto("Muy bien, el tiempo de espera es de {} segundos".format(scrapper.delay)), reply_markup=telebot.types.ReplyKeyboardRemove())
 
     return
 

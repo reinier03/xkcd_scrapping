@@ -431,12 +431,20 @@ def obtener_grupos(scrapper, user, all: bool = False):
 def envia_fotos_input(scrapper, user, photo_path):
     
 
+    scrapper.temp_dict[user]["res"] = scrapper.wait.until(ec.any_of(
+        lambda driver: driver.find_elements(By.CSS_SELECTOR, "span.f1")[3],
+        ec.visibility_of_element_located((By.XPATH, '//*[contains(text(), "Photos")]')),
+        ec.visibility_of_element_located((By.XPATH, '//*[contains(text(), "Fotos")]')),
+        ec.visibility_of_element_located((By.XPATH, '//*[contains(text(), "otos")]')),
+        ec.visibility_of_element_located((By.XPATH, '//*[@id="screen-root"]/div/div[2]/div[7]')),
+    ))
+
+
     try:
-        scrapper.wait_s.until(ec.visibility_of_element_located((By.XPATH, '//*[contains(text(), "otos")]')))
-        scrapper.find_elements(By.XPATH, '//*[contains(text(), "otos")]')[-1].click()
+        scrapper.temp_dict[user]["res"].click()
+    
     except:
-        scrapper.wait_s.until(ec.visibility_of_element_located((By.XPATH, '//*[@id="screen-root"]/div/div[2]/div[7]')))
-        scrapper.find_element(By.XPATH, '//*[@id="screen-root"]/div/div[2]/div[7]').click()
+        ActionChains(scrapper.driver).click(scrapper.temp_dict[user]["res"]).perform()
         
 
     scrapper.find_element(By.XPATH, '//input').send_keys(photo_path)
@@ -795,16 +803,24 @@ def main_folder():
             
 
 
-def user_folder(user):
+def user_folder(user, comprobar=False):
     user = str(user)
     carpeta_destino = gettempdir()
     # carpeta_destino = main_folder()
     
     if not "user_archive" in os.listdir(carpeta_destino):
+
+        if comprobar:
+            return False
+
         os.mkdir(os.path.join(carpeta_destino, "user_archive"))
         os.mkdir(os.path.join(carpeta_destino, "user_archive", user))
         
     if not list(filter(lambda file: file.startswith(user), os.listdir(os.path.join(carpeta_destino, "user_archive")))):
+
+        if comprobar:
+            return False
+
         os.mkdir(os.path.join(carpeta_destino, "user_archive",  user))
         
     return os.path.join(carpeta_destino, "user_archive",  user)
@@ -888,6 +904,9 @@ def handlers(bot, user , msg ,info, diccionario: dict , **kwargs):
 
             bot.register_next_step_handler(temp_dict[user]["msg"], bot_handlers.correo_o_numero, bot,user, info, temp_dict)
 
+        case "whats_verificacion":
+
+            bot.register_next_step_handler(temp_dict[user]["msg"], bot_handlers.whats_verificacion, bot,user, info, temp_dict)
 
         case "correo_o_numero_verificacion":
             
