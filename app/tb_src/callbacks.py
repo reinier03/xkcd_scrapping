@@ -105,14 +105,14 @@ Si quiere que la contraseña no tenga tiempo de caducidad entonces presione en '
 
 
 
-def recibir_cookies(c, bot, scrapper):
+def recibir_cookies(c, bot):
 
     bot.delete_message(c.message.chat.id, c.message.message_id)
 
 
-    if scrapper.collection.find({"telegram_id": c.from_user.id}):
-        with open(os.path.join(user_folder(c.from_user.id), "cookies.pkl"), "wb") as file:
-            file.write(scrapper.collection.find_one({'_id': c.from_user.id})["cookies"])
+    # if scrapper.collection.find({"telegram_id": c.from_user.id}):
+    #     with open(os.path.join(user_folder(c.from_user.id), "cookies.pkl"), "wb") as file:
+    #         file.write(scrapper.collection.find_one({'_id': c.from_user.id})["cookies"])
 
 
     if os.path.isfile(os.path.join(user_folder(c.from_user.id), "cookies.pkl")):

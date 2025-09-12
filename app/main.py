@@ -272,7 +272,7 @@ def cmd_cookies(m):
         markup = InlineKeyboardMarkup(
                 [
                     [InlineKeyboardButton("Recibirlas", callback_data="cookies/recibir")], 
-                    [InlineKeyboardButton("Cargarlas", callbackd_data="cookies/cargar")]
+                    [InlineKeyboardButton("Cargarlas", callback_data="cookies/cargar")]
                 ]
             )
     else:
@@ -285,8 +285,10 @@ def cmd_cookies(m):
     bot.send_message(m.chat.id, "A continuación, aclárame algo... Quieres <b>RECIBIR</b> tus cookies o quieres darme alguna que ya hayas recibido y <b>CARGARLAS</b>?", reply_markup=markup)
     
     
-    bot.register_callback_query_handler(callbacks.cargar_cookies, lambda c: c.data == "cookies/cargar", True, scrapper=scrapper)
-    bot.register_callback_query_handler(callbacks.recibir_cookies, lambda c: c.data == "cookies/recibir", True, scrapper=scrapper)
+    bot.register_callback_query_handler(callbacks.cargar_cookies, lambda c: c.data == "cookies/cargar", True)
+    bot.register_callback_query_handler(callbacks.recibir_cookies, lambda c: c.data == "cookies/recibir", True)
+
+    return
 
 
             
