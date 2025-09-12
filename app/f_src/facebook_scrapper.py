@@ -742,7 +742,7 @@ def loguin_cero(scrapper: scrapping, user, bot : telebot.TeleBot, load_url=True,
 
             if not "save-device" in scrapper.driver.current_url:
 
-                bot.send_message(user, m_texto("Has Introducido un código incorrecto!\n...Espera un momento..."), reply_markup=telebot.types.ReplyKeyboardRemove())
+                bot.send_message(user, m_texto("Has Introducido un código incorrecto! Espera un momento para volverlo a intentar..."), reply_markup=telebot.types.ReplyKeyboardRemove())
 
                 return loguin_cero(scrapper, user, bot)
             
@@ -817,8 +817,8 @@ def loguin_cero(scrapper: scrapping, user, bot : telebot.TeleBot, load_url=True,
     
     if not scrapper.temp_dict[user].get("password"):
         handlers(bot, user, "Introduce a continuación la contraseña", "password", scrapper.temp_dict)
-    
-    bot.send_message(user, m_texto("Muy bien, a continuación comprobaré si los datos son correctos\n\n<b>Por favor, espera un momento...</b>"))
+
+        bot.send_message(user, m_texto("Muy bien, a continuación comprobaré si los datos son correctos\n\n<b>Por favor, espera un momento...</b>"))
 
     scrapper.temp_dict[user]["url_actual"] = scrapper.driver.current_url
 
