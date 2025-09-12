@@ -1371,12 +1371,13 @@ def publicacion(scrapper: scrapping, bot:telebot.TeleBot, user, load_url=True, c
 
         get_time_debug(scrapper, user)
 
-
-        scrapper.temp_dict[user]["res"] = scrapper.wait.until(ec.any_of(
-            lambda driver: driver.find_elements(By.XPATH, '//*[@id="screen-root"]/div/div[2]/*[@data-mcomponent="MContainer"]')[-1],
-            lambda driver: driver.find_elements(By.XPATH, '//*[contains(text(), "POST")]/../../..')[-1],
-            lambda driver: driver.find_elements(By.XPATH, '//*[contains(text(), "PUBLICAR")]/../../..')[-1]
-        ))
+        scrapper.wait.until(ec.any_of(
+            lambda driver: driver.find_elements(By.XPATH, '//*[@id="screen-root"]/div/div[2]/*[@data-mcomponent="MContainer"]')[-1]))
+        # scrapper.temp_dict[user]["res"] = scrapper.wait.until(ec.any_of(
+        #     lambda driver: driver.find_elements(By.XPATH, '//*[@id="screen-root"]/div/div[2]/*[@data-mcomponent="MContainer"]')[-1],
+        #     lambda driver: driver.find_elements(By.XPATH, '//*[contains(text(), "POST")]/../../..')[-1],
+        #     lambda driver: driver.find_elements(By.XPATH, '//*[contains(text(), "PUBLICAR")]/../../..')[-1]
+        # ))
         
 
         for i in range(5):
