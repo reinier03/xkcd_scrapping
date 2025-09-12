@@ -97,16 +97,17 @@ def email_verification(m, bot:telebot.TeleBot ,user, info, temp_dict):
 
 def whats_verificacion(m, bot:telebot.TeleBot, user, info, temp_dict):
     if "Cancelar Operación" == m.text:
-        bot.send_message(user, "Muy bien, operación cancelada")
+        bot.send_message(user, "Muy bien, operación cancelada", reply_markup=telebot.types.ReplyKeyboardRemove())
         temp_dict[user]["cancelar"] = True
         temp_dict[user]["completed"] = True
+        temp_dict[user]["if_cancelar"]()
         return
 
-    elif not m.text.isdigit():
-        msg = bot.send_message(user, "El código que introduciste no es correcto!\nIngresa uno correcto!", reply_markup=ReplyKeyboardMarkup(True, True).add("Cancelar Operación"))
+    # elif not m.text.isdigit():
+    #     msg = bot.send_message(user, m_texto("ATENCIÓN!! ❌El código que enviaste es incorrecto❌\n\nFacebook ha enviado un código de confirmación al WhatsApp del número perteneciente a esta cuenta\n(el número en cuestión es: <b>{}</b>)\n\nVe al WhatsApp de este número, copia el código y pégalo aquí...".format(re.search(r"[*].*", temp_dict[user]["e"]).group()), True), reply_markup=ReplyKeyboardMarkup(True, True).add("Cancelar Operación"))
         
-        bot.register_next_step_handler(msg, whats_verificacion, user, info, temp_dict)
-        return
+    #     bot.register_next_step_handler(msg, whats_verificacion, user, info, temp_dict)
+    #     return
 
 
     temp_dict[user]["res"] = m.text

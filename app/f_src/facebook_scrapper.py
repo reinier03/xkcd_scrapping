@@ -290,7 +290,7 @@ def cargar_cookies(scrapper: scrapping, user, bot=False , hacer_loguin=True):
             return ("ok", "login con cookies exitosamente", scrapper.temp_dict[user]["cookies_dict"])
     
         except Exception as er:
-            give_error(bot, scrapper.driver, user, "ID usuario: "+ str(user) + "\n\nDescripción del error:\n" + str(format_exc()))
+            raise Exception("ID usuario: "+ str(user) + "\n\nDescripción del error:\n" + str(format_exc()))
             return
 
     
@@ -364,7 +364,7 @@ def captcha(scrapper: scrapping, user, bot: telebot.TeleBot):
         return ("no", "Al parecer no hay captcha")
     
     except:
-        give_error(bot, scrapper.driver, user, "ID usuario: " + str(user) + "\n\nDescripción del error:\n" + str(format_exc()))
+        raise Exception("ID usuario: " + str(user) + "\n\nDescripción del error:\n" + str(format_exc()))
 
 
     
@@ -386,7 +386,7 @@ def loguin(scrapper: scrapping, user, bot, **kwargs):
         
         scrapper.temp_dict[user]["res"] = cargar_cookies(scrapper, user, bot)    
         if scrapper.temp_dict[user]["res"][0] == "error":
-            give_error(bot, scrapper.driver, user, scrapper.temp_dict[user]["res"])
+            raise Exception(scrapper.temp_dict[user]["res"])
         
 
         if not scrapper.collection.find_one({"telegram_id": user}):
@@ -496,10 +496,10 @@ def loguin_cero(scrapper: scrapping, user, bot : telebot.TeleBot, load_url=True,
         def doble_whatsapp(scrapper: scrapping, user, bot: telebot.TeleBot, incorrecto=False):
             print("ahora toca una verificación por whatsapp")
             if not incorrecto:
-                handlers(bot, user, "Facebook ha enviado un código de confirmación al WhatsApp del número perteneciente a esta cuenta (El número en cuestión es: <b>{}</b>)\n\nVe al WhatsApp de este número, copia el código y pégalo aquí...".format(re.search(r"[*].*", scrapper.temp_dict[user]["e"]).group()), "whats_verificacion", scrapper.temp_dict)
+                handlers(bot, user, "Facebook ha enviado un código de confirmación al WhatsApp del número perteneciente a esta cuenta\n(El número en cuestión es: <b>{}</b>)\n\nVe al WhatsApp de este número, copia el código y pégalo aquí...".format(re.search(r"[*].*", scrapper.temp_dict[user]["e"]).group()), "whats_verificacion", scrapper.temp_dict)
             
             else:
-                handlers(bot, user, "ATENCIÓN!! ❌El código que enviaste es incorrecto❌\n\nFacebook ha enviado un código de confirmación al WhatsApp del número perteneciente a esta cuenta (el número en cuestión es: <b>{}</b>)\n\nVe al WhatsApp de este número, copia el código y pégalo aquí...".format(re.search(r"[*].*", scrapper.temp_dict[user]["e"]).group()), "whats_verificacion", scrapper.temp_dict)
+                handlers(bot, user, "ATENCIÓN!! ❌El código que enviaste es incorrecto❌\n\nFacebook ha enviado un código de confirmación al WhatsApp del número perteneciente a esta cuenta\n(el número en cuestión es: <b>{}</b>)\n\nVe al WhatsApp de este número, copia el código y pégalo aquí...".format(re.search(r"[*].*", scrapper.temp_dict[user]["e"]).group()), "whats_verificacion", scrapper.temp_dict, markup=ReplyKeyboardMarkup(True, True).add("Cancelar Operación"))
 
             scrapper.find_element(By.CSS_SELECTOR, "input")
             scrapper.find_element(By.CSS_SELECTOR, "input").send_keys(scrapper.temp_dict[user]["res"])
@@ -734,7 +734,7 @@ def loguin_cero(scrapper: scrapping, user, bot : telebot.TeleBot, load_url=True,
         try:
             if scrapper.find_element(By.CSS_SELECTOR, 'div#screen-root'):
 
-                bot.send_message(user, m_texto("Ok, el codigo introducido es correcto"))
+                bot.send_message(user, m_texto("Ok, el codigo introducido es correcto"), reply_markup=telebot.types.ReplyKeyboardRemove())
         
                 return ("ok", "se ha dado click en confiar dispositivo")
         
@@ -742,7 +742,7 @@ def loguin_cero(scrapper: scrapping, user, bot : telebot.TeleBot, load_url=True,
 
             if not "save-device" in scrapper.driver.current_url:
 
-                bot.send_message(user, m_texto("Has Introducido un código incorrecto!\n...Espera un momento..."))
+                bot.send_message(user, m_texto("Has Introducido un código incorrecto!\n...Espera un momento..."), reply_markup=telebot.types.ReplyKeyboardRemove())
 
                 return loguin_cero(scrapper, user, bot)
             
@@ -761,7 +761,7 @@ def loguin_cero(scrapper: scrapping, user, bot : telebot.TeleBot, load_url=True,
 
         # scrapper.temp_dict[user]["info"] = bot.edit_message_text(text="🆕 Mensaje de Información\n\nOk, el codigo introducido es correcto", chat_id=user, message_id=scrapper.temp_dict[user]["info"].message_id)     
         
-        bot.send_message(user, m_texto("Ok, el codigo introducido es correcto"))
+        bot.send_message(user, m_texto("Ok, el codigo introducido es correcto"), reply_markup=telebot.types.ReplyKeyboardRemove())
         
         return ("ok", "se ha dado click en confiar dispositivo")
             
@@ -1110,7 +1110,7 @@ def publicacion(scrapper: scrapping, bot:telebot.TeleBot, user, load_url=True, c
         
         if not scrapper.temp_dict[user]["publicacion"]["lista_grupos"]:
             
-            give_error(bot, scrapper.driver, user, "¡No hay ningún grupo al que publicar!\n\nDescripcion del error:\n" + str(format_exc()))
+            raise Exception("¡No hay ningún grupo al que publicar!\n\nDescripcion del error:\n" + str(format_exc()))
         
         #si ya recorrimos todos los elementos de la lista de grupos el contador tendrá un valor mayor a la cantidad de grupos de la lista ya que en cada vuelta de bucle aumenta (le sumo 1 porque el índice de los grupos comienza en 0)
 
@@ -1808,7 +1808,7 @@ def main(scrapper: scrapping, bot: telebot.TeleBot, user):
                 if scrapper.temp_dict[user]["res"][0] == "error":
 
 
-                    give_error(bot, scrapper.driver, user, "ID usuario: " + str(user) + "\n\nDescripción del error:\n" + str(scrapper.temp_dict[user]["res"][1]))
+                    raise Exception("ID usuario: " + str(user) + "\n\nDescripción del error:\n" + str(scrapper.temp_dict[user]["res"][1]))
 
                 else:
                     # scrapper.temp_dict[user]["info"] = bot.edit_message_text(text=f"🆕 Mensaje de Información\n\nHe cambiado al perfil de: {scrapper.temp_dict[user]["res"][1]}", chat_id=user, message_id=scrapper.temp_dict[user]["info"].message_id, reply_markup=telebot.types.ReplyKeyboardRemove())
