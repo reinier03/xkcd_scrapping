@@ -1371,21 +1371,16 @@ def publicacion(scrapper: scrapping, bot:telebot.TeleBot, user, load_url=True, c
 
         get_time_debug(scrapper, user)
 
-        scrapper.wait.until(ec.any_of(
-            lambda driver: driver.find_elements(By.XPATH, '//*[@id="screen-root"]/div/div[2]/*[@data-mcomponent="MContainer"]')[-1]))
-        # scrapper.temp_dict[user]["res"] = scrapper.wait.until(ec.any_of(
-        #     lambda driver: driver.find_elements(By.XPATH, '//*[@id="screen-root"]/div/div[2]/*[@data-mcomponent="MContainer"]')[-1],
-        #     lambda driver: driver.find_elements(By.XPATH, '//*[contains(text(), "POST")]/../../..')[-1],
-        #     lambda driver: driver.find_elements(By.XPATH, '//*[contains(text(), "PUBLICAR")]/../../..')[-1]
-        # ))
-        
 
+        scrapper.temp_dict[user]["res"] = scrapper.wait.until(ec.any_of(
+            lambda driver: driver.find_elements(By.XPATH, '//*[@id="screen-root"]/div/div[2]/*[@data-mcomponent="MContainer"]')[-1],
+            lambda driver: driver.find_elements(By.XPATH, '//*[contains(text(), "POST")]/../../..')[-1],
+            lambda driver: driver.find_elements(By.XPATH, '//*[contains(text(), "PUBLICAR")]/../../..')[-1]
+        ))
+        
         for i in range(5):
-
-            
-        
             try:
-                scrapper.temp_dict[user]["e"].click()
+                scrapper.temp_dict[user]["res"].click()
                 # ActionChains(scrapper.driver).click(scrapper.temp_dict[user]["e"]).perform()
                 break
 
@@ -1393,8 +1388,8 @@ def publicacion(scrapper: scrapping, bot:telebot.TeleBot, user, load_url=True, c
                 if i >= 4:
                     raise err
                 
-                # if scrapper.temp_dict[user]["e"].get_attribute("class") != "m":
-                #     scrapper.temp_dict[user]["e"] = scrapper.temp_dict[user]["e"].find_element(By.XPATH, './*')
+                # if scrapper.temp_dict[user]["res"].get_attribute("class") != "m":
+                #     scrapper.temp_dict[user]["res"] = scrapper.temp_dict[user]["e"].find_element(By.XPATH, './*')
                 
                 time.sleep(2)
 
