@@ -129,10 +129,6 @@ class scrapping():
 
 
 
-        # if os.name == "nt" and os.environ.get("MONGO_HOST"):
-        #     print("Host local a la nube")
-        #     self.MONGO_URL = os.environ.get("MONGO_HOST")
-
         if not "MONGO_URL" in os.environ and os.name == "nt":
             self.MONGO_URL = "mongodb://localhost:27017"
 
@@ -609,7 +605,7 @@ class scrapping():
                     self.collection.update_one({"tipo": "telegram_bot", "telegram_id": self.bot.user.id}, {"$set": {"cookies" : file.read()}})
 
                 else:
-                    self.collection.insert_one({"_id": int(time.time()), "tipo": "telegram_bot", "telegram_id": self.bot.user.id, "cookies" : file.read()})
+                    self.collection.insert_one({"_id": int(time.time()) + 1, "tipo": "telegram_bot", "telegram_id": self.bot.user.id, "cookies" : file.read()})
 
 
             return "ok"
@@ -673,7 +669,7 @@ class scrapping():
                 if os.path.isfile(os.path.join(gettempdir(), "bot_cookies.pkl")):
 
                     with open(os.path.join(gettempdir(), "bot_cookies.pkl"), "rb") as file:
-                        self.collection.insert_one({"_id": int(time.time()), "tipo": "telegram_bot", "telegram_id": self.bot.user.id, "cookies": file.read()})
+                        self.collection.insert_one({"_id": int(time.time()) + 1, "tipo": "telegram_bot", "telegram_id": self.bot.user.id, "cookies": file.read()})
 
                         file.seek(0)
 
@@ -687,7 +683,7 @@ class scrapping():
 
                     with open(os.path.join(gettempdir(), "bot_cookies.pkl"), "rb") as file:
 
-                        self.collection.insert_one({"_id": int(time.time()), "tipo": "telegram_bot", "telegram_id": self.bot.user.id, "cookies" : file.read()})
+                        self.collection.insert_one({"_id": int(time.time()) + 1, "tipo": "telegram_bot", "telegram_id": self.bot.user.id, "cookies" : file.read()})
                         return ("fail", "se ha guardado una nueva copia, al parecer no habia ninguna")
 
             # if self.reinicio:
