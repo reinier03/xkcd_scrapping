@@ -765,8 +765,12 @@ def cmd_panel(m: telebot.types.Message):
 
 @bot.callback_query_handler(lambda c: c.data.startswith("publicar/"))
 def cual_publicar(c):
-    if not re.search("elegir", c.data) and not re.search(r"\d+", c.data):
-        bot.delete_message(c.message.chat.id, c.message.message_id)
+    if (not re.search("elegir", c.data) and not re.search(r"\d+", c.data)) or c.data == "publicar/elegir/publicar":
+        try:
+            bot.delete_message(c.message.chat.id, c.message.message_id)
+
+        except:
+            pass
 
     if c.data == "publicar/seleccionar":
         ver_lista_publicaciones(c, scrapper, bot, elegir=True)
@@ -778,6 +782,7 @@ def cual_publicar(c):
 
     elif c.data.startswith("publicar/elegir"):
         if c.data == "publicar/elegir/publicar":
+
             threading.Thread(name="Hilo usuario: {}".format(c.from_user.id), target=scrapper.start_publish, args=(c.from_user.id,)).start()
          
         elif c.data == "publicar/elegir/b":

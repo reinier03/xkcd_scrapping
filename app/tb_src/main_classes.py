@@ -995,8 +995,9 @@ class Sin_Plan(Baneado):
 
 class Basico(Sin_Plan): #200 CUP?
 
-    def __init__(self, caducidad):
+    def __init__(self, caducidad, bot_id):
         self.caducidad = caducidad
+        self.bot_id = bot_id
 
     plan = True
     grupos_publicados = 10
@@ -1015,8 +1016,8 @@ def __str__(self):
     
 class Medio(Basico): #500CUP?
 
-    def __init__(self, caducidad):
-        super().__init__(caducidad)
+    def __init__(self, caducidad, bot_id):
+        super().__init__(caducidad, bot_id)
 
     grupos_publicados = 20
     publicaciones = 5
@@ -1034,8 +1035,8 @@ class Medio(Basico): #500CUP?
 
 class Pro(Medio): #700CUP
 
-    def __init__(self, caducidad):
-        super().__init__(caducidad)
+    def __init__(self, caducidad, bot_id):
+        super().__init__(caducidad, bot_id)
 
     grupos_publicados = 40
     publicaciones = 9
@@ -1056,8 +1057,8 @@ class Pro(Medio): #700CUP
     
 class Ilimitado(Pro): #1000 CUP
 
-    def __init__(self, caducidad):
-        super().__init__(caducidad)
+    def __init__(self, caducidad, bot_id):
+        super().__init__(caducidad, bot_id)
 
     grupos_publicados = True
     publicaciones = True
@@ -1075,14 +1076,15 @@ class Ilimitado(Pro): #1000 CUP
         return self.show()
     
 
-class Administrador(Ilimitado): #SOLO PARA ADMINS
+class Administrador: #SOLO PARA ADMINS
 
-    def __init__(self, caducidad=False):
-        super().__init__(caducidad)
-
+    caducidad = False
     grupos_publicados = True
     publicaciones = True
-    
+    repetir = True
+    tiempo_repeticion = None
+    plan = True
+    ban = False
 
     def show(self):
         return """
@@ -1101,7 +1103,7 @@ class Planes_para_comprar:
     """
     Clase que engloba todos los planes que puede adquirir el usuario
     """
-    lista_planes = [Basico(False), Medio(False), Pro(False), Ilimitado(False)]
+    lista_planes = [Basico(False, 12345678), Medio(False, 12345678), Pro(False, 12345678), Ilimitado(False, 12345678)]
 
 
     def show(self, lista = False):

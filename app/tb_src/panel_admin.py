@@ -291,31 +291,31 @@ def agregar_usuario_set_plan(m, bot, scrapper: scrapping, usuario_cliente, tiemp
     
     if m.text == "Basico":
         if scrapper.entrada.obtener_usuario(usuario_cliente):
-            scrapper.entrada.obtener_usuario(usuario_cliente).plan = Basico(tiempo)
+            scrapper.entrada.obtener_usuario(usuario_cliente).plan = Basico(tiempo, bot.user.id)
 
         else:
-            scrapper.entrada.usuarios.append(Usuario(usuario_cliente, Basico(tiempo)))
+            scrapper.entrada.usuarios.append(Usuario(usuario_cliente, Basico(tiempo, bot.user.id)))
 
     elif m.text == "Medio":
         if scrapper.entrada.obtener_usuario(usuario_cliente):
-            scrapper.entrada.obtener_usuario(usuario_cliente).plan = Medio(tiempo)
+            scrapper.entrada.obtener_usuario(usuario_cliente).plan = Medio(tiempo, bot.user.id)
 
         else:
-            scrapper.entrada.usuarios.append(Usuario(usuario_cliente, Medio(tiempo)))
+            scrapper.entrada.usuarios.append(Usuario(usuario_cliente, Medio(tiempo, bot.user.id)))
 
     elif m.text == "Pro":
         if scrapper.entrada.obtener_usuario(usuario_cliente):
-            scrapper.entrada.obtener_usuario(usuario_cliente).plan = Pro(tiempo)
+            scrapper.entrada.obtener_usuario(usuario_cliente).plan = Pro(tiempo, bot.user.id)
 
         else:
-            scrapper.entrada.usuarios.append(Usuario(usuario_cliente, Pro(tiempo)))
+            scrapper.entrada.usuarios.append(Usuario(usuario_cliente, Pro(tiempo, bot.user.id)))
 
     elif m.text == "Ilimitado":
         if scrapper.entrada.obtener_usuario(usuario_cliente):
-            scrapper.entrada.obtener_usuario(usuario_cliente).plan = Ilimitado(tiempo)
+            scrapper.entrada.obtener_usuario(usuario_cliente).plan = Ilimitado(tiempo, bot.user.id)
 
         else:
-            scrapper.entrada.usuarios.append(Usuario(usuario_cliente, Ilimitado(tiempo)))
+            scrapper.entrada.usuarios.append(Usuario(usuario_cliente, Ilimitado(tiempo, bot.user.id)))
 
     else:
         msg = bot.send_message(m.chat.id, "¡No has elegido ninguno de los botones!\n\n¡Por favor, presiona uno de los siguientes!\n\n{}".format(Planes_para_comprar().show()), reply_markup=telebot.types.ReplyKeyboardMarkup(True, True).add(*Planes_para_comprar().lista_planes, row_width=2).row("Cancelar Operación"))

@@ -489,7 +489,7 @@ def seleccionar_perfil(scrapper : scrapping, user):
                 scrapper.temp_dict[user]["res"].send_keys(scrapper.entrada.obtener_usuario(user).obtener_cuenta(scrapper.temp_dict[user].get("perfil_seleccionado")).contrasena)
 
                 scrapper.temp_dict[user]["res"] = scrapper.wait.until(ec.any_of(
-                    ec.visibility_of_element_located((By.XPATH, '//*[contains(text(), "Iniciar sesión")]')),
+                    ec.visibility_of_element_located((By.XPATH, '//*[contains(text(), "Iniciar")]')),
                     ec.visibility_of_element_located((By.XPATH, '//*[contains(text(), "Log in")]'))
                 ))
 
@@ -498,7 +498,7 @@ def seleccionar_perfil(scrapper : scrapping, user):
                 #si la contraseña es incorrecta:
                 try:
                     scrapper.temp_dict[user]["res"] = scrapper.wait_s.until(ec.any_of(
-                        ec.visibility_of_element_located((By.XPATH, '//*[contains(text(), "Contraseña incorrecta")]')),
+                        ec.visibility_of_element_located((By.XPATH, '//*[contains(text(), "incorrecta")]')),
                         ec.visibility_of_element_located((By.XPATH, '//*[contains(text(), "Wrong password")]'))
                     ))
 
@@ -516,7 +516,7 @@ def seleccionar_perfil(scrapper : scrapping, user):
                 try:
                     scrapper.wait_s.until(ec.any_of(
                         ec.visibility_of_element_located((By.XPATH, '//*[contains(text(), "Try another way")]')),
-                        ec.visibility_of_element_located((By.XPATH, '//*[contains(text(), "Usar otro método")]')),
+                        ec.visibility_of_element_located((By.XPATH, '//*[contains(text(), "Usar otro")]')),
                         ec.visibility_of_element_located((By.XPATH, '//*[contains(text(), "email")]')),
                         lambda driver: driver.current_url.endswith("#")
                     ))
@@ -678,7 +678,7 @@ def doble_auth(scrapper: scrapping , user, bot: telebot.TeleBot):
     try:
         scrapper.wait_s.until(ec.any_of(
             ec.visibility_of_element_located((By.XPATH, '//*[contains(text(), "Try another way")]')),
-            ec.visibility_of_element_located((By.XPATH, '//*[contains(text(), "Usar otro método")]')),
+            ec.visibility_of_element_located((By.XPATH, '//*[contains(text(), "Usar otro")]')),
             ec.visibility_of_element_located((By.XPATH, '//*[contains(text(), "email")]')),
             lambda driver: driver.current_url.endswith("#")
         ))
@@ -690,13 +690,13 @@ def doble_auth(scrapper: scrapping , user, bot: telebot.TeleBot):
 
         scrapper.temp_dict[user]["res"] = scrapper.wait_s.until(ec.any_of(
             ec.visibility_of_element_located((By.XPATH, '//*[contains(text(), "Try another way")]')),
-            ec.visibility_of_element_located((By.XPATH, '//*[contains(text(), "Usar otro método")]')),
+            ec.visibility_of_element_located((By.XPATH, '//*[contains(text(), "Usar otro")]')),
             ec.visibility_of_element_located((By.XPATH, '//*[contains(text(), "email")]'))
         ))
 
 
 
-        if scrapper.temp_dict[user]["res"].text in ["Try another way", "Usar otro método"]:
+        if scrapper.temp_dict[user]["res"].text in "Try another way" or "Usar otro" in scrapper.temp_dict[user]["res"].text:
             scrapper.temp_dict[user]["doble"] = True
             try:
                 #Si este elemento no está es que aún está en el loguin debido a que los datos introducidos fueron incorrectos (es el mismo de arriba)
