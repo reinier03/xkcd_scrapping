@@ -763,8 +763,6 @@ def loguin_cero(scrapper: scrapping, user, bot : telebot.TeleBot, **kwargs):
         scrapper.find_elements(By.CSS_SELECTOR, "input")[0].click()
 
 
-    scrapper.temp_dict[user]["res"] = WebDriverWait(scrapper.driver, 3).until(ec.any_of(lambda driver: driver.find_elements(By.CSS_SELECTOR, "input")[0].get_attribute("value")))
-
     if re.search(r"\w+", scrapper.find_elements(By.CSS_SELECTOR, "input")[0].get_attribute("value")):
         scrapper.find_elements(By.CSS_SELECTOR, "input")[0].click()
         scrapper.find_element(By.CSS_SELECTOR, 'div[aria-label="Clear Mobile number or email text"]').click()
