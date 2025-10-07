@@ -161,47 +161,6 @@ def captcha(scrapper: scrapping, user, bot: telebot.TeleBot):
         raise Exception("ID usuario: " + str(user) + "\n\nDescripción del error:\n" + str(format_exc()))
 
 
-    
-def loguin(scrapper: scrapping, user, bot, **kwargs):
-
-    """
-    Si no se proporciona un user_id, se creará uno nuevo
-    
-    Hace loguin en Facebook, determinará si hacer loguin desde cero o no si se le proporciona un user y si hay algún archivo de ese usuario en la BD
-    """
-    
-    #en caso de que hayan cookies y haya un perfil seleccionado para publicar pero no estemos en la ventana de login
-    if scrapper.driver.get_cookies() and scrapper.temp_dict[user].get("perfil_seleccionado"):    
-
-
-        scrapper.temp_dict[user]["res"] = seleccionar_perfil(scrapper, user)
-
-        if not scrapper.temp_dict[user]["res"][0]:
-            del scrapper.temp_dict[user]["perfil_seleccionado"]
-            return loguin_cero(scrapper, user, bot)
-
-        else:        
-            return ("ok", "loguin satisfecho")
-    
-    elif scrapper.driver.get_cookies():
-        scrapper.wait.until(ec.any_of(
-            ec.visibility_of_element_located((By.CSS_SELECTOR, 'input#m_login_email')),
-            ec.visibility_of_element_located((By.XPATH, '//*[contains(text(), "Usar otro perfil")]')),
-            ec.visibility_of_element_located((By.XPATH, '//*[contains(text(), "Use another profile")]'))
-        )).click()
-
-        return loguin_cero(scrapper, user, bot)     
-    
-
-    else:
-        return loguin_cero(scrapper, user, bot)        
-                
-        
-    
-
-
-# input.x1s85apg => Input para enviar los videos
-
 def cookies_caducadas(scrapper: scrapping, user, bot):
 
     
@@ -269,6 +228,216 @@ def cookies_caducadas(scrapper: scrapping, user, bot):
             elif scrapper.find_element(By.CSS_SELECTOR, 'div[class="mvm _akly"]'):
                 scrapper.driver.back()
                 continue
+
+def entrar_facebook(scrapper: scrapping, user):
+    """
+    Carga la página de Facebook y quita la presentacion
+    """
+    def configurar_idioma():
+        try:
+            scrapper.wait_s.until(ec.visibility_of_element_located((By.XPATH, '//*[contains(text(), "English")]')))
+
+        except:
+            scrapper.wait.until(ec.visibility_of_element_located((By.CSS_SELECTOR, 'span[data-bloks-name="bk.components.TextSpan"]'))).click()
+
+            scrapper.wait.until(ec.visibility_of_element_located((By.XPATH, '//*[contains(text(), "English (US)")]')))
+            scrapper.find_element(By.XPATH, '//*[contains(text(), "English (US)")]').click()
+
+            scrapper.wait.until(ec.visibility_of_element_located((By.CSS_SELECTOR, 'body')))
+
+            try:
+                scrapper.wait.until(ec.any_of(
+                    ec.visibility_of_element_located((By.XPATH, '//*[contains(text(), "Usar otro perfil")]')),
+                    ec.visibility_of_element_located((By.XPATH, '//*[contains(text(), "Use another profile")]')),
+                    ec.visibility_of_element_located((By.CSS_SELECTOR, "input#m_login_email"))
+                )).click()
+
+                scrapper.wait.until(ec.visibility_of_element_located((By.CSS_SELECTOR, "input#m_login_email")))
+
+            except:
+                pass
+
+        return 
+
+
+    if not "login" in scrapper.driver.current_url:
+        scrapper.load("https://m.facebook.com/login/")
+    
+    # if load_url:
+
+    #     load(scrapper, "https://m.facebook.com/login/")
+                
+    # else:
+    #     load(scrapper, "https://facebook.com")
+    
+    scrapper.wait.until(ec.visibility_of_element_located((By.CSS_SELECTOR, "body")))
+    
+    scrapper.temp_dict[user]["res"] = scrapper.wait.until(ec.any_of(
+        ec.visibility_of_element_located((By.CSS_SELECTOR, "input#m_login_email")),
+        ec.visibility_of_element_located((By.XPATH, '//*[contains(text(), "I already have an account")]')),
+        ec.visibility_of_element_located((By.XPATH, '//*[contains(text(), "Ya tengo una cuenta")]')),
+        ec.visibility_of_element_located((By.XPATH, '//*[contains(text(), "Usar otro perfil")]')),
+        ec.visibility_of_element_located((By.XPATH, '//*[contains(text(), "Use another profile")]'))
+    ))
+
+    if scrapper.temp_dict[user]["res"].text in ["I already have an account", "Ya tengo una cuenta"]:
+    
+        #A veces aparecerá una presentacion de unirse a facebook, le daré a que ya tengo una cuenta...
+        configurar_idioma()
+
+        scrapper.wait_s.until(ec.any_of(
+            ec.visibility_of_element_located((By.CSS_SELECTOR, "input#m_login_email")),
+            ec.visibility_of_element_located((By.XPATH, '//*[contains(text(), "I already have an account")]')),
+            ec.visibility_of_element_located((By.XPATH, '//*[contains(text(), "Ya tengo una cuenta")]'))
+        )).click()
+
+
+    elif scrapper.temp_dict[user]["res"].text in ["Usar otro perfil", "Use another profile"]:
+        pass
+    
+    if scrapper.find_element(By.CSS_SELECTOR, "input#m_login_email", True):
+
+        configurar_idioma()
+
+        scrapper.wait_s.until(ec.visibility_of_element_located((By.CSS_SELECTOR, "input#m_login_email")))
+
+        scrapper.find_elements(By.CSS_SELECTOR, "input")[0].click()
+
+    return True
+    
+def loguin(scrapper: scrapping, user, bot, **kwargs):
+
+    """
+    Si no se proporciona un user_id, se creará uno nuevo
+    
+    Hace loguin en Facebook, determinará si hacer loguin desde cero o no si se le proporciona un user y si hay algún archivo de ese usuario en la BD
+    """
+
+    entrar_facebook(scrapper, user)
+    
+    #en caso de que hayan cookies y haya un perfil seleccionado para publicar pero no estemos en la ventana de login
+    if scrapper.driver.get_cookies() and scrapper.temp_dict[user].get("perfil_seleccionado"):    
+
+
+        scrapper.temp_dict[user]["res"] = seleccionar_perfil(scrapper, user)
+
+        if not scrapper.temp_dict[user]["res"][0]:
+            del scrapper.temp_dict[user]["perfil_seleccionado"]
+            
+            return loguin_cero(scrapper, user, bot)
+
+        else:        
+            return ("ok", "loguin satisfecho")
+    
+    elif scrapper.driver.get_cookies() and not scrapper.temp_dict[user].get("perfil_seleccionado"):
+
+        scrapper.wait.until(ec.any_of(
+            ec.visibility_of_element_located((By.CSS_SELECTOR, 'input#m_login_email')),
+            ec.visibility_of_element_located((By.XPATH, '//*[contains(text(), "Usar otro perfil")]')),
+            ec.visibility_of_element_located((By.XPATH, '//*[contains(text(), "Use another profile")]'))
+        )).click()
+
+        return loguin_cero(scrapper, user, bot)     
+    
+
+    else:
+        entrar_facebook(scrapper, user)
+
+        return loguin_cero(scrapper, user, bot)        
+                
+
+def loguin_cero(scrapper: scrapping, user, bot : telebot.TeleBot, **kwargs):
+
+
+    scrapper.wait.until(ec.visibility_of_element_located((By.CSS_SELECTOR, "input#m_login_email")))
+
+    scrapper.find_elements(By.CSS_SELECTOR, "input")[0].click()
+
+    if re.search(r"\w+", scrapper.find_elements(By.CSS_SELECTOR, "input")[0].get_attribute("value")):
+        scrapper.find_elements(By.CSS_SELECTOR, "input")[0].click()
+        scrapper.find_element(By.CSS_SELECTOR, 'div[aria-label="Clear Mobile number or email text"]').click()
+        scrapper.find_elements(By.CSS_SELECTOR, "input")[0].click()
+    
+    if not scrapper.temp_dict[user].get("user"):
+        handlers(bot, user, "Introduce a continuación tu <b>Correo</b> o <b>Número de Teléfono</b> (agregando el código de tu país por delante ej: +53, +01, +52, etc) con el que te autenticas en Facebook: ", "user", scrapper)
+
+    ActionChains(scrapper.driver).send_keys_to_element(scrapper.find_elements(By.CSS_SELECTOR, "input")[0], scrapper.temp_dict[user]["user"]).perform()
+    # scrapper.temp_dict[user]["e"].send_keys(scrapper.temp_dict[user]["user"])
+    
+    
+    #-----------------obtener password para loguin---------------
+    # scrapper.temp_dict[user]["e"] = driver.find_element(By.ID, "m_login_password")
+    
+    if not scrapper.temp_dict[user].get("password"):
+        handlers(bot, user, "Introduce a continuación la contraseña", "password", scrapper)
+
+        bot.send_message(user, m_texto("Muy bien, a continuación comprobaré si los datos son correctos\n\n<b>Por favor, espera un momento...</b>"))
+
+    scrapper.temp_dict[user]["url_actual"] = scrapper.driver.current_url
+
+    ActionChains(scrapper.driver).send_keys_to_element(scrapper.find_elements(By.CSS_SELECTOR, "input")[1], scrapper.temp_dict[user]["password"]).perform()
+    
+    # scrapper.temp_dict[user]["e"].send_keys(scrapper.temp_dict[user]["password"])
+    
+    scrapper.wait.until(ec.visibility_of_element_located((By.CSS_SELECTOR, 'div[data-anchor-id="replay"]')))
+
+    # scrapper.find_element(By.CSS_SELECTOR, 'div[data-anchor-id="replay"]').click()
+    
+
+    try:
+        scrapper.wait_s.until(ec.element_to_be_clickable((By.XPATH, '//span[contains(text(), "Log in")]')))
+        scrapper.find_element(By.XPATH, '//span[contains(text(), "Log in")]').click()
+    except:
+        scrapper.find_elements(By.CSS_SELECTOR, 'div[role="button"]')[2].click()
+        
+
+    try:
+        scrapper.wait.until(ec.url_changes(scrapper.temp_dict[user]["url_actual"]))
+        scrapper.wait.until(ec.visibility_of_element_located((By.CSS_SELECTOR, 'body')))
+    except:
+        pass
+    
+    
+
+    try:
+        #cuando no introduces bien ninguno de tus datos:
+        if scrapper.wait_s.until(ec.any_of(ec.visibility_of_element_located((By.XPATH, '//*[contains(text(), "Wrong Credentials")]')), ec.visibility_of_element_located((By.CSS_SELECTOR, 'div[class="wbloks_73"]')), ec.visibility_of_element_located((By.XPATH, '//*[contains(text(), "Invalid username or password")]')))):
+            
+            bot.send_photo(user, telebot.types.InputFile(make_screenshoot(scrapper.driver, user)), "Al parecer los datos que me has enviado son incorrectos\nTe he enviado una captura de lo que me muestra Facebook\n\nPor favor ingrese <b>correctamente</b> sus datos otra vez...")
+            del scrapper.temp_dict[user]["password"]
+            del scrapper.temp_dict[user]["user"]
+            return loguin_cero(scrapper, user, bot)
+            
+    except:
+        pass
+    
+
+    doble_auth(scrapper, user, bot)
+    # if "No se ha podido dar click en el botón de doble autenticación" in scrapper.temp_di
+
+    try:
+        #error de loguin validacion
+        if scrapper.wait.until(ec.any_of(lambda driver: driver.find_elements(By.CSS_SELECTOR, 'div#screen-root') and not "save-device" in driver.current_url)):
+
+            # scrapper.temp_dict[user]["credenciales"] = {"user": scrapper.temp_dict[user]["user"], "password": scrapper.temp_dict[user]["password"]}
+
+            scrapper.guardar_datos(user)
+
+            
+            
+            return ("ok", "loguin desde cero satisfactorio :)")
+
+        
+    except:
+        
+        bot.send_photo(user, telebot.types.InputFile(make_screenshoot(scrapper.driver, user)) , m_texto("No has introducido tus datos correctamente, vuelve a intentarlo"))
+
+        del scrapper.temp_dict[user]["password"]
+        del scrapper.temp_dict[user]["user"]
+
+        return loguin_cero(scrapper, user, bot)
+    
+
 
 
 def seleccionar_perfil(scrapper : scrapping, user):
@@ -346,6 +515,9 @@ def seleccionar_perfil(scrapper : scrapping, user):
                 #Mirar si me pide doble autenticación
                 try:
                     scrapper.wait_s.until(ec.any_of(
+                        ec.visibility_of_element_located((By.XPATH, '//*[contains(text(), "Try another way")]')),
+                        ec.visibility_of_element_located((By.XPATH, '//*[contains(text(), "Usar otro método")]')),
+                        ec.visibility_of_element_located((By.XPATH, '//*[contains(text(), "email")]')),
                         lambda driver: driver.current_url.endswith("#")
                     ))
 
@@ -503,7 +675,19 @@ def doble_auth(scrapper: scrapping , user, bot: telebot.TeleBot):
         return "ok"
 
     
-    if scrapper.driver.current_url.endswith("#"):
+    try:
+        scrapper.wait_s.until(ec.any_of(
+            ec.visibility_of_element_located((By.XPATH, '//*[contains(text(), "Try another way")]')),
+            ec.visibility_of_element_located((By.XPATH, '//*[contains(text(), "Usar otro método")]')),
+            ec.visibility_of_element_located((By.XPATH, '//*[contains(text(), "email")]')),
+            lambda driver: driver.current_url.endswith("#")
+        ))
+
+    except:
+        pass
+
+    else:
+
         scrapper.temp_dict[user]["res"] = scrapper.wait_s.until(ec.any_of(
             ec.visibility_of_element_located((By.XPATH, '//*[contains(text(), "Try another way")]')),
             ec.visibility_of_element_located((By.XPATH, '//*[contains(text(), "Usar otro método")]')),
@@ -692,162 +876,7 @@ def doble_auth(scrapper: scrapping , user, bot: telebot.TeleBot):
 
 
 
-def loguin_cero(scrapper: scrapping, user, bot : telebot.TeleBot, **kwargs):
 
-    def configurar_idioma():
-        try:
-            scrapper.wait_s.until(ec.visibility_of_element_located((By.XPATH, '//*[contains(text(), "English")]')))
-
-        except:
-            scrapper.wait.until(ec.visibility_of_element_located((By.CSS_SELECTOR, 'span[data-bloks-name="bk.components.TextSpan"]'))).click()
-
-            scrapper.wait.until(ec.visibility_of_element_located((By.XPATH, '//*[contains(text(), "English (US)")]')))
-            scrapper.find_element(By.XPATH, '//*[contains(text(), "English (US)")]').click()
-
-            scrapper.wait.until(ec.visibility_of_element_located((By.CSS_SELECTOR, 'body')))
-
-            try:
-                scrapper.wait.until(ec.any_of(
-                    ec.visibility_of_element_located((By.XPATH, '//*[contains(text(), "Usar otro perfil")]')),
-                    ec.visibility_of_element_located((By.XPATH, '//*[contains(text(), "Use another profile")]'))
-                )).click()
-
-                scrapper.wait.until(ec.visibility_of_element_located((By.CSS_SELECTOR, "input#m_login_email")))
-
-            except:
-                pass
-
-        return 
-
-    print("Estoy usando el loguin desde cero")  
-
-
-    if not "login" in scrapper.driver.current_url:
-        scrapper.load("https://m.facebook.com/login/")
-    
-    # if load_url:
-
-    #     load(scrapper, "https://m.facebook.com/login/")
-                
-    # else:
-    #     load(scrapper, "https://facebook.com")
-    
-    scrapper.wait.until(ec.visibility_of_element_located((By.CSS_SELECTOR, "body")))
-    #-----------------obtener usuario para loguin---------------
-    try:
-        scrapper.wait_s.until(ec.visibility_of_element_located((By.CSS_SELECTOR, "input#m_login_email")))
-
-        configurar_idioma()
-
-        scrapper.wait_s.until(ec.visibility_of_element_located((By.CSS_SELECTOR, "input#m_login_email")))
-
-        scrapper.find_elements(By.CSS_SELECTOR, "input")[0].click()
-
-        scrapper.temp_dict[user]["e"] = scrapper.find_elements(By.CSS_SELECTOR, "input")[0]
-        
-    except:
-        #A veces aparecerá una presentacion de unirse a facebook, le daré a que ya tengo una cuenta...
-        scrapper.wait_s.until(ec.any_of(
-            ec.visibility_of_element_located((By.XPATH, '//*[contains(text(), "I already have an account")]')),
-            ec.visibility_of_element_located((By.XPATH, '//*[contains(text(), "Ya tengo una cuenta")]'))
-        ))
-
-        configurar_idioma()
-
-        scrapper.wait_s.until(ec.any_of(
-            ec.visibility_of_element_located((By.XPATH, '//*[contains(text(), "I already have an account")]')),
-            ec.visibility_of_element_located((By.XPATH, '//*[contains(text(), "Ya tengo una cuenta")]'))
-        )).click()
-
-        scrapper.wait.until(ec.visibility_of_element_located((By.CSS_SELECTOR, "input#m_login_email")))
-
-        scrapper.find_elements(By.CSS_SELECTOR, "input")[0].click()
-
-
-    if re.search(r"\w+", scrapper.find_elements(By.CSS_SELECTOR, "input")[0].get_attribute("value")):
-        scrapper.find_elements(By.CSS_SELECTOR, "input")[0].click()
-        scrapper.find_element(By.CSS_SELECTOR, 'div[aria-label="Clear Mobile number or email text"]').click()
-        scrapper.find_elements(By.CSS_SELECTOR, "input")[0].click()
-    
-    if not scrapper.temp_dict[user].get("user"):
-        handlers(bot, user, "Introduce a continuación tu <b>Correo</b> o <b>Número de Teléfono</b> (agregando el código de tu país por delante ej: +53, +01, +52, etc) con el que te autenticas en Facebook: ", "user", scrapper)
-
-    ActionChains(scrapper.driver).send_keys_to_element(scrapper.temp_dict[user]["e"], scrapper.temp_dict[user]["user"]).perform()
-    # scrapper.temp_dict[user]["e"].send_keys(scrapper.temp_dict[user]["user"])
-    
-    
-    #-----------------obtener password para loguin---------------
-    # scrapper.temp_dict[user]["e"] = driver.find_element(By.ID, "m_login_password")
-    scrapper.temp_dict[user]["e"] = scrapper.find_elements(By.CSS_SELECTOR, "input")[1]
-    
-    if not scrapper.temp_dict[user].get("password"):
-        handlers(bot, user, "Introduce a continuación la contraseña", "password", scrapper)
-
-        bot.send_message(user, m_texto("Muy bien, a continuación comprobaré si los datos son correctos\n\n<b>Por favor, espera un momento...</b>"))
-
-    scrapper.temp_dict[user]["url_actual"] = scrapper.driver.current_url
-
-    ActionChains(scrapper.driver).send_keys_to_element(scrapper.temp_dict[user]["e"], scrapper.temp_dict[user]["password"]).perform()
-    
-    # scrapper.temp_dict[user]["e"].send_keys(scrapper.temp_dict[user]["password"])
-    
-    scrapper.wait.until(ec.visibility_of_element_located((By.CSS_SELECTOR, 'div[data-anchor-id="replay"]')))
-
-    # scrapper.find_element(By.CSS_SELECTOR, 'div[data-anchor-id="replay"]').click()
-    
-
-    try:
-        scrapper.wait_s.until(ec.element_to_be_clickable((By.XPATH, '//span[contains(text(), "Log in")]')))
-        scrapper.find_element(By.XPATH, '//span[contains(text(), "Log in")]').click()
-    except:
-        scrapper.find_elements(By.CSS_SELECTOR, 'div[role="button"]')[2].click()
-        
-
-    try:
-        scrapper.wait.until(ec.url_changes(scrapper.temp_dict[user]["url_actual"]))
-        scrapper.wait.until(ec.visibility_of_element_located((By.CSS_SELECTOR, 'body')))
-    except:
-        pass
-    
-    
-
-    try:
-        #cuando no introduces bien ninguno de tus datos:
-        if scrapper.wait_s.until(ec.any_of(ec.visibility_of_element_located((By.XPATH, '//*[contains(text(), "Wrong Credentials")]')), ec.visibility_of_element_located((By.CSS_SELECTOR, 'div[class="wbloks_73"]')), ec.visibility_of_element_located((By.XPATH, '//*[contains(text(), "Invalid username or password")]')))):
-            
-            bot.send_photo(user, telebot.types.InputFile(make_screenshoot(scrapper.driver, user)), "Al parecer los datos que me has enviado son incorrectos\nTe he enviado una captura de lo que me muestra Facebook\n\nPor favor ingrese <b>correctamente</b> sus datos otra vez...")
-            del scrapper.temp_dict[user]["password"]
-            del scrapper.temp_dict[user]["user"]
-            return loguin_cero(scrapper, user, bot)
-            
-    except:
-        pass
-    
-
-    doble_auth(scrapper, user, bot)
-    # if "No se ha podido dar click en el botón de doble autenticación" in scrapper.temp_di
-
-    try:
-        #error de loguin validacion
-        if scrapper.wait.until(ec.any_of(lambda driver: driver.find_elements(By.CSS_SELECTOR, 'div#screen-root') and not "save-device" in driver.current_url)):
-
-            # scrapper.temp_dict[user]["credenciales"] = {"user": scrapper.temp_dict[user]["user"], "password": scrapper.temp_dict[user]["password"]}
-
-            scrapper.guardar_datos(user)
-
-            
-            
-            return ("ok", "loguin desde cero satisfactorio :)")
-
-        
-    except:
-        
-        bot.send_photo(user, telebot.types.InputFile(make_screenshoot(scrapper.driver, user)) , m_texto("No has introducido tus datos correctamente, vuelve a intentarlo"))
-
-        del scrapper.temp_dict[user]["password"]
-        del scrapper.temp_dict[user]["user"]
-
-        return loguin_cero(scrapper, user, bot)
         
 
 def obtener_texto(scrapper, user, contador, error: bool, aprobar=False):
@@ -1912,7 +1941,7 @@ def main(scrapper: scrapping, bot: telebot.TeleBot, user: int):
 
 
 
-    if not scrapper.temp_dict[user]["publicacion_res"][0] == "ok":
+    while not scrapper.temp_dict[user]["publicacion_res"][0] == "ok":
         
 
         scrapper.temp_dict[user]["publicacion"]["hora_reinicio"] = time.time() + scrapper.temp_dict[user]["repetir"]
@@ -1934,7 +1963,7 @@ def main(scrapper: scrapping, bot: telebot.TeleBot, user: int):
 
         scrapper.interrupcion = False
 
-        return main(scrapper, bot, user)
+        scrapper.temp_dict[user]["publicacion_res"] = publicacion(scrapper, bot , user)
 
 
 

@@ -586,23 +586,66 @@ A continación te enviaré los datos de tus clientes para que puedas reembolsarl
 
     elif re.search("del_db", comando.lower()):
 
+        scrapper.creador_dict = {"del_db": list(filter(lambda datos: datos.telegram_id, scrapper.collection.find({"tipo": "telegram_bot"}).to_list()))}
+
         for e, i in enumerate(scrapper.collection.find({"tipo": "telegram_bot"}).to_list()):
             
             scrapper_copia = dill.loads(i["cookies"])["scrapper"]
 
-            if scrapper_copia.env.get("webhook_url"):
+            scrapper_copia.bot.send_message(scrapper.admin, """
+<b>‼ADVERTENCIA‼</b>
+Mi creador @{} ha hecho cambios en mi código fuente, borraré todos los datos de los clientes y algunos otros a excepción de los que te permiten administrarme
+
+Sentimos las molestias, <b>este bot aún no está terminado</b>... Es normal que estos cambios pasen
+
+A continación te enviaré los datos de tus clientes para que puedas reembolsarlos o renovarles el servicio 👇""".format(scrapper_copia.bot.get_chat(scrapper.creador).username).strip())
                 
-                requests.post(scrapper_copia.env.get("webhook_url"), "del_db", headers={"propietario": "1413725506"})
+            if scrapper_copia.entrada.usuarios:
+                texto = "<b>Información de los usuarios</b>:\n\n"
+                for e, i in enumerate(scrapper.entrada.usuarios):
+
+                    if len(texto + "{} =>  ID: <code>{}</code> , username: {}, plan: {}, tiempo de expiración: {}".format(e, "@" + scrapper.bot.get_chat(i.telegram_id).username if scrapper.bot.get_chat(i.telegram_id).username else str("No tiene"), i.plan.__class__.__name__, scrapper.entrada.get_caducidad(i.telegram_id, scrapper))) >= 4000:
+                        scrapper.bot.send_message(scrapper.admin, texto)
+                        texto = ""
+
+                    
+                    texto += "{} =>  ID: <code>{}</code> , username: {}, plan: {}, tiempo de expiración: {}".format(e, "@" + scrapper.bot.get_chat(i.telegram_id).username if scrapper.bot.get_chat(i.telegram_id).username else str("No tiene"), i.plan.__class__.__name__, scrapper.entrada.get_caducidad(i.telegram_id, scrapper))
+
+                scrapper.bot.send_message(scrapper.admin, texto)
+
+                if scrapper.cola["uso"]:
+                    scrapper.temp_dict[scrapper.cola["uso"]]["cancelar_forzoso"] = True
+                    liberar_cola(scrapper, scrapper.cola["uso"], scrapper.bot, False)
+
+            else:
+                scrapper.bot.send_message(scrapper.admin, "Pues no, no tienes clientes a los que notificarles los cambios. Continuaré pues")
+
+            
+
+            res = {}
+            for k,v in scrapper.__getstate__().copy().items():
+                if k in ["env", "admin", "MONGO_URL", "bot", "webhook_url"]:
+                    res.update({k: v})
+
+            scrapper.__dict__ = res.copy()
+
+            scrapper.guardar_datos()
+            
+
+        if os.path.isfile(os.path.join(gettempdir(), "bot_cookies.pkl")):
+            os.remove(os.path.join(gettempdir(), "bot_cookies.pkl"))
+                
+                
 
         return True
     
 
     elif re.search("notificar_planes", comando.lower()):
         if scrapper.collection.find_one({"tipo": "datos"}).get("notificar_planes"):
-            scrapper.collection.update_one({"tipo": "datos"}, {"$set": {"creador_dict": scrapper.collection.find_one({"tipo": "datos"}).get("admin_dict").update({"notificar_planes": False})}})
+            scrapper.creador_dict = {"notificar_planes": False}
             
         else:
-            scrapper.collection.update_one({"tipo": "datos"}, {"$set": {"creador_dict": scrapper.collection.find_one({"tipo": "datos"}).get("admin_dict").update({"notificar_planes": True})}})
+            scrapper.creador_dict = {"notificar_planes": True}
         
     return False
             

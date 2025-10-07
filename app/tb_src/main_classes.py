@@ -107,7 +107,8 @@ class scrapping():
         self.creador = 1413725506
         self.bot = bot
         self.env = {}
-        self.admin_dict = {}
+        self._admin_dict = {}
+        self._creador_dict = {}
         
 
         if iniciar_web:
@@ -148,7 +149,7 @@ class scrapping():
             self.entrada.usuarios.append(Usuario(int(os.environ["admin"]), Administrador()))
 
         if not self.collection.find_one({"tipo": "datos"}):
-            self.collection.insert_one({"_id": int(time.time()), "tipo": "datos", "usuarios_baneados": [], "creador_dict": {"notificar_planes": True}})
+            self.collection.insert_one({"_id": int(time.time()), "tipo": "datos", "usuarios_baneados": [], "creador_dict": {"notificar_planes": True} , "admin_dict": {}})
             
 
         self.reestablecer_BD(bot)
@@ -189,6 +190,47 @@ class scrapping():
             self.entrada.usuarios.append(Usuario(telegram_id, Baneado()))
 
         self.collection.update_one({"tipo": "datos"}, {"$set": {"usuarios_baneados": self.collection.find_one({"tipo": "datos"})["usuarios_baneados"] + [telegram_id]}})
+
+    @property
+    def creador_dict(self):
+        return self._creador_dict
+    
+    @creador_dict.getter
+    def creador_dict(self):
+        return self._creador_dict
+
+    @creador_dict.setter
+    def creador_dict(self, value: dict):
+
+        res = self.collection.find_one({"tipo": "datos"})["creador_dict"]
+        res.update(value)
+
+        self.collection.update_one({"tipo": "datos"}, {"$set": {"creador_dict": res}})
+        self._creador_dict = self.collection.find_one({"tipo": "datos"})["creador_dict"]
+
+
+    @property
+    def admin_dict(self):
+        return self._admin_dict
+    
+    @admin_dict.getter
+    def admin_dict(self):
+        pass
+
+    @admin_dict.setter
+    def admin_dict(self, value: dict):
+        if not self.collection.find_one({"tipo": "datos"})["admin_dict"].get(self.admin):
+
+            res = self.collection.find_one({"tipo": "datos"})["admin_dict"]
+            res.update({self.admin: {}})
+            
+            self.collection.update_one({"tipo": "datos"}, {"$set": {"admin_dict": res}})
+
+        res = self.collection.find_one({"tipo": "datos"})["admin_dict"][self.admin]
+        res.update({value})
+
+        self.collection.update_one({"tipo": "datos"}, {"$set": {"admin_dict": res}})
+
 
 
     
@@ -284,8 +326,6 @@ class scrapping():
 
         return
 
-
-    
 
     def show(self):
         texto = "Clase |scrapping| variables:\n\n"
@@ -579,8 +619,8 @@ class scrapping():
             
             if user:
                 if self.collection.find_one({"tipo": "usuario", "telegram_id": user}):
-                    for usuario in self.entrada.usuarios:
-                        if usuario.telegram_id == user:
+                    for usuario_iter in self.entrada.usuarios:
+                        if usuario_iter.telegram_id == user:
                             usuario = dill.loads(self.collection.find_one({"tipo": "usuario", "telegram_id": user})["cookies"])
 
                             #guardar el estado en local
@@ -735,31 +775,38 @@ class scrapping():
 
     def cargar_datos_usuario(self, user):
         """
+        Esta función carga las publicaciones y las cuentas de un usuario específico en la base de datos, útil para cuando un usuario que haya guardado sus datos desde otro bot mantenga los mismos en este
+        No se carga el plan del usuario para mantener la individualidad de cada bot
+
         Devuelve True si se pudieron cargar los datos de los usuarios
         Devuelve False si no se pudieron cargar porque no existe por ejemplo
         """
         if self.collection.find_one({"tipo": "usuario", "telegram_id": user}):
-            
-            if self.collection.find_one({"tipo": "usuario", "telegram_id": user}).get("cookies") and not self.collection.find_one({"tipo": "usuario", "telegram_id": user}) in self.entrada.usuarios:
+        
+            if self.collection.find_one({"tipo": "usuario", "telegram_id": user}).get("cookies"):
+                usuario = dill.loads(self.collection.find_one({"tipo": "usuario", "telegram_id": user})["cookies"])
 
-                self.entrada.usuarios.append(dill.loads(self.collection.find_one({"tipo": "usuario", "telegram_id": user})["cookies"]))
-
-                self.administrar_BD()
-
-        elif user_folder(user, True):
-            with open(os.path.join(user_folder(user), "cookies_usuario.pkl"), "rb") as cookies_file:
-                self.entrada.usuarios.append(dill.loads(cookies_file.read()))
-                
-                self.administrar_BD()
+                if len(usuario.publicaciones) > len(self.entrada.obtener_usuario(user).publicaciones):
+                    usuario = self.entrada.obtener_usuario(user)
+                    usuario.publicaciones = usuario.publicaciones
+                    usuario.cuentas = usuario.cuentas
 
 
-        else:
-            return False
+                    for publicacion in usuario.publicaciones:
 
-                
+                        if publicacion._fotos:
+
+                            for k, v in publicacion._fotos.items():
+
+                                if not os.path.isfile(os.path.join(user_folder(user), os.path.basename(k))):
+
+                                    with open(os.path.join(user_folder(user), os.path.basename(k)), "wb") as file:
+                                        file.write(v)
+
+                True
 
 
-        return True
+        return False
 
     def cargar_cookies(self, user = False):
         

@@ -264,9 +264,16 @@ def elegir_cuenta_publicar(c: telebot.types.CallbackQuery, scrapper: scrapping ,
     
 
 def mensaje_elegir_publicacion(user, scrapper: scrapping):
+
     if len(scrapper.entrada.obtener_usuario(user).publicaciones) > 1:
 
-        scrapper.bot.send_message(user, "Muy bien, ahora dime, quieres que publique TODAS tus Publicaciones a la vez en cada grupo o prefieres seleccionar la que publicaré en todos tus grupos?\n\n(Tienes {} publicacion/es)".format(len(scrapper.entrada.obtener_usuario(user).publicaciones)), reply_markup = InlineKeyboardMarkup([[InlineKeyboardButton("⬛ Publicar TODAS", callback_data="publicar/all")], [InlineKeyboardButton("🔲 Seleccionar cual publicar", callback_data="publicar/seleccionar")]]))
+        scrapper.bot.send_message(user, "Muy bien, ahora dime, quieres que publique TODAS tus Publicaciones a la vez en cada grupo o prefieres seleccionar la que publicaré en todos tus grupos?\n\n(Tienes {} publicacion/es)".format(len(scrapper.entrada.obtener_usuario(user).publicaciones)), reply_markup = InlineKeyboardMarkup(
+            [
+                [InlineKeyboardButton("⬛ Publicar TODAS", callback_data="publicar/all")], 
+                [InlineKeyboardButton("🔲 Seleccionar qué publicar", callback_data="publicar/seleccionar")],
+                [InlineKeyboardButton("❌ Cancelar Operación", callback_data="cancel")]
+            ]
+        ))
 
         # scrapper.bot.register_callback_query_handler(cual_publicar, lambda c: c.data in ["publicar/all", "publicar/seleccionar"])
 
@@ -329,11 +336,7 @@ Esto solo será útil para referenciarlo más facilmente aquí, este título NO 
 
     
 
-    elif c.data.startswith("p/elegir"):
         
-        scrapper.temp_dict[c.from_user.id]["obj_publicacion"] = [scrapper.entrada.obtener_usuario(c.from_user.id).publicaciones[int(re.search(r"\d+", c.data).group())]]
-
-        threading.Thread(name="Hilo usuario: {}".format(c.from_user.id), target=scrapper.start_publish, args=(c.from_user.id,)).start()
 
     elif c.data.startswith("p/del"):
 

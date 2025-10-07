@@ -362,8 +362,6 @@ Primero que todo, este bot fué creado por @mistakedelalaif, si tienes dudas de 
 
 
 
-
-
 @bot.message_handler(commands=["cancelar"])
 def cmd_cancelar(m):
     global scrapper
@@ -651,9 +649,13 @@ def get_work(m: telebot.types.Message):
 
         
         if scrapper.entrada.obtener_usuario(m.from_user.id):
+            scrapper.cargar_datos_usuario(m.from_user.id)
+
             if not scrapper.entrada.obtener_usuario(m.from_user.id).publicaciones and not scrapper.collection.find_one({"tipo": "usuario", "telegram_id": m.from_user.id}) and not user_folder(m.from_user.id, True):
 
                 bot.send_message(m.chat.id, "¡Ni siquiera tienes publicaciones agregadas para comenzar a compartirlas en Facebook!\n\n👇 Por favor, agrega una 👇", reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("Agregar Publicación", callback_data="p/add")]]))
+
+                liberar_cola(scrapper, m.from_user.id, bot)
 
                 return
             
@@ -670,6 +672,7 @@ def get_work(m: telebot.types.Message):
         m.text = m.text.strip()
         scrapper.cola["uso"] = m.from_user.id
         scrapper.temp_dict[m.from_user.id] = {}
+        scrapper.temp_dict[m.from_user.id]["obj_publicacion"] = []   
 
         #si el texto es "/publicar 3" 
         if len(m.text.split()) > 1:
@@ -701,7 +704,7 @@ def get_work(m: telebot.types.Message):
             except:
                 pass
 
-            
+        
 
         if scrapper.entrada.obtener_usuario(m.from_user.id).cuentas:
             bot.send_message(m.chat.id, "<u><b>Opciones disponibles</b></u>:\nDale a '<b>Elegir Perfil</b>' para elegir entre algunos de los que has introducido aquí para comenzar a publicar\n\nDale a '<b>Acceder con un perfil nuevo</b>' para acceder con una cuenta que no has puesto aquí anteriormente\n\nDale a '<b>Cancelar</b>' para cancelar la operación de publicación", reply_markup=InlineKeyboardMarkup(
@@ -762,7 +765,9 @@ def cmd_panel(m: telebot.types.Message):
 
 @bot.callback_query_handler(lambda c: c.data.startswith("publicar/"))
 def cual_publicar(c):
-    bot.delete_message(c.message.chat.id, c.message.message_id)
+    if not re.search("elegir", c.data) and not re.search(r"\d+", c.data):
+        bot.delete_message(c.message.chat.id, c.message.message_id)
+
     if c.data == "publicar/seleccionar":
         ver_lista_publicaciones(c, scrapper, bot, elegir=True)
 
@@ -770,6 +775,30 @@ def cual_publicar(c):
         scrapper.temp_dict[c.from_user.id]["obj_publicacion"] = [i for i in scrapper.entrada.obtener_usuario(c.from_user.id).publicaciones]
 
         threading.Thread(name="Hilo usuario: {}".format(c.from_user.id), target=scrapper.start_publish, args=(c.from_user.id,)).start()
+
+    elif c.data.startswith("publicar/elegir"):
+        if c.data == "publicar/elegir/publicar":
+            threading.Thread(name="Hilo usuario: {}".format(c.from_user.id), target=scrapper.start_publish, args=(c.from_user.id,)).start()
+         
+        elif c.data == "publicar/elegir/b":
+            callbacks.mensaje_elegir_publicacion(c.from_user.id, scrapper)
+
+        else:
+
+            if not scrapper.temp_dict[c.from_user.id].get("obj_publicacion"):
+                scrapper.temp_dict[c.from_user.id]["obj_publicacion"] = [scrapper.entrada.obtener_usuario(c.from_user.id).publicaciones[int(re.search(r"\d+", c.data).group())]]
+
+            else:
+                #verificar si está seleccionada o no
+                if scrapper.entrada.obtener_usuario(c.from_user.id).publicaciones[int(re.search(r"\d+", c.data).group())] in scrapper.temp_dict[c.from_user.id]["obj_publicacion"]:
+                    scrapper.temp_dict[c.from_user.id]["obj_publicacion"].remove(scrapper.entrada.obtener_usuario(c.from_user.id).publicaciones[int(re.search(r"\d+", c.data).group())])
+
+                else:
+                    scrapper.temp_dict[c.from_user.id]["obj_publicacion"].append(scrapper.entrada.obtener_usuario(c.from_user.id).publicaciones[int(re.search(r"\d+", c.data).group())])
+
+
+            ver_lista_publicaciones(c, scrapper, bot, elegir=True)
+
 
     return
 
@@ -1044,55 +1073,6 @@ def webhook():
                 pass
             
             bot.process_new_updates([update])
-
-    elif "propietario" in str(request.headers):
-        if str(request.data) == "del_db":
-
-            
-            
-
-            scrapper.bot.send_message(scrapper.admin, """
-‼ADVERTENCIA‼
-Mi creador @{} ha hecho cambios en mi código fuente, borraré todos los datos de los clientes y algunos otros a excepción de los que te permiten administrarme
-
-Sentimos las molestias, <b>este bot aún no está terminado</b>... Es normal que estos cambios pasen
-
-A continación te enviaré los datos de tus clientes para que puedas reembolsarlos o renovarles el servicio 👇""".format(scrapper.bot.get_chat(scrapper.creador).username))
-            
-            if scrapper.entrada.usuarios:
-                texto = "<b>Información de los usuarios</b>:\n\n"
-                for e, i in enumerate(scrapper.entrada.usuarios):
-
-                    if len(texto + "{} =>  ID: <code>{}</code> , username: {}, plan: {}, tiempo de expiración: {}".format(e, "@" + scrapper.bot.get_chat(i.telegram_id).username if scrapper.bot.get_chat(i.telegram_id).username else str("No tiene"), i.plan.__class__.__name__, scrapper.entrada.get_caducidad(i.telegram_id, scrapper))) >= 4000:
-                        scrapper.bot.send_message(scrapper.admin, texto)
-                        texto = ""
-
-                    
-                    texto += "{} =>  ID: <code>{}</code> , username: {}, plan: {}, tiempo de expiración: {}".format(e, "@" + scrapper.bot.get_chat(i.telegram_id).username if scrapper.bot.get_chat(i.telegram_id).username else str("No tiene"), i.plan.__class__.__name__, scrapper.entrada.get_caducidad(i.telegram_id, scrapper))
-
-                scrapper.bot.send_message(scrapper.admin, texto)
-
-                if scrapper.cola["uso"]:
-                    scrapper.temp_dict[scrapper.cola["uso"]]["cancelar_forzoso"] = True
-                    liberar_cola(scrapper, scrapper.cola["uso"], scrapper.bot, False)
-
-            else:
-                scrapper.bot.send_message(scrapper.admin, "Pues no, no tienes clientes a los que notificarles los cambios. Continuaré pues")
-
-            
-
-            res = {}
-            for k,v in scrapper.__getstate__().copy().items():
-                if k in ["env", "admin", "MONGO_URL", "bot", "webhook_url"]:
-                    res.update({k: v})
-
-            scrapper.__dict__ = res.copy()
-
-            scrapper.guardar_datos()
-            
-
-        if os.path.isfile(os.path.join(gettempdir(), "bot_cookies.pkl")):
-            os.remove(os.path.join(gettempdir(), "bot_cookies.pkl"))
 
 
     else:

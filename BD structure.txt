@@ -12,7 +12,7 @@ bot:
 {"_id": int(time.time()), "tipo": "telegram_bot", "telegram_id": id_del_bot, "cookies": bot_cookies.pkl}
 
 global:    
-{"_id": int(time.time()), "tipo": "datos", "usuarios_baneados": [12345, 4567, 5678434], "cookies_facebook": cookies_facebook.pkl, "creador_dict": {"opcion1": True, "Limite_usuarios": 3}}
+{"_id": int(time.time()), "tipo": "datos", "usuarios_baneados": [12345, 4567, 5678434], "cookies_facebook": cookies_facebook.pkl, "creador_dict": {"opcion1": True, "Limite_usuarios": 3}, "admin_dict": {12345678: {"opcion1": False}}}
 ------------------------ estructura general END----------------------------------
 
 

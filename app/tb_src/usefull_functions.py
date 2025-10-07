@@ -610,24 +610,13 @@ def ver_publicacion(c: telebot.types.CallbackQuery, scrapper, bot: telebot.TeleB
     if usuario_info == False:
         usuario_info = c.from_user.id
 
-    if scrapper.cola["uso"] == usuario_info:
 
-        if not scrapper.temp_dict[usuario_info].get("obj_publicacion"):
-            p_markup=InlineKeyboardMarkup(
-                [
-                    [InlineKeyboardButton("✅ Elegir para publicar en Facebook", callback_data="p/elegir/{}".format(indice))],
-                    [InlineKeyboardButton("↩ Volver Atrás y Elegir otra", callback_data="p/wl/a/{}".format(indice if indice % cantidad_publicaciones_mostrar == 0 else indice - indice % cantidad_publicaciones_mostrar))],
-                    [InlineKeyboardButton("🗑 Eliminar Publicación", callback_data="p/del/conf/{}".format(indice))]
-                ]
-            )
-
-    else:
-        p_markup=InlineKeyboardMarkup(
-            [
-                [InlineKeyboardButton("🗑 Eliminar Publicación", callback_data="p/del/conf/{}".format(indice))],
-                [InlineKeyboardButton("↩ Volver Atrás", callback_data="p/wl/a/{}".format(indice if indice % cantidad_publicaciones_mostrar == 0 else indice - indice % cantidad_publicaciones_mostrar))],
-            ]
-        )
+    p_markup=InlineKeyboardMarkup(
+        [
+            [InlineKeyboardButton("🗑 Eliminar Publicación", callback_data="p/del/conf/{}".format(indice))],
+            [InlineKeyboardButton("↩ Volver Atrás", callback_data="p/wl/a/{}".format(indice if indice % cantidad_publicaciones_mostrar == 0 else indice - indice % cantidad_publicaciones_mostrar))],
+        ]
+    )
     
     for usuario in scrapper.entrada.obtener_usuarios(False):
         res = usuario.publicaciones[indice].enviar(scrapper, c.message.chat.id)
@@ -662,7 +651,7 @@ def ver_lista_publicaciones(m, scrapper, bot: telebot.TeleBot, indice = 0, usuar
 
 
     if elegir:
-        TEXTO = "👇 Elige una de tus publicaciones para compartirla en Facebook 👇\n\n"
+        TEXTO = "👇 Elige las publicaciones que serán compartidas en Facebook 👇\n\n"
     else:
         TEXTO = "👇 Lista de Publicaciones Creadas 👇\n\nToca en alguna para ver más información de ella / eliminarla / editarla / seleccionarla"
 
@@ -670,19 +659,32 @@ def ver_lista_publicaciones(m, scrapper, bot: telebot.TeleBot, indice = 0, usuar
     markup = InlineKeyboardMarkup(row_width=1)
 
     for publicacion in scrapper.entrada.obtener_usuario(usuario_info).publicaciones[indice : indice + cantidad_publicaciones_mostrar]:
+        
+        if elegir:
+            markup.add(InlineKeyboardButton("✅ " + publicacion.titulo if publicacion in scrapper.temp_dict[usuario_info]["obj_publicacion"] else publicacion.titulo, callback_data="publicar/elegir/{}".format(scrapper.entrada.obtener_usuario(usuario_info).publicaciones.index(publicacion))))
 
-        markup.add(InlineKeyboardButton(publicacion.titulo, callback_data="p/w/{}".format(scrapper.entrada.obtener_usuario(usuario_info).publicaciones.index(publicacion))))
+        else:
+            markup.add(InlineKeyboardButton(publicacion.titulo, callback_data="p/w/{}".format(scrapper.entrada.obtener_usuario(usuario_info).publicaciones.index(publicacion))))
 
     markup.row_width = 1
     
 
     markup.row(InlineKeyboardButton("◀", callback_data="p/wl/{}".format(0 if indice - cantidad_publicaciones_mostrar < 0 else indice - cantidad_publicaciones_mostrar)), InlineKeyboardButton("▶", callback_data= "p/wl/{}".format(indice + cantidad_publicaciones_mostrar)))
 
+    if elegir:
+        if scrapper.temp_dict[usuario_info]["obj_publicacion"]:
+            markup.row(InlineKeyboardButton("✅ Publicar Seleccionados", callback_data="publicar/elegir/publicar"))
+            markup.row(InlineKeyboardButton("🔙 Volver atrás", callback_data="publicar/elegir/b"))
+
+        else:
+            markup.row(InlineKeyboardButton("🔙 Volver atrás", callback_data="publicar/elegir/b"))
+
+
     try:
         if m.caption:
             bot.edit_message_caption(TEXTO, m.chat.id, m.message_id, reply_markup=markup)
 
-        elif m.text:
+        else:
             bot.edit_message_text(TEXTO, m.chat.id, m.message_id, reply_markup=markup)
 
     except:
