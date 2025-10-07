@@ -229,7 +229,7 @@ def cookies_caducadas(scrapper: scrapping, user, bot):
                 scrapper.driver.back()
                 continue
 
-def entrar_facebook(scrapper: scrapping, user):
+def entrar_facebook(scrapper: scrapping, user, cargar_loguin = False):
     """
     Carga la página de Facebook y quita la presentacion
     """
@@ -260,7 +260,7 @@ def entrar_facebook(scrapper: scrapping, user):
         return 
 
 
-    if not "login" in scrapper.driver.current_url:
+    if not "login" in scrapper.driver.current_url or cargar_loguin:
         scrapper.load("https://m.facebook.com/login/")
     
     # if load_url:
@@ -313,12 +313,11 @@ def loguin(scrapper: scrapping, user, bot, **kwargs):
     Hace loguin en Facebook, determinará si hacer loguin desde cero o no si se le proporciona un user y si hay algún archivo de ese usuario en la BD
     """
 
-    entrar_facebook(scrapper, user)
     
     #en caso de que hayan cookies y haya un perfil seleccionado para publicar pero no estemos en la ventana de login
     if scrapper.driver.get_cookies() and scrapper.temp_dict[user].get("perfil_seleccionado"):    
 
-
+        
         scrapper.temp_dict[user]["res"] = seleccionar_perfil(scrapper, user)
 
         if not scrapper.temp_dict[user]["res"][0]:
@@ -328,26 +327,37 @@ def loguin(scrapper: scrapping, user, bot, **kwargs):
 
         else:        
             return ("ok", "loguin satisfecho")
-    
-    elif scrapper.driver.get_cookies() and not scrapper.temp_dict[user].get("perfil_seleccionado"):
 
-        scrapper.wait.until(ec.any_of(
-            ec.visibility_of_element_located((By.CSS_SELECTOR, 'input#m_login_email')),
-            ec.visibility_of_element_located((By.XPATH, '//*[contains(text(), "Usar otro perfil")]')),
-            ec.visibility_of_element_located((By.XPATH, '//*[contains(text(), "Use another profile")]'))
-        )).click()
-
-        return loguin_cero(scrapper, user, bot)     
-    
 
     else:
-        entrar_facebook(scrapper, user)
+        return loguin_cero(scrapper, user, bot)
 
-        return loguin_cero(scrapper, user, bot)        
+    # elif scrapper.driver.get_cookies() and not scrapper.temp_dict[user].get("perfil_seleccionado"):
+
+    #     scrapper.wait.until(ec.any_of(
+    #         ec.visibility_of_element_located((By.CSS_SELECTOR, 'input#m_login_email')),
+    #         ec.visibility_of_element_located((By.XPATH, '//*[contains(text(), "Usar otro perfil")]')),
+    #         ec.visibility_of_element_located((By.XPATH, '//*[contains(text(), "Use another profile")]'))
+    #     )).click()
+
+    #     return loguin_cero(scrapper, user, bot)     
+    
+
+    # else:
+    #     entrar_facebook(scrapper, user)
+
+    #     return loguin_cero(scrapper, user, bot)        
                 
 
 def loguin_cero(scrapper: scrapping, user, bot : telebot.TeleBot, **kwargs):
 
+    entrar_facebook(scrapper, user, True)
+
+    scrapper.wait.until(ec.any_of(
+        ec.visibility_of_element_located((By.CSS_SELECTOR, 'input#m_login_email')),
+        ec.visibility_of_element_located((By.XPATH, '//*[contains(text(), "Usar otro perfil")]')),
+        ec.visibility_of_element_located((By.XPATH, '//*[contains(text(), "Use another profile")]'))
+    )).click()
 
     scrapper.wait.until(ec.visibility_of_element_located((By.CSS_SELECTOR, "input#m_login_email")))
 
@@ -448,6 +458,8 @@ def seleccionar_perfil(scrapper : scrapping, user):
     
 
     scrapper.facebook_logout()
+    
+    entrar_facebook(scrapper, user)
 
     scrapper.temp_dict[user]["res"] = scrapper.wait.until(ec.any_of(
         ec.visibility_of_element_located((By.CSS_SELECTOR, 'input#m_login_email')),
