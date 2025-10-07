@@ -1,10 +1,11 @@
+import threading
 import time
 import sys
 import os
 import selenium.webdriver
 import selenium.webdriver.remote
 import selenium.webdriver.remote.webelement
-from seleniumbase.undetected import WebElement
+from selenium.webdriver.remote.webelement import WebElement
 import telebot
 from telebot.types import *
 import re
@@ -22,6 +23,7 @@ from tempfile import gettempdir, tempdir
 import requests
 import json
 import dill
+import telebot.types
 
 sys.path.append(os.path.dirname(os.path.dirname(__file__)))
 
@@ -31,27 +33,64 @@ from tb_src import bot_handlers
 # import numpy
 # import pyautogui
 
+
+def puede_continuar(scrapper, user, comprobacion = True):
+    """
+    Verifica si el plan que contrató el usuario le permite continuar para hacer algo especificado en <comprobacion>
+
+    Devuelve True si puede continuar
+    Devuelve False si no puede hacerlo
+    """
+    
+    if scrapper.entrada.get_caducidad(user, scrapper) == True:
+        return True
+
+
+    if comprobacion == "publicacion":
+        usuario = scrapper.entrada.obtener_usuario(user)
+        if not usuario.plan.grupos_publicados == True:
+            if usuario.plan.grupos_publicados - 1 <= scrapper.temp_dict[user]["contador"]:
+                return False
+            else:
+                return True
+        else: 
+            return True
+
+
+def mostrar_info_usuario(chat_destino, usuario_evaluar, bot: telebot.TeleBot):
+    with open(str(usuario_evaluar) + ".jpg", "wb") as file:
+        file.write(bot.download_file(bot.get_file(bot.get_chat(usuario_evaluar).photo.small_file_id).file_path))
+        bot.send_document(chat_destino, telebot.types.InputFile(str(usuario_evaluar) + ".jpg"), caption=
+"""
+<b>ID</b>: {}
+<b>Nombre</b>: {}
+<b>Alias (username)</b>: {}
+""".strip().format(usuario_evaluar, bot.get_chat(usuario_evaluar).first_name, "@" + bot.get_chat(usuario_evaluar).username if  bot.get_chat(usuario_evaluar).username else str("No tiene")))
+    os.remove(str(usuario_evaluar) + ".jpg")
+
+    return
+
 def debug_txt(scrapper=False):
     if scrapper:
         if scrapper.temp_dict.get(scrapper.admin):
+
+            if scrapper.temp_dict[scrapper.admin].get("mostrar_tiempo_debug") and scrapper.temp_dict[scrapper.admin].get("tiempo_debug"):
+                
+                scrapper.temp_dict[scrapper.admin]["res"] = "\n".join(scrapper.temp_dict[scrapper.admin]["tiempo_debug"])
+
+                with open(os.path.join(user_folder(scrapper.admin), "tiempo_publicacion_" + str(scrapper.admin) + ".txt"), "w", encoding="utf-8") as file:
+                    file.write("Log de publicación\nID del usuario: {}\n\n{}".format(scrapper.admin, scrapper.temp_dict[scrapper.admin]["res"]))
+                    
+                with open(os.path.join(user_folder(scrapper.admin), "tiempo_publicacion_" + str(scrapper.admin) + ".txt"), "r", encoding="utf-8") as file:
+                    scrapper.bot.send_document(scrapper.admin, telebot.types.InputFile(file, file_name="tiempo_publicacion_" + str(scrapper.admin) + ".txt"), caption = "Ha ocurrido un error inesperado! ID usuario: {}".format(scrapper.admin))
+            
+                os.remove(os.path.join(user_folder(scrapper.admin), "tiempo_publicacion_" + str(scrapper.admin) + ".txt"))
+                del scrapper.temp_dict[scrapper.admin]["mostrar_tiempo_debug"]
+                del scrapper.temp_dict[scrapper.admin]["tiempo_debug"]
+
+
             if not scrapper.temp_dict[scrapper.admin].get("cancelar"):
                 scrapper.bot.send_message(scrapper.admin, m_texto("La Operación ha finalizado") )
-
-            
-            if scrapper.temp_dict.get(scrapper.admin):
-                if scrapper.temp_dict[scrapper.admin].get("mostrar_tiempo_debug") and scrapper.temp_dict[scrapper.admin].get("tiempo_debug"):
-                    
-                    scrapper.temp_dict[scrapper.admin]["res"] = "\n".join(scrapper.temp_dict[scrapper.admin]["tiempo_debug"])
-
-                    with open(os.path.join(user_folder(scrapper.admin), "tiempo_publicacion_" + str(scrapper.admin) + ".txt"), "w", encoding="utf-8") as file:
-                        file.write("Log de publicación\nID del usuario: {}\n\n{}".format(scrapper.admin, scrapper.temp_dict[scrapper.admin]["res"]))
-                        
-                    with open(os.path.join(user_folder(scrapper.admin), "tiempo_publicacion_" + str(scrapper.admin) + ".txt"), "r", encoding="utf-8") as file:
-                        scrapper.bot.send_document(scrapper.admin, telebot.types.InputFile(file, file_name="tiempo_publicacion_" + str(scrapper.admin) + ".txt"), caption = "Ha ocurrido un error inesperado! ID usuario: {}".format(scrapper.admin))
-                
-                    os.remove(os.path.join(user_folder(scrapper.admin), "tiempo_publicacion_" + str(scrapper.admin) + ".txt"))
-                    del scrapper.temp_dict[scrapper.admin]["mostrar_tiempo_debug"]
-                    del scrapper.temp_dict[scrapper.admin]["tiempo_debug"]
 
 
     return
@@ -104,58 +143,7 @@ def elemento_click(scrapper, elemento : tuple, intentos = 3):
                 
 
 
-def facebook_popup(driver, timeout = 3):
-    """
-    Muchas veces aparece un popup sobre que facebook es mejor en la aplicacion y nos recomienda instalarla, pero esto perturba el scrapping, en esta funcion compruebo si existe y me deshago de él
-    """
-    try:
-        #div[class="m fixed-container bottom"]
-        WebDriverWait(driver, timeout).until(ec.any_of(
-            ec.visibility_of_element_located((By.XPATH, '//*[contains(texto(), "Facebook is better on the app")]')),
-            ec.visibility_of_element_located((By.XPATH, '//div[contains(@class,"m fixed-container bottom")]'))
-            ))            
 
-    except:
-        return "no"
-
-
-
-    try:
-        res = driver.find_element(By.XPATH, '//div[contains(@class,"m fixed-container bottom")]')
-
-        while len(res) >= 5:
-            res = res.find_elements(By.XPATH, './*')
-
-        res[4].click()
-        return "ok"
-        
-    except:
-        pass
-
-
-
-    try:
-
-        res = driver.find_element(By.XPATH, '//*[contains(texto(), "Not now")]')
-
-        for i in range(5):
-            try:
-                res.click()
-                break
-            except:
-                if i >= 4:
-                    raise Exception("No pude sacar el popup de Facebook")
-
-                res = res.find_element(By.XPATH, '..')
-
-        return "ok"
-
-    except:
-        pass
-
-
-
-    raise Exception("No se pudo clickear sobre el elemento para cerrar el popup de Facebook")
 
     
 
@@ -197,113 +185,20 @@ def get_time(scrapper, user , tz_country = "America/Havana"):
         
         return "{}:{}".format(str(int((time.time() - horario) // 60)).zfill(2), str(int((time.time() - horario) % 60)).zfill(2))  
 
+
+
     
-def reestablecer_BD(scrapper, bot):
-    res = administrar_BD(scrapper, bot, True)
-    if res[0] == "ok":
 
 
-        for k, v in res[1].items():
-            if k == "scrapper":
-                variable = v.__dict__
-                scrapper._temp_dict = variable["_temp_dict"]
-
-                if not variable["cola"]["uso"].get(bot.user.id):
-                    variable["cola"].update(scrapper.cola)
-
-                scrapper.cola = variable["cola"]
-
-                scrapper._entrada = variable["_entrada"]
-                scrapper.env = variable["env"]
-
-                if scrapper.env.get(bot.user.id):
-                    for k,v in scrapper.env[bot.user.id].items():
-                        os.environ[k] = v
-                    
-
-                    
-                
-
-            elif k == "foto_b" and scrapper.cola["uso"].get(bot.user.id):
-                with open(os.path.join(user_folder(scrapper.cola["uso"][bot.user.id]) , "foto_publicacion.png"), "wb") as file:
-                    file.write(res[1]["foto_b"])
-                    scrapper.temp_dict[scrapper.cola["uso"][bot.user.id]]["foto_p"] = os.path.join(user_folder(scrapper.cola["uso"][bot.user.id]) , "foto_publicacion.png")
-
-            else:
-                globals()[k] = v
-
-        return "ok"
-
-    else:
-
-        return "no"
-
-
-def env_vars(user, bot, scrapper):
-    TEXTO = """
-Enviame el archivo.env a continuación con las siguientes variables de entorno y sus respectivos valores:
-
-admin=<ID del administrador del bot>
-MONGO_URL=<Enlace del cluster de MongoDB (Atlas)>
-webhook_url=<[OPCIONAL]Si esta variable es definida se usará el metodo webhook, sino pues se usara el método polling>""".strip()
-
-    msg = bot.send_message(user, TEXTO, False)
-
-    bot.register_next_step_handler(msg, set_env_vars, TEXTO, bot, scrapper)
-
-    return
-
-
-def set_env_vars(m: telebot.types.Message, TEXTO, bot, scrapper):
-    if m.document:
-        if not m.document.file_name.endswith(".env"):
-            msg = bot.send_message(m.chat.id, m_texto("Ese archivo no es de las variables de entorno!\nEnvía el adecuado!\n\n{}", True).format(TEXTO), False)
-                
-            bot.register_next_step_handler(msg, set_env_vars, TEXTO)
-            return
-
-        with open("variables_entorno.env", "wb") as file:
-            try:
-                file.write(bot.download_file(bot.get_file(m.document.file_id).file_path))
-
-            except:
-                msg = bot.send_message(m.chat.id, m_texto("Ese archivo no es de las variables de entorno!\nEnvía el adecuado!\n\n{}".format(TEXTO), True), False)
-                
-                bot.register_next_step_handler(msg, set_env_vars, TEXTO)
-                return
-
-        with open("variables_entorno.env", "r") as file:
-            texto = file.read()
-
-        os.remove("variables_entorno.env")
-        
-        if "admin=" in texto and "MONGO_URL=" in texto:
-            scrapper.env[bot.user.id] = {}
-            for i in texto.splitlines():
-                os.environ[re.search(r".*=", i).group().replace("=", "")] = re.search(r"=.*", i).group().replace("=", "")
-                scrapper.env[bot.user.id][re.search(r".*=", i).group().replace("=", "")] = re.search(r"=.*", i).group().replace("=", "")
-            
-
-            
-        else:
-            msg = bot.send_message(m.chat.id, m_texto("No has enviado el formato correcto del archivo!\nPor favor envie a continuacion un archivo .env que siga el formato adecuado\n\n{}", True).format(TEXTO), False)
-
-                
-            bot.register_next_step_handler(msg, set_env_vars, TEXTO)
-
-
-    else:
-        msg = bot.send_message(m.chat.id, m_texto("No has enviado el archivo variables de entorno!\nEnvía el adecuado!\n\n{}", True).format(TEXTO), False)
-
-        bot.register_next_step_handler(msg, set_env_vars, TEXTO)
-
-
-    administrar_BD(scrapper, bot)
-    return scrapper.env
+    
 
 
 
-def liberar_cola(scrapper, user, bot):
+
+
+
+
+def liberar_cola(scrapper, user, bot, notificar_usuarios=True):
 
     if not user in list(scrapper.temp_dict):
         return
@@ -315,19 +210,29 @@ def liberar_cola(scrapper, user, bot):
 
         bot.send_message(int(user), m_texto("ATENCIÓN‼\nEl administrador ha finalizado TU proceso\n\n👇Si tienes alguna queja comunícate con él👇\n{}".format(str("@" + bot.get_chat(scrapper.admin).username) if bot.get_chat(scrapper.admin).username else str(" "))), reply_markup=ReplyKeyboardRemove())
 
-    scrapper.cola["uso"][bot.user.id] = False
+    
+    
+    if not scrapper.temp_dict[user].get("if_cancelar"):
+        scrapper.cola["uso"] = False
 
-    for i in scrapper.cola["cola_usuarios"][bot.user.id]:
-        try:
-            bot.send_message(i, m_texto("Ya estoy disponible para Publicar :D\n\nÚsame antes de que alguien más me ocupe"))
-        except:
-            pass
+    if notificar_usuarios:
+
+        for i in scrapper.cola["cola_usuarios"]:
+            try:
+                bot.send_message(i, m_texto("Ya estoy disponible para Publicar :D\n\nÚsame antes de que alguien más me ocupe"))
+            except:
+                pass
     
     if scrapper.interrupcion:
         scrapper.interrupcion = False
-        
-    del scrapper.temp_dict[user]
-    administrar_BD(scrapper, bot)
+    
+    try:
+        del scrapper.temp_dict[user]
+    except:
+        pass
+
+    scrapper.guardar_datos(user, False)
+
     return
 
 def obtener_grupos(scrapper, user, all: bool = False):
@@ -339,7 +244,7 @@ def obtener_grupos(scrapper, user, all: bool = False):
     
     except:
         #en caso de que no esté mostrada la pagina de grupos esto fallará así que la cargo
-        load(scrapper, "https://m.facebook.com/groups/")
+        scrapper.load("https://m.facebook.com/groups/")
         scrapper.temp_dict[user]["e"] = scrapper.wait.until(ec.visibility_of_element_located((By.XPATH, '//*[@id="screen-root"]/div/div[3]/div[5]')))
 
     if all:
@@ -371,6 +276,7 @@ def obtener_grupos(scrapper, user, all: bool = False):
 
 
 
+    scrapper.wait.until(ec.visibility_of_element_located((By.XPATH, '//*[@id="screen-root"]/div/div[3]/div[5]')))
 
     scrapper.temp_dict[user]["res"] = scrapper.find_element(By.XPATH, '//*[@id="screen-root"]/div/div[3]/div[5]').find_elements(By.CSS_SELECTOR, 'div[data-mcomponent="MContainer"][data-focusable="true"][data-type="container"]')
     
@@ -483,38 +389,13 @@ def envia_fotos_input(scrapper, user, photo_path):
     
     
 
-def load(scrapper, url):
 
-        
-    if os.name == "nt":
-        try:
-            scrapper.driver.get(url)
-        except:
-            pass
-        
-
-        WebDriverWait(scrapper.driver, 500).until(ec.visibility_of_element_located((By.CSS_SELECTOR, "body")))
-
-    else:
-        scrapper.driver.get(url)
-            
-    
-    
-    return 
         
 
 def if_cancelar(scrapper, user, bot):
 
-    if scrapper.entrada.caducidad:
-        if time.time() >= scrapper.entrada.caducidad:
-            scrapper.entrada.limpiar_usuarios(scrapper, bot)
-            if scrapper.cola["uso"][bot.user.id]:
-                scrapper.temp_dict[scrapper.cola["uso"][bot.user.id]]["cancelar_forzoso"] = True
-
-                liberar_cola(scrapper, user, bot)
-
-    
-            bot.send_message(scrapper.admin, m_texto("El tiempo de vigencia de la contraseña ha caducado"))
+    if scrapper.entrada.get_caducidad(user,scrapper) == True:
+        return
 
 
     if scrapper.temp_dict[user].get("cancelar") or scrapper.temp_dict[user].get("cancelar_forzoso"):
@@ -525,7 +406,7 @@ def if_cancelar(scrapper, user, bot):
 
 def obtener_diferencia_scroll(scrapper, user):
     if not scrapper.driver.current_url.endswith("groups/"):
-        load(scrapper ,"https://m.facebook.com/groups/")
+        scrapper.load("https://m.facebook.com/groups/")
     
     try:
         return scrapper.temp_dict[user]["publicacion"]["lista_grupos"][0].location["y"]
@@ -665,89 +546,6 @@ def leer_BD(scrapper = False):
     return res
 
 
-def administrar_BD(scrapper, bot, cargar_cookies=False, user=False, **kwargs):
-    """
-    El parametro 'guardar' si es True, guardará el estado actual del bot, Si es False lo cargará
-    """
-    if scrapper.cola["uso"].get(bot.user.id):
-        if os.path.isfile(os.path.join(user_folder(scrapper.cola["uso"][bot.user.id]) , "foto_publicacion.png")):
-            with open(os.path.join(user_folder(scrapper.cola["uso"][bot.user.id]) , "foto_publicacion.png"), "rb") as file:
-                dict_guardar = {"scrapper": scrapper, "foto_b": file.read()}
-        else:
-            dict_guardar = {"scrapper": scrapper}
-    else:
-        dict_guardar = {"scrapper": scrapper}
-
-    for k, v in kwargs.items():
-        if not user:
-            dict_guardar.update({k: v})
-
-        if user:
-            dict_guardar["scrapper"].temp_dict[user].update({k: v})
-
-    
-    #GUARDAR
-    if cargar_cookies == False:
-        #si va a guardarse el estado...
-
-
-
-        with open(os.path.join(gettempdir(), "bot_cookies.pkl"), "wb") as file:
-
-            dill.dump(dict_guardar, file)
-
-        with open(os.path.join(gettempdir(), "bot_cookies.pkl"), "rb") as file:
-
-            if scrapper.collection.find_one({"tipo": "telegram_bot", "telegram_id": bot.user.id}):
-                
-                scrapper.collection.update_one({"tipo": "telegram_bot", "telegram_id": bot.user.id}, {"$set": {"cookies" : file.read()}})
-
-            else:
-                scrapper.collection.insert_one({"_id": int(time.time()), "tipo": "telegram_bot", "telegram_id": bot.user.id, "cookies" : file.read()})
-
-        return "ok"
-
-    #CARGAR
-    elif cargar_cookies == True:
-        #si se va a cargar el estado...        
-        if scrapper.collection.find_one({"tipo": "telegram_bot", "telegram_id": bot.user.id}):
-            
-            res = ("ok" , dill.loads(scrapper.collection.find_one({"tipo": "telegram_bot", "telegram_id": bot.user.id})["cookies"]))
-
-            with open(os.path.join(gettempdir(), "bot_cookies.pkl"), "wb") as file:
-                dill.dump(dill.loads(scrapper.collection.find_one({"tipo": "telegram_bot", "telegram_id": bot.user.id})["cookies"]), file)
-
-
-
-        else:
-            #si no hay ningun archivo del bot en la base de datos primero compruebo si hay una copia local para insertarla en la BD
-            if os.path.isfile(os.path.join(gettempdir(), "bot_cookies.pkl")):
-
-                with open(os.path.join(gettempdir(), "bot_cookies.pkl"), "rb") as file:
-                    scrapper.collection.insert_one({"_id": int(time.time()), "tipo": "telegram_bot", "telegram_id": bot.user.id, "cookies": file.read()})
-
-                    file.seek(0)
-
-                    res = ("ok" , dill.load(file))
-                    
-            #si no hay copia ni en local ni en online pues la creo
-            else:
-                with open(os.path.join(gettempdir(), "bot_cookies.pkl"), "wb") as file:
-
-                    dill.dump(dict_guardar, file)
-
-                with open(os.path.join(gettempdir(), "bot_cookies.pkl"), "rb") as file:
-
-                    scrapper.collection.insert_one({"_id": int(time.time()), "tipo": "telegram_bot", "telegram_id": bot.user.id, "cookies" : file.read()})
-                    res = ("fail", "se ha guardado una nueva copia, al parecer no habia ninguna")
-
-        return res
-
-        
-
-
-                
-
 
     
 
@@ -769,8 +567,12 @@ def m_texto(texto, solicitud=False):
     if solicitud:
         return "❗ <u><b>Solicitud de Información</b></u> ❗\n\n" + texto
     else:
-        # return "🆕 <u><b>Mensaje de Información</b></u>\n\n<blockquote>" + texto + "</blockquote>"
-        return "🆕 <u><b>Mensaje de Información</b></u>\n\n" + texto
+        
+        if re.search("ERROR", texto):
+            texto = texto.replace(re.search(r"\s*ERROR\s*", texto).group(), "")
+            return "<b>❌ ¡Error! ❌</b>\n¡La información ingresada es incorrecta!\n\n" + texto
+        else:
+            return "🆕 <u><b>Mensaje de Información</b></u>\n\n" + texto
 
 def info_message(texto, bot:telebot.TeleBot, temp_dict, user, mensaje_obj=False , markup = False):
     if mensaje_obj:
@@ -800,8 +602,95 @@ def main_folder():
         
     else:
         return os.path.dirname(sys.argv[0])
-            
+    
 
+def ver_publicacion(c: telebot.types.CallbackQuery, scrapper, bot: telebot.TeleBot, indice: int, usuario_info=False, cantidad_publicaciones_mostrar = 6):
+    #usuario_info es el usuario del cual esta publicación es
+
+    if usuario_info == False:
+        usuario_info = c.from_user.id
+
+    if scrapper.cola["uso"] == usuario_info:
+
+        if not scrapper.temp_dict[usuario_info].get("obj_publicacion"):
+            p_markup=InlineKeyboardMarkup(
+                [
+                    [InlineKeyboardButton("✅ Elegir para publicar en Facebook", callback_data="p/elegir/{}".format(indice))],
+                    [InlineKeyboardButton("↩ Volver Atrás y Elegir otra", callback_data="p/wl/a/{}".format(indice if indice % cantidad_publicaciones_mostrar == 0 else indice - indice % cantidad_publicaciones_mostrar))],
+                    [InlineKeyboardButton("🗑 Eliminar Publicación", callback_data="p/del/conf/{}".format(indice))]
+                ]
+            )
+
+    else:
+        p_markup=InlineKeyboardMarkup(
+            [
+                [InlineKeyboardButton("🗑 Eliminar Publicación", callback_data="p/del/conf/{}".format(indice))],
+                [InlineKeyboardButton("↩ Volver Atrás", callback_data="p/wl/a/{}".format(indice if indice % cantidad_publicaciones_mostrar == 0 else indice - indice % cantidad_publicaciones_mostrar))],
+            ]
+        )
+    
+    for usuario in scrapper.entrada.obtener_usuarios(False):
+        res = usuario.publicaciones[indice].enviar(scrapper, c.message.chat.id)
+
+        if isinstance(res, list):
+            #puede ser que sea una galeria de fotos...
+            bot.edit_message_reply_markup(c.message.chat.id, res[-1].message_id, reply_markup=p_markup)
+
+        else:
+            
+            bot.edit_message_reply_markup(c.message.chat.id, res.message_id, reply_markup=p_markup)
+
+
+
+
+    
+
+def ver_lista_publicaciones(m, scrapper, bot: telebot.TeleBot, indice = 0, usuario_info=False, cantidad_publicaciones_mostrar = 6, elegir=False):
+
+    
+    if not usuario_info:
+        usuario_info = m.from_user.id
+
+    if isinstance(m, telebot.types.CallbackQuery):
+        m = m.message
+
+    
+    
+    #para asegurarme de que el índice a la siguiente lista exista...
+    if indice + cantidad_publicaciones_mostrar > len(scrapper.entrada.obtener_usuario(usuario_info).publicaciones):
+        cantidad_publicaciones_mostrar = len(scrapper.entrada.obtener_usuario(usuario_info).publicaciones)
+
+
+    if elegir:
+        TEXTO = "👇 Elige una de tus publicaciones para compartirla en Facebook 👇\n\n"
+    else:
+        TEXTO = "👇 Lista de Publicaciones Creadas 👇\n\nToca en alguna para ver más información de ella / eliminarla / editarla / seleccionarla"
+
+
+    markup = InlineKeyboardMarkup(row_width=1)
+
+    for publicacion in scrapper.entrada.obtener_usuario(usuario_info).publicaciones[indice : indice + cantidad_publicaciones_mostrar]:
+
+        markup.add(InlineKeyboardButton(publicacion.titulo, callback_data="p/w/{}".format(scrapper.entrada.obtener_usuario(usuario_info).publicaciones.index(publicacion))))
+
+    markup.row_width = 1
+    
+
+    markup.row(InlineKeyboardButton("◀", callback_data="p/wl/{}".format(0 if indice - cantidad_publicaciones_mostrar < 0 else indice - cantidad_publicaciones_mostrar)), InlineKeyboardButton("▶", callback_data= "p/wl/{}".format(indice + cantidad_publicaciones_mostrar)))
+
+    try:
+        if m.caption:
+            bot.edit_message_caption(TEXTO, m.chat.id, m.message_id, reply_markup=markup)
+
+        elif m.text:
+            bot.edit_message_text(TEXTO, m.chat.id, m.message_id, reply_markup=markup)
+
+    except:
+        bot.send_message(m.chat.id, TEXTO, reply_markup=markup)
+
+        
+
+    return
 
 def user_folder(user, comprobar=False):
     user = str(user)
@@ -822,6 +711,11 @@ def user_folder(user, comprobar=False):
             return False
 
         os.mkdir(os.path.join(carpeta_destino, "user_archive",  user))
+
+    else:
+        
+        if comprobar:
+            return True
         
     return os.path.join(carpeta_destino, "user_archive",  user)
     
@@ -847,37 +741,53 @@ def make_captcha_screenshoot(captcha_element, user):
     return os.path.join(user_folder(user), str(user) + "_captcha.png")
 
 
-def handlers(bot, user , msg ,info, diccionario: dict , **kwargs):    
-
-    temp_dict = diccionario.copy()
+def handlers(bot, user , msg , info, scrapper : dict , **kwargs):    
+    temp_dict = scrapper.temp_dict.copy()
     msg = m_texto(msg, True)
 
     if kwargs.get("file"):
         if kwargs.get("markup"):
-            temp_dict[user]["msg"] = bot.send_photo(user, kwargs.get("file"), caption=msg, reply_markup=kwargs.get("markup"))
+            try:
+                temp_dict[user]["msg"] = bot.send_photo(user, kwargs.get("file"), caption=msg, reply_markup=kwargs.get("markup"))
+
+            except:
+                temp_dict[user]["msg"] = bot.send_photo(user, kwargs.get("file"), caption=msg, reply_markup=kwargs.get("markup"), parse_mode=False)
             
         else:
-            temp_dict[user]["msg"] = bot.send_photo(user, kwargs.get("file"), caption=msg)
+            try:
+                temp_dict[user]["msg"] = bot.send_photo(user, kwargs.get("file"), caption=msg)
+            except:
+                temp_dict[user]["msg"] = bot.send_photo(user, kwargs.get("file"), caption=msg, parse_mode = False)
         
     else:
         if kwargs.get("markup"):
-            temp_dict[user]["msg"] = bot.send_message(user, msg, reply_markup=kwargs.get("markup"))
+            try:
+                temp_dict[user]["msg"] = bot.send_message(user, msg, reply_markup=kwargs.get("markup"))
+
+            except:
+                temp_dict[user]["msg"] = bot.send_message(user, msg, reply_markup=kwargs.get("markup"), parse_mode = False)
         
         else:
-            temp_dict[user]["msg"] = bot.send_message(user, msg)
+            try: 
+                temp_dict[user]["msg"] = bot.send_message(user, msg)
+            except:
+                temp_dict[user]["msg"] = bot.send_message(user, msg, parse_mode = False)
     
 
     temp_dict[user]["completed"] = False   
 
     match info:
+
+        case "set_env_vars":
+            bot.register_next_step_handler(temp_dict[user]["msg"], bot_handlers.set_env_vars, bot, msg, scrapper)
         
         case "user":
         
-            bot.register_next_step_handler(temp_dict[user]["msg"], bot_handlers.get_user, bot,user, info, temp_dict, diccionario=temp_dict)
+            bot.register_next_step_handler(temp_dict[user]["msg"], bot_handlers.get_user, bot,user, info, temp_dict, diccionario=temp_dict, mensaje_editar=temp_dict[user]["msg"])
             
         case "password":
             
-            bot.register_next_step_handler(temp_dict[user]["msg"], bot_handlers.get_user, bot,user, info, temp_dict, diccionario=temp_dict)
+            bot.register_next_step_handler(temp_dict[user]["msg"], bot_handlers.get_user, bot,user, info, temp_dict, diccionario=temp_dict, mensaje_editar=temp_dict[user]["msg"])
             
         case "perfil_elegir":
             
@@ -914,26 +824,43 @@ def handlers(bot, user , msg ,info, diccionario: dict , **kwargs):
 
         case "email_verification":
             
-
-            bot.register_next_step_handler(temp_dict[user]["msg"], bot_handlers.email_verification, bot,user, info, temp_dict)
+            bot.register_next_step_handler(temp_dict[user]["msg"], bot_handlers.email_verification,bot,user, info, temp_dict)
             
 
         case "bucle_publicacion":
-            try:
-                bot.register_next_step_handler(temp_dict[user]["msg"], bot_handlers.repetir_bucle, bot,user, info, temp_dict)
-            except:
-                bot.register_next_step_handler(temp_dict[user]["msg"], bot_handlers.repetir_bucle, bot,user, info, temp_dict)
-            
-            
-    while not temp_dict[user]["completed"]:
-        
-        diccionario[user]["if_cancelar"]()
+            bot.register_next_step_handler(temp_dict[user]["msg"], bot_handlers.repetir_bucle, bot,user, info, temp_dict)
 
-        time.sleep(2)
+    
+
+            
+            
+    while True:
+        
+        if info == "set_env_vars":
+
+            if scrapper.env:
+                break
+            
+            else:
+                time.sleep(2)
+
+        else:
+            if temp_dict[user]["completed"]:
+                break
+
+            else:
+                scrapper.temp_dict[user]["if_cancelar"]()
+                time.sleep(2)
+
+        
 
     
     del temp_dict[user]["completed"], temp_dict[user]["msg"]
     
-    diccionario[user].update(temp_dict[user])
+    scrapper.temp_dict[user].update(temp_dict[user])
+
+    if temp_dict[user]["res"] == "/cancelar":
+        liberar_cola(scrapper, user, scrapper.bot)
+        return
     
     return temp_dict[user]["res"]

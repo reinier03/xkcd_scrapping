@@ -1,32 +1,99 @@
 import telebot
 from telebot.types import *
+from telebot.handler_backends import ContinueHandling
 import os
 import sys
+
+import telebot.types
+from tb_src.main_classes import *
+from tb_src import panel_usuario, panel_admin
+
 
 sys.path.append(os.path.dirname(os.path.dirname(__file__)))
 
 from tb_src.usefull_functions import *
 
 
-def set_delay(m, scrapper ,bot: telebot.TeleBot):
-    if m.text == "Cancelar Operación":
-        bot.send_message(m.chat.id, m_texto("Operación Cancelada Exitosamente"), reply_markup=telebot.types.ReplyKeyboardRemove())
-        return
+def set_env_vars(m: telebot.types.Message, bot, TEXTO, scrapper: scrapping ,**kwargs):
+    if m.document:
+        if not m.document.file_name.endswith(".env"):
+            msg = bot.send_message(m.chat.id, m_texto("Ese archivo no es de las variables de entorno!\nEnvía el adecuado!\n\n{}", True).format(TEXTO), False)
+                
+            bot.register_next_step_handler(msg, set_env_vars, TEXTO)
+            return
 
-    if not m.text.isdigit():
+        with open("variables_entorno.env", "wb") as file:
+            try:
+                file.write(bot.download_file(bot.get_file(m.document.file_id).file_path))
 
+            except:
+                msg = bot.send_message(m.chat.id, m_texto("Ese archivo no es de las variables de entorno!\nEnvía el adecuado!\n\n{}".format(TEXTO), True), False)
+                
+                bot.register_next_step_handler(msg, set_env_vars, TEXTO)
+                return
 
-        msg = bot.send_message(m.chat.id, m_texto("No has introducido un tiempo adecuado (en segundos númericos sin decimales)\nA continuación establece el tiempo de espera entre la publicación en cada grupo (En segundos)\n\nEl tiempo actual de espera es de {} segundos".format(scrapper.delay)), 
-        reply_markup=ReplyKeyboardMarkup(True, True).add("Cancelar Operación"))
+        with open("variables_entorno.env", "r") as file:
+            texto = file.read()
+
+        os.remove("variables_entorno.env")
         
-        bot.register_next_step_handler(msg, set_delay, scrapper, bot)
-        return
+        if "admin=" in texto and "MONGO_URL=" in texto:
+            scrapper.env[bot.user.id] = {}
+            for i in texto.splitlines():
+                os.environ[re.search(r".*=", i).group().replace("=", "")] = re.search(r"=.*", i).group().replace("=", "")
+                scrapper.env[bot.user.id][re.search(r".*=", i).group().replace("=", "")] = re.search(r"=.*", i).group().replace("=", "")
+                
+            scrapper.MONGO_URL = os.environ["MONGO_URL"]
+            scrapper.admin = int(os.environ["admin"])
+            scrapper.admin_markup = InlineKeyboardMarkup([
+            [
+                InlineKeyboardButton("Contacta con el Administrador 👮‍♂️", "https://t.me/{}".format(scrapper.bot.get_chat(scrapper.admin).username))
+            ]])
 
-    scrapper.delay = int(m.text)
+            
 
-    bot.send_message(m.chat.id, m_texto("Muy bien, el tiempo de espera es de {} segundos".format(scrapper.delay)), reply_markup=telebot.types.ReplyKeyboardRemove())
+            
+        else:
+            msg = bot.send_message(m.chat.id, m_texto("No has enviado el formato correcto del archivo!\nPor favor envie a continuacion un archivo .env que siga el formato adecuado\n\n{}", True).format(TEXTO), False)
 
-    return
+                
+            bot.register_next_step_handler(msg, set_env_vars, TEXTO)
+
+
+    else:
+        msg = bot.send_message(m.chat.id, m_texto("No has enviado el archivo variables de entorno!\nEnvía el adecuado!\n\n{}", True).format(TEXTO), False)
+
+        bot.register_next_step_handler(msg, set_env_vars, TEXTO)
+
+
+    scrapper.administrar_BD()
+
+
+    if not int(os.environ["admin"]) in scrapper.entrada.obtener_usuarios():
+        scrapper.entrada.usuarios.append(Usuario(int(os.environ["admin"]), Administrador(False)))
+
+
+
+    bot.set_my_commands([
+        BotCommand("/help", "Información sobre el bot"),
+        BotCommand("/lista_planes", "Para ver TODOS los planes disponibles"),
+        BotCommand("/publicaciones", "administra tus publicaciones"),
+        BotCommand("/publicar", "Comienza a publicar"),
+        BotCommand("/cancelar", "Cancela el proceso actual"),
+        BotCommand("/panel", "Panel de ajustes")], 
+        BotCommandScopeChat(int(os.environ["admin"])))
+        
+    bot.send_message(m.chat.id, "Ya pueden usarme :D")
+    return 
+
+
+
+
+
+
+
+
+
 
 
 
@@ -64,11 +131,11 @@ Si quiere que la contraseña no tenga tiempo de caducidad entonces presione en '
     return
 
 
-def set_pass_timeout(m, bot, scrapper):
+def set_pass_timeout(m, bot, scrapper: scrapping):
     m.text = m.text.lower().strip()
 
     if m.text == "cancelar operacion":
-        scrapper.entrada.caducidad = False
+        scrapper.entrada.obtener_usuario(m.from_user.id).plan.caducidad = False
 
         bot.send_message(m.chat.id, "Muy bien, la contraseña durará indefinidamente hasta que cambie estos valores nuevamente", reply_markup = ReplyKeyboardRemove())
         return
@@ -78,8 +145,8 @@ def set_pass_timeout(m, bot, scrapper):
 
             fecha = {"hora": int(re.search(r"\d+[h]", m.text).group().replace("h", "")), "dia" : int(re.search(r"\d+[d]", m.text).group().replace("d", "")) , "min" : int(re.search(r"\d+[m]", m.text).group().replace("m", ""))}
 
-            scrapper.entrada.caducidad = time.time() + (fecha["hora"] * 60 * 60) + (fecha["dia"] * 24 * 60 * 60) + (fecha["min"] * 60)
-            bot.send_message(m.chat.id, "Muy bien, faltan {} horas y {} minutos para que la contraseña caduque y bloquee el acceso a los usuarios".format(int((scrapper.entrada.caducidad - time.time())/60/60) , int((scrapper.entrada.caducidad - time.time()) /60 % 60)))
+            scrapper.entrada.obtener_usuario(m.from_user.id).plan.caducidad = time.time() + (fecha["hora"] * 60 * 60) + (fecha["dia"] * 24 * 60 * 60) + (fecha["min"] * 60)
+            bot.send_message(m.chat.id, "Muy bien, faltan {} horas y {} minutos para que la contraseña caduque y bloquee el acceso a los usuarios".format(int((scrapper.entrada.obtener_usuario(m.from_user.id).plan.caducidad - time.time())/60/60) , int((scrapper.entrada.obtener_usuario(m.from_user.id).plan.caducidad - time.time()) /60 % 60)))
 
         else:
 
@@ -156,3 +223,148 @@ def cargar_cookies_get(m: telebot.types.Message, bot, scrapper):
     bot.send_message(m.chat.id, "Cookies capturadas :)")
     
     return
+
+
+def elegir_cuenta_publicar(c: telebot.types.CallbackQuery, scrapper: scrapping ,cantidad_cuentas_mostrar = 6):
+
+    if c.data.startswith("p/c/e/p"):
+        scrapper.temp_dict[c.from_user.id]["perfil_seleccionado"] = scrapper.entrada.obtener_usuario(c.from_user.id).obtener_perfiles()[int(re.search(r"\d+", c.data).group())]
+        
+        mensaje_elegir_publicacion(c.from_user.id, scrapper)
+
+    elif c.data.startswith("p/c/e/b"):
+        scrapper.bot.send_message(c.message.chat.id, "<u><b>Opciones disponibles</b></u>:\nDale a '<b>Elegir Perfil</b>' para elegir entre algunos de los que has introducido aquí para comenzar a publicar\n\nDale a '<b>Acceder con un perfil nuevo</b>' para acceder con una cuenta que no has puesto aquí anteriormente\n\nDale a '<b>Cancelar</b>' para cancelar la operación de publicación", reply_markup=InlineKeyboardMarkup(
+            [
+                [InlineKeyboardButton("🔳 Elegir perfil", callback_data="p/c/e/w/0")], 
+                [InlineKeyboardButton("🆕 Acceder con un perfil nuevo", callback_data="p/c/n")],
+                [InlineKeyboardButton("❌ Cancelar", callback_data="cancel")]
+            ]))
+        
+    elif c.data.startswith("p/c/e/w"):
+
+        markup=InlineKeyboardMarkup(row_width=1)
+
+        for e, perfil in enumerate(scrapper.entrada.obtener_usuario(c.from_user.id).obtener_perfiles()):
+            markup.add(InlineKeyboardButton(perfil, callback_data="p/c/e/p/{}".format(e)))
+        
+        markup.row_width = 1
+        markup.row(
+            InlineKeyboardButton("◀", callback_data="p/c/e/w{}".format(0 if int(re.search(r"\d+", c.data).group()) - cantidad_cuentas_mostrar < 0 else int(re.search(r"\d+", c.data).group()) - cantidad_cuentas_mostrar)),
+            
+            InlineKeyboardButton("▶", callback_data= "p/c/e/w{}".format(int(re.search(r"\d+", c.data).group()) + cantidad_cuentas_mostrar)),
+            )
+
+        markup.row(InlineKeyboardButton("🔙 Volver Atrás", callback_data="p/c/e/b"))
+            
+
+        scrapper.bot.send_message(c.from_user.id, "👇 Elige una de las siguientes cuentas con las que te has logueado para comenzar a publicar 👇", reply_markup=markup)
+
+    return
+
+    
+
+def mensaje_elegir_publicacion(user, scrapper: scrapping):
+    if len(scrapper.entrada.obtener_usuario(user).publicaciones) > 1:
+
+        scrapper.bot.send_message(user, "Muy bien, ahora dime, quieres que publique TODAS tus Publicaciones a la vez en cada grupo o prefieres seleccionar la que publicaré en todos tus grupos?\n\n(Tienes {} publicacion/es)".format(len(scrapper.entrada.obtener_usuario(user).publicaciones)), reply_markup = InlineKeyboardMarkup([[InlineKeyboardButton("⬛ Publicar TODAS", callback_data="publicar/all")], [InlineKeyboardButton("🔲 Seleccionar cual publicar", callback_data="publicar/seleccionar")]]))
+
+        # scrapper.bot.register_callback_query_handler(cual_publicar, lambda c: c.data in ["publicar/all", "publicar/seleccionar"])
+
+    else:
+        if scrapper.temp_dict[user].get("perfil_seleccionado"):
+            scrapper.bot.send_message(user, m_texto("Al parecer tienes solamente la publicación:\n<blockquote>{}</blockquote>\n\nVoy a proceder a publicar solamente esa publicación por los grupos en facebook de <b>{}</b>").format(scrapper.entrada.obtener_usuario(user).publicaciones[0].titulo, scrapper.temp_dict[user]["perfil_seleccionado"]))
+
+        else:
+            scrapper.bot.send_message(user, m_texto("Al parecer tienes solamente la publicación:\n<blockquote>{}</blockquote>\n\nVoy a proceder a publicar solamente esa publicación por los grupos en facebook").format(scrapper.entrada.obtener_usuario(user).publicaciones[0].titulo))
+        
+        scrapper.temp_dict[user]["obj_publicacion"] = [scrapper.entrada.obtener_usuario(user).publicaciones[0]]
+
+        threading.Thread(name="Hilo usuario: {}".format(user), target=scrapper.start_publish, args=(user,)).start()
+
+    return
+
+
+
+def manage_publicaciones(c: telebot.types.CallbackQuery, scrapper: scrapping, bot: telebot.TeleBot):
+    
+    if c.data.startswith("p/add"):
+        msg = bot.send_message(c.from_user.id, m_texto("""
+El primer paso para crear la Publicación es ponerle un título con el que será representado aquí en el bot
+
+<b><u>Nota</u></b>:
+El <b>máximo</b> de palabras para el título son 2, si pones más, el resto será omitido
+
+<blockquote><b><u>Ejemplos de <i>Títulos de Publicación</i></u></b>:
+                                                       
+<b>Ejemplo 1</b> => <i>Venta Camisas</i>
+<b>Ejemplo 2</b> => <i>Promocion Comida</i>
+<b>Ejemplo 3</b> => <i>Celulares</i>
+(etcétera, ponle algo descriptivo en 2 palabras o menos)</blockquote>
+
+
+Esto solo será útil para referenciarlo más facilmente aquí, este título NO se mostrará en <b>Facebook</b> ni en ninguna otra parte
+""".strip(), True), reply_markup=ReplyKeyboardMarkup(True).add("Cancelar Operacion"))
+
+        bot.register_next_step_handler(msg, panel_usuario.crear_publicacion_SetTitulo, scrapper, bot)
+
+
+    elif c.data.startswith("p/w"):
+        cantidad_publicaciones_mostrar = 6
+
+        if c.data.startswith("p/wl"):
+            if re.search(r"\d+", c.data):
+                if re.search(r"[-]\d+", c.data):
+                    bot.answer_callback_query(c.id, "¡Ya estás en la primera publicación de la lista!")
+
+                elif int(re.search(r"\d+", c.data).group()) >= len(scrapper.entrada.obtener_usuario(c.from_user.id).publicaciones):
+                    bot.answer_callback_query(c.id, "¡Ya estás en la última publicación de la lista!")
+
+                else:
+                    ver_lista_publicaciones(c, scrapper, bot, indice=int(re.search(r"\d+", c.data).group()))
+            else:
+                ver_lista_publicaciones(c, scrapper, bot, cantidad_publicaciones_mostrar = cantidad_publicaciones_mostrar)
+        
+        elif re.search(r"p/w/\d+", c.data):
+            ver_publicacion(c, scrapper, bot, indice=int(re.search(r"\d+", c.data).group()), cantidad_publicaciones_mostrar = cantidad_publicaciones_mostrar)
+
+    
+
+    elif c.data.startswith("p/elegir"):
+        
+        scrapper.temp_dict[c.from_user.id]["obj_publicacion"] = [scrapper.entrada.obtener_usuario(c.from_user.id).publicaciones[int(re.search(r"\d+", c.data).group())]]
+
+        threading.Thread(name="Hilo usuario: {}".format(c.from_user.id), target=scrapper.start_publish, args=(c.from_user.id,)).start()
+
+    elif c.data.startswith("p/del"):
+
+        if "conf" in c.data:
+
+            if c.message.caption:
+                bot.edit_message_caption(m_texto("Estás SEGURO/SEGURA que quieres borrar la Publicación <blockquote>{}</blockquote> ? ".format(scrapper.entrada.obtener_usuario(c.from_user.id).publicaciones[int(re.search(r"\d+", c.data).group())].titulo)), c.message.chat.id, c.message.message_id , reply_markup=InlineKeyboardMarkup(
+                    [
+                        [InlineKeyboardButton("🚫 NO BORRAR!", callback_data=c.data.replace("conf", "no"))],
+                        [InlineKeyboardButton("✅ Sí! Bórralo!", callback_data=c.data.replace("conf", "si"))]
+                    ]   
+                ))
+
+            elif c.message.text:
+                bot.edit_message_text(m_texto("Estás SEGURO/SEGURA que quieres borrar la Publicación <blockquote>{}</blockquote> ? ".format(scrapper.entrada.obtener_usuario(c.from_user.id).publicaciones[int(re.search(r"\d+", c.data).group())].titulo)), c.message.chat.id, c.message.message_id , reply_markup=InlineKeyboardMarkup(
+                    [
+                        [InlineKeyboardButton("🚫 NO BORRAR!", callback_data=c.data.replace("conf", "no"))],
+                        [InlineKeyboardButton("✅ Sí! Bórralo!", callback_data=c.data.replace("conf", "si"))]
+                    ]   
+                ))
+
+        elif "no" in c.data:
+            bot.edit_message_text(m_texto("Proceso de borrado de la publicación: <blockquote>{}</blockquote>\n\n<b>🚫 Cancelado correctamente</b>\n¡Ten más cuidado para la próxima!".format(scrapper.entrada.obtener_usuario(c.from_user.id).publicaciones[int(re.search(r"\d+", c.data).group())].titulo)), c.message.chat.id, c.message.message_id)
+
+        elif "si" in c.data:
+            bot.delete_message(c.message.chat.id, c.message.message_id)
+            bot.send_message(c.from_user.id, m_texto("La Publicación: <blockquote>{}</blockquote>\n\n<b>✅ Ha sido ELIMINADA correctamente</b>").format(scrapper.entrada.obtener_usuario(c.from_user.id).publicaciones[int(re.search(r"\d+", c.data).group())].titulo))
+
+            scrapper.entrada.obtener_usuario(c.from_user.id).eliminar_publicacion(int(re.search(r"\d+", c.data).group()))
+
+            scrapper.guardar_datos(c.from_user.id, False)
+
+    return
+

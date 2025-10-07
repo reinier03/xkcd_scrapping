@@ -5,14 +5,26 @@ from tb_src.usefull_functions import *
 
 sys.path.append(os.path.dirname(os.path.dirname(__file__)))
 
-def get_user(m , bot , user , info, temp_dict, **kwargs):
+
+
+def get_user(m: telebot.types.Message, bot: telebot.TeleBot , user , info, temp_dict, **kwargs):
+
 
     temp_dict[user][info] = m.text
     
     temp_dict[user]["res"] = m.text
 
     temp_dict[user]["completed"] = True
+
+    texto_reemplazado = m.text.replace(re.search(r".*", m.text[3:]).group(), "*" * len(re.search(r".*", m.text[3:]).group()))
     
+    if info == "user":
+        bot.edit_message_text(kwargs["mensaje_editar"].text + "\n\n<b><u>Usuario Introducido</u></b>:\n<blockquote>" + texto_reemplazado + "</blockquote>", m.chat.id, kwargs["mensaje_editar"].message_id)
+
+    else:
+        bot.edit_message_text(kwargs["mensaje_editar"].text + "\n\n<b><u>Contraseña Introducida</u></b>:\n<blockquote>" + texto_reemplazado + "</blockquote>", m.chat.id, kwargs["mensaje_editar"].message_id)
+
+    bot.delete_message(m.chat.id, m.message_id)
             
     return
 
@@ -115,39 +127,3 @@ def whats_verificacion(m, bot:telebot.TeleBot, user, info, temp_dict):
     return
 
 
-
-def repetir_bucle(m, bot: telebot.TeleBot, user, info, temp_dict):
-    
-    if m.text == "No Repetir":
-        m = bot.send_message(user, "Muy bien, por ahora publicaré solamente 1 vez en todos tus grupos, la repetición está desactivada\n\n<b>Comenzaré la publicación en breve...</b>", reply_markup=telebot.types.ReplyKeyboardRemove())
-
-        bot.pin_chat_message(user, m.message_id, True)
-        bot.unpin_all_chat_messages(user)
-        
-        temp_dict[user]["res"] = False
-        temp_dict[user]["completed"] = True
-
-    elif re.search(r"\d", m.text):
-        if re.search(r"\d[.,]\d", m.text):
-            temp_dict[user]["res"] = int(float(re.search(r"\d+[.,]\d+", m.text).group()) * 60 * 60)
-            temp_dict[user]["completed"] = True
-
-        else:
-            
-            temp_dict[user]["res"] = int(m.text) * 60 * 60
-            temp_dict[user]["completed"] = True
-
-        
-        m = bot.send_message(user, "Muy bien, cada {} hora(s) y {} minuto(s) estaré difundiendo la publicación por todos los grupos de esta cuenta\n\nCuando quieras cancelar la difusión por los grupos envíame /cancelar\n\n<b>Comenzaré la publicación en breve...</b>".format(int(temp_dict[user]["res"] / 60 / 60), int(temp_dict[user]["res"] / 60 % 60)), reply_markup=telebot.types.ReplyKeyboardRemove())
-
-        bot.pin_chat_message(user, m.message_id, True)
-        bot.unpin_all_chat_messages(user)
-
-    else:
-
-        temp_dict[user]["msg"] = bot.send_message(user, "Por favor, ingrese un NÚMERO de MINUTOS de espera antes de volver a repetir el envio de esta publicación por los grupos en la cuenta de <b>{}</b> o presione en '<b>No Repetir</b>'".format(temp_dict[user]["perfil_actual"]))
-
-        bot.register_next_step_handler(temp_dict[user]["msg"], bot_handlers.repetir_bucle, bot,user, info, temp_dict)
-
-
-    return

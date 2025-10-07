@@ -1,22 +1,40 @@
 Esto es un Mongo DB 
 
+
+BD = "face"
+Colección = "usuarios
+
+------------------------ estructura general ----------------------------------
+usuario:   
+{"_id": int(time.time()), "tipo": "usuario", "telegram_id": 1747104645, "cookies" : cookies_usuario.pkl, "cookies_facebook": cookies_facebook.pkl},
+
+bot:    
+{"_id": int(time.time()), "tipo": "telegram_bot", "telegram_id": id_del_bot, "cookies": bot_cookies.pkl}
+
+global:    
+{"_id": int(time.time()), "tipo": "datos", "usuarios_baneados": [12345, 4567, 5678434], "cookies_facebook": cookies_facebook.pkl, "creador_dict": {"opcion1": True, "Limite_usuarios": 3}}
+------------------------ estructura general END----------------------------------
+
+
 #por cada usuario
+    {"_id": random, "telegram_id": 1747104645, "cookies" : cookies_usuario.pkl}
 
-estructura db["usuarios"]:
-{"_id": random, "telegram_id": 1747104645, "user" : "example@gmail.com", "password": "juanito123", "cookies" : cookies.pkl}
+    Explicacion:
+        "id_" : se genera con time.time()
+        "telegram_id" : el id de telegram del usuario
+        "user" : usuario de la cuenta de facebook
+        "cookies" : el archivo binario que contiene la clase "Usuario" del propio usuario de telegram
+        "cookies_facebook": el archivo binario que contiene las cookies con la sesión iniciada del usuario que está publicando, sirve para cuando se para el host poder reiniciar sin volver a loguear, también está duplicado de los datos globales para no interferir con el loguin de otro usuario [NOTA IMPORTANTE] : Este valor se resetea a None luego de terminar de publicar o cancelar la operación
 
-Explicacion:
-    "id_" : se genera con time.time()
-    "telegram_id" : el id de telegram del usuario
-    "user" : usuario de la cuenta de facebook
-    "password": contraseña de facebook
-    "cookies" : archivo cifrado de las cookies del usuario en el navegador
 
-Nota:
-Hay un dato en la coleccion que almacena el estado del bot, este tiene el "telegram_id" del bot y es para poder recuperar el estado del bot en caso de una ruptura en el host:
+#global:
+    {"_id": int(time.time()), "tipo": "datos", "usuarios_baneados": [12345, 4567, 5678434], "cookies_facebook": cookies_facebook.pkl, "admin_dict": {"opcion1": True, "Limite_usuarios": 3}}
+
+        "admin_dict" : Diccionario de opciones globales que solo el creador puede establecer
+
 
 estructura del bot en db["usuarios"]:
-{"id_": "telegram_bot", "telegram_id": id_del_bot, "cookies": bot_cookies.pkl}
+{"_id": "telegram_bot", "telegram_id": id_del_bot, "cookies": bot_cookies.pkl}
 
 Para indicar que es el bot dejare en el campo de "id_" el valor de "telegram_bot"
 

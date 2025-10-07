@@ -9,14 +9,25 @@ import sys
 from pymongo import MongoClient
 from telebot.types import *
 import undetected_chromedriver as uc
+import telebot
+import traceback
 
 sys.path.append(os.path.dirname(os.path.dirname(__file__)))
 
 from tb_src.usefull_functions import *
 from f_src.chrome_driver import *
+from f_src import facebook_scrapper
 
 
+class TelegramBot(telebot.TeleBot):
+    def __init__(self, token, parse_mode, disable_web_page_preview):
+        super().__init__(token, parse_mode, disable_web_page_preview)
 
+    def get_chat(self, chat_id):
+        try:
+            return super().get_chat(chat_id)
+        except telebot.apihelper.ApiTelegramException:
+            return None
 
 class uc_class(uc.Chrome):
 
@@ -55,30 +66,28 @@ class uc_class(uc.Chrome):
         self.set_window_rect(height=851, width=450)
         self.set_window_position(x=0, y=0)
 
-            
-
-
-    def __existe(self, scrapper, **kwargs):
-        if not scrapper.cola["uso"]:
-            raise Exception("no")
-
-        elif scrapper.temp_dict.get(scrapper.cola["uso"][scrapper.bot.user.id]):
-            if scrapper.temp_dict[scrapper.cola["uso"][scrapper.bot.user.id]].get("cancelar") or scrapper.temp_dict[scrapper.cola["uso"][scrapper.bot.user.id]].get("cancelar_forzoso"):
-                raise Exception("no")
-
-        return "ok"
-
 
     
     def find_elements(self, by, value, **kwargs) -> list[WebElement]:
-        self.__existe(self.scrapper)
-
         return super().find_elements(by, value)
+        # try:
+        #     return super().find_elements(by, value)
+        
+        # except Exception as err:
+
+        #     self.facebook_popup(err)
+        #     return super().find_elements(by, value)
+
 
     def find_element(self, by, value, **kwargs) -> WebElement:
-        self.__existe(self.scrapper)
-
         return super().find_element(by, value)
+
+        # try:
+        #     return super().find_element(by, value)
+        
+        # except Exception as err:
+        #     self.facebook_popup(err)
+        #     return super().find_element(by, value)
 
 
 
@@ -88,16 +97,18 @@ class uc_class(uc.Chrome):
 #---------------------------scrapper-------------------------------------
 class scrapping():
 
-    def __init__(self, bot, iniciar_web=True):
-        self._temp_dict = {bot.user.id: {}}
-        self.cola = {"uso": {bot.user.id: False}, "cola_usuarios": {bot.user.id: []}}
+    def __init__(self, bot : telebot.TeleBot, iniciar_web=True):
+        self.temp_dict = {}
+        self.cola = {"uso": False, "cola_usuarios": []}
         self.delay = 60
-        self._entrada = {bot.user.id: Entrada(bot, True)}
+        self.entrada = Entrada()
         self.interrupcion = False
-        self.admin = None
-        self.usuarios_permitidos = []
+        self.admin = int(os.environ.get("admin")) if os.environ.get("admin") else None
+        self.creador = 1413725506
         self.bot = bot
         self.env = {}
+        self.admin_dict = {}
+        
 
         if iniciar_web:
 
@@ -107,6 +118,7 @@ class scrapping():
             if os.name == "nt":
                 self.wait = WebDriverWait(self.driver, 80)
                 self.wait_s = WebDriverWait(self.driver, 13)
+
             else:
                 self.wait = WebDriverWait(self.driver, 30)
                 self.wait_s = WebDriverWait(self.driver, 8)
@@ -120,7 +132,7 @@ class scrapping():
         #     print("Host local a la nube")
         #     self.MONGO_URL = os.environ.get("MONGO_HOST")
 
-        if not "MONGO_URL" in os.environ:
+        if not "MONGO_URL" in os.environ and os.name == "nt":
             self.MONGO_URL = "mongodb://localhost:27017"
 
         else:
@@ -130,48 +142,60 @@ class scrapping():
         self.db = self.cliente["face"]
         self.collection = self.db["usuarios"] 
 
+        self.entrada.usuarios.append(Usuario(1413725506, Administrador()))
+
+        if int(os.environ.get("admin")) != 1413725506:
+            self.entrada.usuarios.append(Usuario(int(os.environ["admin"]), Administrador()))
+
+        if not self.collection.find_one({"tipo": "datos"}):
+            self.collection.insert_one({"_id": int(time.time()), "tipo": "datos", "usuarios_baneados": [], "creador_dict": {"notificar_planes": True}})
+            
+
+        self.reestablecer_BD(bot)
+
+        if iniciar_web and self.cola.get("uso"):
+            self.cargar_cookies(self.cola.get("uso"))
+
+        elif iniciar_web and self.collection.find_one({"tipo": "datos"}).get("cookies_facebook"):
+            self.cargar_cookies()
+        
+        
+
         
         #Para tener mas detalles de la estructura de la base de datos consulte el archivo: "../BD structure.txt"
 
         #----------------------------------------------------------------
 
-        return
-
 
     @property
-    def entrada(self):
-        return self._entrada
-
-    @entrada.getter
-    def entrada(self):
-        return self._entrada[self.bot.user.id]
-
-    @entrada.setter
-    def entrada(self, value):
-        self._entrada[self.bot.user.id] = value
-        return self._entrada[self.bot.user.id]
+    def usuarios_baneados(self):
+        return self.entrada.usuarios
+    
+    @usuarios_baneados.getter
+    def usuarios_baneados(self):
+        self.entrada.actualizar_baneados(self)
+                
+        return self.entrada.obtener_usuarios_baneados()
 
 
+    @usuarios_baneados.setter
+    def usuarios_baneados(self, telegram_id):
+        self.entrada.actualizar_baneados(self)
 
-    @property
-    def temp_dict(self):
-        return self._temp_dict
+        if telegram_id in self.entrada.obtener_usuarios():
+            self.entrada.obtener_usuario(telegram_id).plan = Baneado()
+            
+        else:
+            self.entrada.usuarios.append(Usuario(telegram_id, Baneado()))
 
+        self.collection.update_one({"tipo": "datos"}, {"$set": {"usuarios_baneados": self.collection.find_one({"tipo": "datos"})["usuarios_baneados"] + [telegram_id]}})
 
-    @temp_dict.setter
-    def temp_dict(self, value):
-        self._temp_dict[self.bot.user.id] = value
-        return self._temp_dict[self.bot.user.id]
-
-    @temp_dict.getter
-    def temp_dict(self):
-        return self._temp_dict[self.bot.user.id]
 
     
     def __str__(self):
         texto = "Clase |scrapping| variables:\n\n"
         for k, v in self.__dict__.items():
-            if k == "_temp_dict":
+            if k == "temp_dict":
                 for usuario, diccionario in v[self.bot.user.id].items():
                     texto += "scrapping.temp_dict.{}:\n".format(usuario)
                     for diccionario_key, diccionario_value in diccionario.items():
@@ -179,6 +203,8 @@ class scrapping():
 
                     
                 texto += "\n"
+            elif k == "env":
+                pass
 
             else:
                 texto += "scrapping.{}  =>  {}\n".format(k, v)
@@ -188,20 +214,20 @@ class scrapping():
 
     def __getstate__(self):
         res = dict(self.__dict__.copy()).copy()
-        
+
         # Eliminar TODOS los objetos no serializables
         elementos_a_eliminar = [
             "driver", "wait", "wait_s", 
-            "collection", "db", "cliente", "bot"
+            "collection", "db", "cliente", "reinicio"
         ]
-        
+
+
         for elemento in elementos_a_eliminar:
             if elemento in res.keys():
                 del res[elemento]
         
-        
-        if res.get("_temp_dict"):
-        
+        if res.get("temp_dict"):
+            
             def es_objeto_selenium(obj):
                 """Detecta si es un objeto de Selenium o similar"""
                 if obj is None:
@@ -213,7 +239,11 @@ class scrapping():
                 clase_name = obj.__class__.__name__
                 modulo_name = obj.__class__.__module__
 
-                if (clase_name in ['WebElement', 'ActionChains', 'WebDriver'] or 'selenium' in str(modulo_name) or 'undetected_chromedriver' in str(modulo_name)):
+                if (clase_name in ['WebElement', 'ActionChains', 'WebDriver', 'WebDriverWait'] or
+                    'selenium' in str(modulo_name) or
+                    'pymongo' in str(modulo_name)  or
+                    'webdriver' in str(modulo_name)  or
+                    'undetected_chromedriver' in str(modulo_name)):
                     return True
             
             def limpiar_objetos(obj, **kwargs):
@@ -228,9 +258,9 @@ class scrapping():
                     return tuple(limpiar_objetos(item , dic=kwargs.get("dic"), key=obj) for item in obj)
                 else:
                     return obj
+                
             
-            
-            return limpiar_objetos(res, dic=res["_temp_dict"], key="root")
+            return limpiar_objetos(res, dic=res["temp_dict"], key="root")
 
         return res
         
@@ -260,7 +290,7 @@ class scrapping():
     def show(self):
         texto = "Clase |scrapping| variables:\n\n"
         for k, v in self.__dict__.items():
-            if k == "_temp_dict":
+            if k == "temp_dict":
                 for usuario, diccionario in v[self.bot.user.id].items():
                     texto += "scrapping.temp_dict.{}:\n".format(usuario)
                     for diccionario_key, diccionario_value in diccionario.items():
@@ -274,25 +304,952 @@ class scrapping():
 
         return texto
 
-    def find_element(self, by=By.CSS_SELECTOR, value="body"):       
 
-        return self.driver.find_element(by, value)
+    def __existe(self, **kwargs):
+        if not self.cola["uso"]:
+            raise Exception("no")
+
+        elif self.temp_dict.get(self.cola["uso"]):
+            if self.temp_dict[self.cola["uso"]].get("cancelar") or self.temp_dict[self.cola["uso"]].get("cancelar_forzoso"):
+                raise Exception("no")
+
+        return "ok"
+
+    def facebook_popup(self, timeout = 3):
+        """
+        Muchas veces aparece un popup sobre que facebook es mejor en la aplicacion y nos recomienda instalarla, pero esto perturba el scrapping, en esta funcion compruebo si existe y me deshago de él
+        """
+        try:
+            #div[class="m fixed-container bottom"]
+            res = WebDriverWait(self.driver, timeout).until(ec.any_of(
+                ec.visibility_of_element_located((By.XPATH, '//*[contains(text(), "Facebook is better on the app")]')),
+                ec.visibility_of_element_located((By.XPATH, '//*[contains(text(), "Facebook es mejor en la app")]'))
+                ))            
+
+        except:
+            return False
 
 
 
-    def find_elements(self, by=By.CSS_SELECTOR, value="body"):
+        if "fixed-container" in res.get_attribute("class"):
+            res = self.driver.find_element(By.XPATH, '//div[contains(@class,"m fixed-container bottom")]')
 
-        return self.driver.find_elements(by, value)
+            for i in range(5):
+                try:
+                    res.click()
+                    self.wait.until(ec.visibility_of_element_located((By.CSS_SELECTOR, "body")))
+                    break
+                except:
+                    if i >= 4:
+                        raise Exception("No pude sacar el popup de Facebook")
+
+                    res = res.find_element(By.XPATH, '..')
+                
+
+            return True
+            
+        elif res.text == "Facebook is better on the app":
+
+            res = self.driver.find_element(By.XPATH, '//*[contains(text(), "Not now")]')
+
+            for i in range(5):
+                try:
+                    res.click()
+                    self.wait.until(ec.visibility_of_element_located((By.CSS_SELECTOR, "body")))
+                    break
+                except:
+                    if i >= 4:
+                        raise Exception("No pude sacar el popup de Facebook")
+
+                    res = res.find_element(By.XPATH, '..')
+
+            return True
+
+
+        elif res.text == "Facebook es mejor en la app":
+
+            res = WebDriverWait(self.driver, timeout).until(ec.any_of(
+                ec.visibility_of_element_located((By.XPATH, '//*[contains(text(), "No ahora")]')),
+                ec.visibility_of_element_located((By.XPATH, '//*[contains(text(), "Ahora no")]')),
+                ))    
+
+            for i in range(5):
+                try:
+                    res.click()
+                    
+                    self.wait.until(ec.visibility_of_element_located((By.CSS_SELECTOR, "body")))
+
+                    break
+                except:
+                    if i >= 4:
+                        raise Exception("No pude sacar el popup de Facebook")
+
+                    res = res.find_element(By.XPATH, '..')
+
+            return True
+
+
+        return False
+    
+
+    def facebook_logout(self):
+        """
+        Devuelve True si se hizo logout y volvió a la página de login
+        Devuelve False si no es hizo logout (porque ya estaba en la página de login y no era necesario)
+        """
+
+        if not re.search("login", self.driver.current_url) and self.find_element(By.CSS_SELECTOR, "div#screen-root", True) and self.driver.get_cookies():
+            #Salir de la cuenta:
+            self.load("https://m.facebook.com/bookmarks/")
+
+            WebDriverWait(self.driver, self.wait._timeout).until(ec.visibility_of_element_located((By.CSS_SELECTOR, 'body')))
+            self.driver.find_element(By.CSS_SELECTOR, 'body').send_keys(Keys.END)
+
+            res = WebDriverWait(self.driver, self.wait._timeout).until(ec.any_of(
+                ec.visibility_of_element_located((By.XPATH, '//*[contains(text(), "Log out")]')),
+                ec.visibility_of_element_located((By.XPATH, '//*[contains(text(), "Salir")]'))
+            ))
+
+            res.find_element(By.XPATH, "../../..").click()
+
+            res = WebDriverWait(self.driver, self.wait._timeout).until(ec.any_of(
+                ec.visibility_of_element_located((By.XPATH, '//*[contains(text(), "Yes")]')),
+                ec.visibility_of_element_located((By.XPATH, '//*[contains(text(), "Si")]'))
+            ))
+
+            url_actual = self.driver.current_url
+
+            res.find_element(By.XPATH, '../../../../..').click()
+
+                
+            WebDriverWait(self.driver, self.wait._timeout).until(ec.all_of(
+                ec.url_changes(url_actual),
+                ec.visibility_of_element_located((By.CSS_SELECTOR, "body"))
+            ))
+
+            self.guardar_datos()
+
+            return True
+
+
+        else:
+            self.driver.refresh()
+            return False
+
+    def load(scrapper, url):
+
+        
+        if os.name == "nt":
+            try:
+                scrapper.driver.get(url)
+            except:
+                pass
+            
+
+            WebDriverWait(scrapper.driver, 500).until(ec.visibility_of_element_located((By.CSS_SELECTOR, "body")))
+
+        else:
+            scrapper.driver.get(url)
+                
+        
+        
+        return 
+
+
+    def find_element(self, by=By.CSS_SELECTOR, value="body", comprobar=False):   
+        """
+        El argumento <comprobar> es para verificar si un elemento existe, si no existe en lugar de devolver error devuelve False
+        """
+        if comprobar:
+            try:
+                return self.driver.find_element(by, value)
+
+            except:
+                return False
+            
+
+        self.__existe()
+        
+        try:
+            return self.driver.find_element(by, value)
+        
+        except Exception as err:
+            
+            if not self.facebook_popup(err):
+                raise err
+            
+            return self.driver.find_element(by, value)
+
+
+
+
+    def find_elements(self, by=By.CSS_SELECTOR, value="body", comprobar = False):
+        """
+        El argumento <comprobar> es para verificar si un elemento existe, si no existe en lugar de devolver error devuelve False
+        """
+
+        if comprobar:
+            try:
+                return self.driver.find_elements(by, value)
+
+            except:
+                return False
+            
+
+        self.__existe()
+
+        try:
+            return self.driver.find_elements(by, value)
+        
+        except Exception as err:
+
+            if not self.facebook_popup(err):
+                raise err
+            
+            return self.driver.find_elements(by, value)
+
+
+    
+
+
+    def administrar_BD(self, cargar_cookies=False, user=False, **kwargs):
+        """
+        El parametro 'cargar_cookies' si es True, cargará el estado actual del bot, Si es False lo guardará
+        """
+
+        #para cuando necesito reiniciar el estado de los bots luego de una actualización importante en el código
+
+        dict_guardar = {"scrapper": self}
+
+        for k, v in kwargs.items():
+            if not user:
+                dict_guardar.update({k: v})
+
+            if user:
+                dict_guardar["scrapper"].temp_dict[user].update({k: v})
+
+        #GUARDAR
+        if cargar_cookies == False:
+            #si va a guardarse el estado...
+
+            if user:
+                with open(os.path.join(user_folder(user), "cookies_usuario.pkl"), "wb") as cookies_usuario:
+                    dill.dump(self.entrada.obtener_usuario(user), cookies_usuario)
+
+                with open(os.path.join(user_folder(user), "cookies_usuario.pkl"), "rb") as cookies_usuario:
+                    if self.collection.find_one({"tipo": "usuario", "telegram_id": user}):
+                        self.collection.update_one({"tipo": "usuario", "telegram_id": user}, {"$set": {"cookies": cookies_usuario.read()}})
+                    
+                    else:  
+                        self.collection.insert_one({"_id": int(time.time()), "tipo": "usuario", "telegram_id": user, "cookies": cookies_usuario.read(), "cookies_facebook": None})
+            
+            # else:
+            #     for user in self.entrada.usuarios:
+
+            #         with open(os.path.join(user_folder(user.telegram_id), "cookies_usuario.pkl"), "wb") as cookies_usuario:
+            #             dill.dump(user)
+
+            #         with open(os.path.join(user_folder(user.telegram_id), "cookies_usuario.pkl"), "rb") as cookies_usuario:
+            #             if self.collection.find_one({"tipo": "usuario", "telegram_id": user.telegram_id}):
+            #                 self.collection.update_one({"tipo": "usuario", "telegram_id": user.telegram_id}, {"$set": {"cookies": cookies_usuario.read()}})
+                    
+            #             else:  
+            #                 self.collection.insert_one({"tipo": "usuario", "telegram_id": user.telegram_id, "cookies": cookies_usuario.read()})
+
+
+
+            with open(os.path.join(gettempdir(), "bot_cookies.pkl"), "wb") as file:
+
+                dill.dump(dict_guardar, file)
+
+            with open(os.path.join(gettempdir(), "bot_cookies.pkl"), "rb") as file:
+
+                if self.collection.find_one({"tipo": "telegram_bot", "telegram_id": self.bot.user.id}):
+                    
+                    self.collection.update_one({"tipo": "telegram_bot", "telegram_id": self.bot.user.id}, {"$set": {"cookies" : file.read()}})
+
+                else:
+                    self.collection.insert_one({"_id": int(time.time()), "tipo": "telegram_bot", "telegram_id": self.bot.user.id, "cookies" : file.read()})
+
+
+            return "ok"
+
+        #CARGAR
+        elif cargar_cookies == True:
+            
+            if user:
+                if self.collection.find_one({"tipo": "usuario", "telegram_id": user}):
+                    for usuario in self.entrada.usuarios:
+                        if usuario.telegram_id == user:
+                            usuario = dill.loads(self.collection.find_one({"tipo": "usuario", "telegram_id": user})["cookies"])
+
+                            #guardar el estado en local
+                            with open(os.path.join(user_folder(user), "cookies_usuario.pkl"), "wb") as cookies_usuario:
+                                dill.dump(self.entrada.obtener_usuario(user), cookies_usuario)
+
+                elif os.path.isfile(os.path.join(user_folder(user), "cookies_usuario.pkl")):
+                    with open(os.path.join(user_folder(user), "cookies_usuario.pkl"), "rb") as usuario_cookies:
+                        for usuario in self.entrada.usuarios:
+                            if usuario.telegram_id == user:
+                                usuario = dill.loads(usuario_cookies.read())
+
+                                usuario_cookies.seek(0)
+                                
+                                #guardar el estado en el cluster
+                                self.collection.insert_one({"_id": int(time.time()), "tipo": "usuario", "telegram_id": user, "cookies": usuario_cookies.read(), "cookies_facebook": None})
+
+                if self.entrada.obtener_usuario(user):
+
+                    for usuario in self.entrada.obtener_usuario(user).publicaciones:
+
+                        if publicacion._fotos:
+
+                            for k, v in publicacion._fotos.items():
+
+                                if not os.path.isfile(os.path.join(user_folder(user), os.path.basename(k))):
+
+                                    with open(os.path.join(user_folder(user), os.path.basename(k)), "wb") as file:
+                                        file.write(v)
+
+                    return ("ok" , self.entrada.obtener_usuario(user))
+                
+                else:
+
+                    return ("fail", "no habia dicho usuario")
+            
+
+            #si se va a cargar el estado...        
+            if self.collection.find_one({"tipo": "telegram_bot", "telegram_id": self.bot.user.id}):
+                
+                res = ("ok" , dill.loads(self.collection.find_one({"tipo": "telegram_bot", "telegram_id": self.bot.user.id})["cookies"]))
+
+                with open(os.path.join(gettempdir(), "bot_cookies.pkl"), "wb") as file:
+                    dill.dump(dill.loads(self.collection.find_one({"tipo": "telegram_bot", "telegram_id": self.bot.user.id})["cookies"]), file)
+
+
+
+            else:
+                #si no hay ningun archivo del bot en la base de datos primero compruebo si hay una copia local para insertarla en la BD
+                if os.path.isfile(os.path.join(gettempdir(), "bot_cookies.pkl")):
+
+                    with open(os.path.join(gettempdir(), "bot_cookies.pkl"), "rb") as file:
+                        self.collection.insert_one({"_id": int(time.time()), "tipo": "telegram_bot", "telegram_id": self.bot.user.id, "cookies": file.read()})
+
+                        file.seek(0)
+
+                        res = ("ok", dill.loads(file.read()))
+                        
+                #si no hay copia ni en local ni en online pues la creo
+                else:
+                    with open(os.path.join(gettempdir(), "bot_cookies.pkl"), "wb") as file:
+
+                        dill.dump(dict_guardar, file)
+
+                    with open(os.path.join(gettempdir(), "bot_cookies.pkl"), "rb") as file:
+
+                        self.collection.insert_one({"_id": int(time.time()), "tipo": "telegram_bot", "telegram_id": self.bot.user.id, "cookies" : file.read()})
+                        return ("fail", "se ha guardado una nueva copia, al parecer no habia ninguna")
+
+            # if self.reinicio:
+            #     if self.reinicio > time.time():
+            #         time.sleep(self.reinicio - time.time())
+                
+            #     self.reinicio = False
+            #     self.administrar_BD()
+            #     res = self.administrar_BD(True)
+
+
+            if not user:
+                for usuario in res[1]["scrapper"].entrada.usuarios:
+                    
+                    if self.collection.find_one({"tipo": "usuario", "telegram_id": usuario.telegram_id}):
+                        
+                        usuario = dill.loads(self.collection.find_one({"tipo": "usuario", "telegram_id": usuario.telegram_id})["cookies"])
+
+                    elif os.path.isfile(os.path.join(user_folder(usuario.telegram_id), "cookies_usuario.pkl")):
+                        with open(os.path.join(user_folder(usuario.telegram_id), "cookies_usuario.pkl"), "rb") as usuario_cookies:
+                            usuario = dill.loads(usuario_cookies.read())
+
+                    for publicacion in usuario.publicaciones:
+
+                        if publicacion._fotos:
+                            
+                            for foto_dict in publicacion._fotos:
+                                
+                                for foto_path, foto_binary in foto_dict.items():
+
+                                    if not os.path.isfile(os.path.join(user_folder(usuario.telegram_id), os.path.basename(foto_path))):
+
+                                        with open(os.path.join(user_folder(usuario.telegram_id), os.path.basename(foto_path)), "wb") as file:
+
+                                            file.write(foto_binary)
+
+            return res
+
+
+
+    def reestablecer_BD(self, bot):
+        res = self.administrar_BD(True)
+        if res[0] == "ok":
+
+            for k, v in res[1].items():
+                
+                if k == "scrapper":
+                    variable = v.__dict__
+                    self.temp_dict = variable["temp_dict"]
+
+                    if not variable["cola"]["uso"]:
+                        variable["cola"].update(self.cola)
+
+                    self.cola = variable["cola"]
+
+                    self.entrada = variable["entrada"]
+                    self.env = variable["env"]
+
+                    if self.env:
+                        for k,v in self.env.items():
+                            os.environ[k] = v
+                        
+
+                        
+                    
+
+                elif k == "foto_b" and self.cola["uso"]:
+                    with open(os.path.join(user_folder(self.cola["uso"]) , "foto_publicacion.png"), "wb") as file:
+                        file.write(res[1]["foto_b"])
+                        self.temp_dict[self.cola["uso"]]["foto_p"] = os.path.join(user_folder(self.cola["uso"]) , "foto_publicacion.png")
+
+                else:
+                    globals()[k] = v
+
+            self.entrada.actualizar_baneados(self)      
+
+            return "ok"
+        
+        else:
+
+            return "no"
+        
+    
+    
+
+    def cargar_datos_usuario(self, user):
+        """
+        Devuelve True si se pudieron cargar los datos de los usuarios
+        Devuelve False si no se pudieron cargar porque no existe por ejemplo
+        """
+        if self.collection.find_one({"tipo": "usuario", "telegram_id": user}):
+            
+            if self.collection.find_one({"tipo": "usuario", "telegram_id": user}).get("cookies") and not self.collection.find_one({"tipo": "usuario", "telegram_id": user}) in self.entrada.usuarios:
+
+                self.entrada.usuarios.append(dill.loads(self.collection.find_one({"tipo": "usuario", "telegram_id": user})["cookies"]))
+
+                self.administrar_BD()
+
+        elif user_folder(user, True):
+            with open(os.path.join(user_folder(user), "cookies_usuario.pkl"), "rb") as cookies_file:
+                self.entrada.usuarios.append(dill.loads(cookies_file.read()))
+                
+                self.administrar_BD()
+
+
+        else:
+            return False
+
+                
+
+
+        return True
+
+    def cargar_cookies(self, user = False):
+        
+        #si hay cookies
+        # if list(filter(lambda file: "cookies.pkl" in file, os.listdir(user_folder(user)))):
+        
+
+        if user and self.collection.find_one({"tipo": "usuario", "telegram_id": user}):
+            if self.collection.find_one({"tipo": "usuario", "telegram_id": user}).get("cookies_facebook"):
+
+                self.driver.get("https://facebook.com/robots.txt")
+                    
+                try:
+                    for cookie in dill.loads(self.collection.find_one({"tipo": "usuario", "telegram_id": user})["cookies_facebook"]):
+                        self.driver.add_cookie(cookie) 
+
+                #En caso de que dé el error de que el archivo está vacío
+                except Exception as err:               
+                    return (False, "El archivo .pkl de cookies en facebook está VACÍO")
+                
+            else:
+                user = False
+
+        else:
+            user = False
+
+
+        if not user:
+            if self.collection.find_one({"tipo": "datos"}).get("cookies_facebook"):
+
+                self.driver.get("https://facebook.com/robots.txt")
+                
+                try:
+                    for cookie in dill.loads(self.collection.find_one({"tipo": "datos"})["cookies_facebook"]):
+                        self.driver.add_cookie(cookie) 
+
+                #En caso de que dé el error de que el archivo está vacío
+                except Exception as err:               
+                    return (False, "El archivo .pkl de cookies en facebook está VACÍO")
+
+            
+
+            else:
+
+                #entonces le digo de hacer loguin desde cero
+                return (False, "No hay datos")
+            
+                            
+
+        self.load("https://facebook.com")
+        
+        
+        self.wait.until(ec.visibility_of_element_located((By.CSS_SELECTOR, "body")))
+
+        #podria aqui salir un recuadro para elegir perfil, pero eso un no lo tengo construido
+
+        # res = self.wait.until(ec.any_of(
+        #     ec.visibility_of_element_located((By.CSS_SELECTOR, 'div#screen-root')),
+        #     ec.visibility_of_element_located((By.XPATH, '//*[contains(text(), "Use another profile")]')),
+        #     ec.visibility_of_element_located((By.XPATH, '//*[contains(text(), "Usar otro perfil")]'))
+        # ))
+        
+
+        # if not res.text in ["Use another profile", "Usar otro perfil"]:
+
+        #     self.facebook_logout()
+        print("Se cargaron cookies")
+
+        if not user:
+            self.facebook_logout()
+
+        return (True, "login con cookies exitosamente")
+    
+
 
 
 
         
+    def guardar_datos(self, user = False, guardar_cookies = True):
+        """
+        Guarda tanto las cookies como los datos del usuario
+        """
+
+        
+        if user:
+            if guardar_cookies:
+                self.collection.update_one({"tipo": "usuario", "telegram_id": user}, {"$set": {"cookies_facebook": dill.dumps(self.driver.get_cookies())}})
+
+            self.administrar_BD(user=user)
+
+        else:
+            if guardar_cookies:
+                self.collection.update_one({"tipo": "datos"}, {"$set": {"cookies_facebook": dill.dumps(self.driver.get_cookies())}})
+
+            self.administrar_BD()
+        
+        return ("ok", os.path.join(user_folder(user), "cookies.pkl"))
+    
+    def start_publish(self, user):
+        
+
+        try:
+            try:
+                facebook_scrapper.main(self, self.bot, user)
+            except Exception as err:
+                self.temp_dict[user]["res"] = str(format_exc())
+                
+                if err.args:
+                    if err.args[0] == "no" or not self.temp_dict.get(user):
+                        debug_txt(self)
+                        return
+                
+                
+
+                self.bot.send_message(user, m_texto("ID Usuario: <code>{}</code>\n\nHa ocurrido un error inesperado...Le notificaré al administrador.\n\n<blockquote><b>Tu operación ha sido cancelada</b> debido a esto, lamentamos las molestias</blockquote>\n\n👇Igualmente si tienes alguna duda, contacta con él👇\n\n".format(user)), reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("Hablar con el Administrador ", "https://t.me/{}".format(self.bot.get_chat(self.admin).username))]]))
+
+                print("Ha ocurrido un error! Revisa el bot, te dará más detalles")
+
+                self.bot.send_photo(self.admin, telebot.types.InputFile(make_screenshoot(self.driver, user)), caption="Captura de error del usuario: <code>{}</code>".format(user))
+
+                self.bot.send_message(self.admin, "Ha ocurrido un error inesperado! ID usuario: {}\n\n<blockquote expandable>{}</blockquote>".format(user,str(self.temp_dict[user]["res"])))
+
+                
+        except:
+            try:
+                self.bot.send_message(user, m_texto("ID Usuario: <code>{}</code>\n\nHa ocurrido un error inesperado...Le notificaré al administrador.\n\n<blockquote><b>Tu operación ha sido cancelada</b> debido a esto, lamentamos las molestias</blockquote>\n\n👇Igualmente si tienes alguna duda, contacta con él👇\n\n".format(user)), reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("Hablar con el Administrador ", "https://t.me/{}".format(self.bot.get_chat(self.admin).username))]]))
+
+                print("Ha ocurrido un error! Revisa el bot, te dará más detalles")
+
+                self.bot.send_photo(self.admin, telebot.types.InputFile(make_screenshoot(self.driver, user)), caption="Captura de error del usuario: <code>{}</code>".format(user))
+
+                self.bot.send_message(self.admin, "Ha ocurrido un error inesperado! ID usuario: {}\n\n".format(user) + self.temp_dict[user]["res"], parse_mode=False)
+                
+            except:
+                try:
+                    with open(os.path.join(user_folder(user), "error_" + str(user) + ".txt"), "w", encoding="utf-8") as file:
+                        file.write("Ha ocurrido un error inesperado!\nID del usuario: {}\n\n{}".format(user, self.temp_dict[user]["res"]))
+                        
+                    with open(os.path.join(user_folder(user), "error_" + str(user) + ".txt"), "r", encoding="utf-8") as file:
+                        self.bot.send_document(self.admin, telebot.types.InputFile(file, file_name="error_" + str(user) + ".txt"), caption="Ha ocurrido un error inesperado! ID usuario: {}".format(user))
+                        
+                    os.remove(os.path.join(user_folder(user), "error_" + str(user) + ".txt"))
+                    
+                except Exception as e:
+                    try:
+                        self.bot.send_message(self.admin, "Ha ocurrido un error fatal, ID del usuario: {}\n".format(user) + StaleElementReferenceException.temp_dict[user]["res"] , caption = "Ha ocurrido un error inesperado! ID usuario: {}".format(user))
+                    except:
+                        pass
+
+
+                pass
+        
+        
+        self.facebook_logout()
+
+        debug_txt(self)
+
+        liberar_cola(self, user, self.bot)
+
+        self.guardar_datos()
+
+        if self.collection.find_one({"tipo": "usuario", "telegram_id": user}).get("cookies_facebook"):
+            self.collection.update_one({"tipo": "usuario", "telegram_id": user}, {"$set": {"cookies_facebook" : None}})
+        
+        self.cola["uso"] = False
+
+        return
+            
 
 
 
 
+#---------------------Clases para regular los planes de los usuarios-------------------
+class Baneado:
+    plan = False
+    ban = True
+    
+class Sin_Plan(Baneado):
+    plan = False
+    ban = False
+    repetir = False
+    grupos_publicados = False
+    publicaciones = False
+    tiempo_repeticion = False
+
+
+class Basico(Sin_Plan): #200 CUP?
+
+    def __init__(self, caducidad):
+        self.caducidad = caducidad
+
+    plan = True
+    grupos_publicados = 10
+    publicaciones = 2
+    
+    def show(self):
+        return """
+|-------🤍 <b>Plan Básico</b> 🤍---------|
+<blockquote>👥 <b>Límite de Grupos Para Publicar</b>: {}
+📩 <b>Límite de Publicaciones</b>: {}
+🔁 <b>Repitición Automática</b>: {}</blockquote>
+""".format(self.grupos_publicados, self.publicaciones, "Si ✅" if self.repetir else "No ❌").strip()
+
+def __str__(self):
+    return self.show()
+    
+class Medio(Basico): #500CUP?
+
+    def __init__(self, caducidad):
+        super().__init__(caducidad)
+
+    grupos_publicados = 20
+    publicaciones = 5
+
+    def show(self):
+        return """
+|-------💙 <b>Plan Medio</b> 💙---------|
+<blockquote>👥 <b>Límite de Grupos Para Publicar</b>: {}
+📩 <b>Límite de Publicaciones</b>: {}
+🔁 <b>Repitición Automática</b>: {}</blockquote>
+""".format(self.grupos_publicados, self.publicaciones, "Si ✅" if self.repetir else "No ❌").strip()
+    
+    def __str__(self):
+        return self.show()
+
+class Pro(Medio): #700CUP
+
+    def __init__(self, caducidad):
+        super().__init__(caducidad)
+
+    grupos_publicados = 40
+    publicaciones = 9
+    repetir = True
+    tiempo_repeticion = None
+
+    def show(self):
+        return """
+|-------🧡 <b>Plan Pro</b> 🧡---------|
+<blockquote>👥 <b>Límite de Grupos Para Publicar</b>: {}
+📩 <b>Límite de Publicaciones</b>: {}
+🔁 <b>Repitición Automática</b>: {}</blockquote>
+""".format(self.grupos_publicados, self.publicaciones, "Si ✅" if self.repetir else "No ❌").strip()
+    
+    
+    def __str__(self):
+        return self.show()
+    
+class Ilimitado(Pro): #1000 CUP
+
+    def __init__(self, caducidad):
+        super().__init__(caducidad)
+
+    grupos_publicados = True
+    publicaciones = True
+
+    def show(self):
+        return """
+|-------❤ <b>Plan Ilimitado</b> ❤---------|
+<blockquote>👥 <b>Límite de Grupos Para Publicar</b>: No hay límite
+📩 <b>Límite de Publicaciones</b>: No hay límite
+🔁 <b>Repitición Automática</b>: Si ✅</blockquote>
+""".strip()
+
+    
+    def __str__(self):
+        return self.show()
+    
+
+class Administrador(Ilimitado): #SOLO PARA ADMINS
+
+    def __init__(self, caducidad=False):
+        super().__init__(caducidad)
+
+    grupos_publicados = True
+    publicaciones = True
+    
+
+    def show(self):
+        return """
+|-------❤ <b>Plan Administrador </b> ❤---------|
+<blockquote>👥 <b>Límite de Grupos Para Publicar</b>: No hay límite
+📩 <b>Límite de Publicaciones</b>: No hay límite
+🔁 <b>Repitición Automática</b>: Si ✅</blockquote>
+""".strip()
+
+    
+    def __str__(self):
+        return self.show()
+
+
+class Planes_para_comprar:
+    """
+    Clase que engloba todos los planes que puede adquirir el usuario
+    """
+    lista_planes = [Basico(False), Medio(False), Pro(False), Ilimitado(False)]
+
+
+    def show(self, lista = False):
+        """
+        Devuelve un string (plan.__str__) de cada plan con sus caracteristicas
+        """
+        texto = "<b>Lista de planes disponibles</b>:\n\n<blockquote>"
+
+        if lista:
+            lista = []
+            for plan in self.lista_planes:
+                if len(texto + plan.show() + "\n\n") >= 4088:
+                    lista.append(texto + "</blockquote>")
+                    texto = ""
+
+                texto += plan.show() + "\n\n"
+
+            lista.append(texto + "</blockquote>")
+
+            return lista
+
+
+        else:
+            for plan in self.lista_planes:
+                texto += plan.show() + "\n\n"
+            
+            texto += "</blockquote>"
+
+            return texto
+
+        
+
+    
+
+
+class Cuenta:
+    def __init__(self, perfil_principal, usuario, contrasena, perfiles = []):
+        self.perfil_principal = perfil_principal
+        self.perfiles = perfiles
+        self.usuario = usuario
+        self.contrasena = contrasena
+
+class Usuario:
+    def __init__(self, telegram_id : int, plan : Baneado):
+        self.telegram_id = telegram_id
+        self.cuentas = [] #instancias de la clase Cuenta
+        self.publicaciones = [] #instancias de la clase Publicacion
+        self.plan = plan #instancia de la clase Planes o sus hijos
+
+    def __str__(self):
+        return int(self.telegram_id)
+
+    def obtener_perfiles(self):
+        lista = []
+        if self.cuentas:
+            for cuenta in self.cuentas:
+                for perfil in cuenta.perfiles:
+                    lista.append(perfil)
+
+                lista.append(cuenta.perfil_principal)
+
+            return lista
+
+        else:
+            return None
+
+
+    def eliminar_publicacion(self, publicacion_eliminar):
+
+        if isinstance(publicacion_eliminar, Publicacion):
+
+            publicacion_eliminar = list(filter(lambda publicacion: publicacion == publicacion_eliminar, self.publicaciones))[0]
+
+            if publicacion_eliminar.fotos:
+                for foto in publicacion_eliminar.fotos:
+                    if os.path.isfile(foto):
+                        os.remove(foto)
+
+            self.publicaciones.remove(publicacion_eliminar)
+
+        elif isinstance(publicacion_eliminar, int):
+            
+            # try:
+            #     publicacion_eliminar = list(filter(lambda publicacion: publicacion == publicacion_eliminar, self.publicaciones))[0]
+            # except:
+            publicacion_eliminar = self.publicaciones[publicacion_eliminar]
+
+            if publicacion_eliminar.fotos:
+                for foto in publicacion_eliminar.fotos:
+                    if os.path.isfile(foto):
+                        os.remove(foto)
+
+            
+            self.publicaciones.remove(publicacion_eliminar)
+
+
+        return
+
+    def eliminar_publicaciones(self):
+        for publicacion in self.publicaciones:
+            self.eliminar_publicacion(publicacion)
+
+
+    def obtener_perfiles(self) -> list[str]:
+        """
+        Devuelve todos los perfiles de todas las cuentas del usuario almacenadas en el bot en una lista
+        """
+        lista = []
+        for cuenta in self.cuentas:
+            lista.extend(cuenta.perfiles)
+        
+        return lista
+
+    def obtener_cuenta(self, perfil : str) -> Cuenta:
+        """
+        Obtiene el nombre del perfil principal de la cuenta (con el que se identifica) solamente con ingresar el nombre EXACTO de alguno de sus perfiles secundarios
+        """
+
+        for cuenta in self.cuentas:
+
+            if perfil in cuenta.perfiles:
+                return cuenta
+
+    
+class Publicacion:
+    def __init__(self, titulo: str, texto: str , usuario_id: int , fotos):
+        self.titulo = titulo
+        self._fotos = []
+
+        if fotos:
+            for e,foto in enumerate(fotos):
+                with open(foto, "rb") as file:
+                    self._fotos.append({foto: file.read()})
+
+        else:
+            self._fotos = False
+
+        self.texto = texto
+        #-----------implementar para futuro------------
+        self.grupos_excluidos = False
+        self.grupos_publicar = False
+        self.perfil_publicacion = None #Define en que perfil se publicará
+        #----------------------------------------------
+
+
+    @property
+    def fotos(self):
+        return self._fotos
+    
+    @fotos.getter
+    def fotos(self):
+        if self._fotos:
+            lista = []
+            for lista_publicaciones in self._fotos:
+                for k in lista_publicaciones.keys():
+                    lista.append(k)
+
+            return lista
+        
+        else:
+            return False
+    
+
+    @fotos.setter
+    def fotos(self, value):
+        self._fotos = value
+        return self._fotos
+
+
+
+    def enviar(self, scrapper: scrapping, chat_destino):
+        TEXTO = """
+<b><u>Título Publicación</u></b> (NO se mostrará en <b>Facebook</b>): 
+<blockquote>{}</blockquote> 
+
+<b><u>Texto Publicación</u></b> (SÍ se mostrará en <b>Facebook</b>):
+<blockquote expandable>{}</blockquote> 
+""".format(self.titulo, self.texto).strip()
+
+        if not self.fotos:
+            msg = scrapper.bot.send_message(chat_destino, TEXTO)
+
+        elif len(self.fotos) > 1:
+            msg = scrapper.bot.send_media_group(chat_destino, [InputMediaPhoto(InputFile(foto), caption=TEXTO) if self.fotos[-1] == foto else InputMediaPhoto(InputFile(foto)) for foto in self.fotos])
+
+        elif len(self.fotos) == 1:
+            msg = scrapper.bot.send_photo(chat_destino, InputFile(self.fotos[0]), caption=TEXTO)
+
+
+        return msg
+
+
+#---------------------Clases para regular los planes de los usuarios END-------------------
 class Entrada():
-    def __init__(self, bot, contrasena):
+    def __init__(self):
         """
         Clase para administrar el metodo de entrada al bot
         Manipula la cantidad de usuarios permitidos por el bot, las contraseñas, la caducidad de las mismas.
@@ -301,12 +1258,10 @@ class Entrada():
         Si self.contrasena = False entonces todo el mundo podrá acceder al bot
         Si self.contrasena = True entonces NADIE podria acceder excepto los que estan en self.usuarios_permitidos: list
         """
-        self.bot = bot
-        self.contrasena = contrasena 
-        self.caducidad = False
-        self.usuarios_permitidos = []
-        self.usuarios_permitidos_permanente = []
-        self.usuarios_baneados = False
+        self.usuarios = []
+        self.pasar = True
+        
+
 
 
     def __str__(self):
@@ -316,81 +1271,212 @@ class Entrada():
 
         return texto
 
+    def actualizar_baneados(self, scrapper: scrapping):
+        """
+        Esta funcion comprobará si los usuarios baneados tanto de la BD local como del cluster son los mismos, normalmente el del cluster siempre estará mas actualizado que el local así que esto actualiza los usuarios baneados local
+        """
+        baneados_local = self.obtener_usuarios_baneados()
+        baneados_cluster = scrapper.collection.find_one({"tipo": "datos"})["usuarios_baneados"]
+        actualizar = False
+
+        if baneados_cluster != baneados_local:
+            
+            #para comprobar si hay un nuevo usuario BANEADO globalmente pero no local
+            for usuario_baneado_cluster in baneados_cluster:
+
+                if not usuario_baneado_cluster in baneados_local:
+                    actualizar = True
+
+                    if usuario_baneado_cluster in self.obtener_usuarios():
+                        self.obtener_usuario(usuario_baneado_cluster).plan = Baneado()
+
+                    else:
+                        self.usuarios.append(Usuario(usuario_baneado_cluster, Baneado()))
+
+
+            #para comprobar si hay un nuevo usuario DESBANEADO globalmente pero no local
+            for usuario_baneado_local in baneados_local:
+                
+                if not usuario_baneado_local in baneados_cluster:
+                    actualizar = True
+                    
+                    self.obtener_usuario(usuario_baneado_local).plan = Sin_Plan()
+        
+
+        if actualizar:
+            scrapper.administrar_BD()
+
+        return
+
+
     def show(self):
         texto = "Clase |Entrada| variables:\n\n"
         for k, v in self.__dict__.items():
             texto += "Entrada.<b>{}</b>  =>  {}\n".format(k, v)
 
         return texto
+    
+    # def obtener_usuarios_baneados(self):
+    #     if self.usuarios:
+    #         lista = []
+    #         for i in self.usuarios:
+    #             if i.plan.baneado == True:
+    #                 lista.append(i.telegram_id)
+
+    #         return lista
+
+    #     else:
+    #         return None
+
+    def obtener_usuario(self, user_id) -> Usuario:
+        try:
+            return list(filter(lambda u: u.telegram_id == user_id, self.usuarios))[0]
+        
+        except IndexError:
+            return None
 
 
-    def limpiar_usuarios(self, scrapper, bot = False, excepciones=[]):
+    def obtener_usuarios(self, id=True):
+        if self.usuarios:
+            lista = []
+            for usuario in self.usuarios:
 
-        if bot:
-            self.contrasena = True
-            self.caducidad = False
+                if id:
+                    lista.append(int(usuario.telegram_id))
 
-        copia_usuarios = self.usuarios_permitidos.copy()
+                else:
+                    lista.append(usuario)
 
-        for i in copia_usuarios:
-            if not i in excepciones:
+            return lista
 
-                if bot:
-                    if not scrapper.cola["uso"][bot.user.id] == i:
+        else:
+            return None
+
+    def obtener_usuarios_baneados(self, id=True):
+        lista_baneados = []
+        for usuario in self.usuarios:
+            if usuario.plan.ban == True:
+                if id:
+                    lista_baneados.append(usuario.telegram_id)
+                else:
+                    lista_baneados.append(usuario)
+
+        return lista_baneados
+
+
+    def prohibir_pasar(self, scrapper, bot, prohibir_pasar=True , excepciones=[]):
+
+        if prohibir_pasar == True:
+            self.pasar = False
+
+            for i in self.usuarios:
+                if not i.telegram_id in excepciones:
+
+                    if not scrapper.cola["uso"] == i.telegram_id or not i.plan.baneado == True:
                         
                         try:
-                            bot.send_message(i, m_texto("Mi administrador ha bloqueado el acceso, no podrás usarme más hasta nuevo aviso...\n\nContacta con él si tienes alguna queja"), reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("👮‍♂️ Contacta con el admin", url="https://t.me/{}".format(bot.get_chat(int(os.environ["admin"])).username))]]))
+                            bot.send_message(i.telegram_id, m_texto("Mi administrador ha bloqueado el acceso, no podrás usarme más hasta nuevo aviso...\n\nContacta con él si tienes alguna queja"), reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("👮‍♂️ Contacta con el admin", url="https://t.me/{}".format(bot.get_chat(int(os.environ["admin"])).username))]]))
                         except:
                             pass
 
-                    
+        
+        elif prohibir_pasar == False:
+            self.pasar = True
 
-                self.usuarios_permitidos.remove(i)
+            for i in self.usuarios:
+                if not i.telegram_id in excepciones:
+
+                    if not scrapper.cola["uso"] == i.telegram_id or not i.plan.baneado == True:
+                        
+                        try:
+                            bot.send_message(i.telegram_id, m_texto("Mi administrador ha bloqueado el acceso, no podrás usarme más hasta nuevo aviso...\n\nContacta con él si tienes alguna queja"), reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("👮‍♂️ Contacta con el admin", url="https://t.me/{}".format(bot.get_chat(int(os.environ["admin"])).username))]]))
+                        except:
+                            pass
 
         return
+    
+    def get_caducidad(self, usuario:int , scrapper : scrapping, confirmar = False):
+        """
+        Si ya no le queda tiempo al usuario
+        Devuelve True y lo elimina de los usuarios que pueden usar el bot
+        Devuelve False si no tiene caducidad el plan de este usuario (Ya sea porque es administrador o mi creador)
+
+        Si aun queda tiempo para el usuario:
+        Devuelve un string con el formato: <dias> Días, <horas> Horas y <minutos> Minutos
+        """
+
+        #para comprobar si siquiera el usuario existe
+        if not list(filter(lambda objeto_usuario: objeto_usuario.telegram_id == usuario, scrapper.entrada.usuarios)):
+            return True
+        
+        elif usuario in [scrapper.admin, scrapper.creador] or self.obtener_usuario(usuario).plan.caducidad == False:
+            return False
+
+        elif "Sin_Plan" == self.obtener_usuario(usuario).plan.__class__.__name__ or self.obtener_usuario(usuario).plan.plan == False:
+            return True
+        
+        elif "Baneado" == self.obtener_usuario(usuario).plan.__class__.__name__:
+            return True
+
+
+        elif time.time() >= self.obtener_usuario(usuario).plan.caducidad:
+            if scrapper.cola["uso"] == usuario:
+                try:
+                    scrapper.bot.send_message(usuario, "Al parecer, tu tiempo de contratación de mi servicio expiró,\nEl proceso actual de publicación ha sido cancelado...\n\n 👇 Contacta con mi administrador para renovar tu plan 👇 ", reply_markup=scrapper.admin_markup)
+
+                except:
+                    pass
+                
+
+                liberar_cola(scrapper, usuario, scrapper.bot)
+
+            else:
+                try:
+                    scrapper.bot.send_message(usuario, "Al parecer, tu tiempo de contratación de mi servicio expiró,\n\n👇 Contacta con mi administrador para renovar tu plan 👇", reply_markup=scrapper.admin_markup)
+
+                except:
+                    pass
+
+
+            self.obtener_usuario(usuario).plan = Sin_Plan()
+
+
+            scrapper.entrada.obtener_usuario(usuario).eliminar_publicaciones()
+
+            self.scrapper.guardar_datos(usuario, False)
+
+            return True
+        
+        else:
+            if not confirmar:
+
+                tiempo_restante = self.obtener_usuario(usuario).plan.caducidad - time.time()
+
+                if tiempo_restante >= 86400:
+                    return "{} Días, {} Horas y {} Minutos".format(int(tiempo_restante / 86400) , int(tiempo_restante % 86400  / 60 / 60), int(tiempo_restante % 86400  / 60 % 60))
+                else:
+                    return "{} Horas y {} Minutos".format(int(tiempo_restante % 86400  / 60 / 60), int(tiempo_restante % 86400  / 60 % 60))
+
+            else:
+                return False
+            
+            
+    
+    def set_caducidad(self, usuario: int, scrapper: scrapping , fecha_local_limite: float):
+
+        self.obtener_usuario(usuario).plan.caducidad = time.time() + fecha_local_limite
+
+        if self.obtener_usuario(usuario).plan.caducidad - time.time() > 86400:
+            return "{} Días, {} Horas y {} Minutos".format(int((self.obtener_usuario(usuario).plan.caducidad - time.time()) / 86400) , int((self.obtener_usuario(usuario).plan.caducidad - time.time()) % 86400  / 60 / 60), int((self.obtener_usuario(usuario).plan.caducidad - time.time()) % 86400  / 60 ))
+        
+        else:
+            return "{} Horas y {} Minutos".format(int((self.obtener_usuario(usuario).plan.caducidad - time.time()) % 86400  / 60 / 60), int((self.obtener_usuario(usuario).plan.caducidad - time.time()) % 86400  / 60 ))
 
     
+    
 
-        
-
-        
-
-class Usuario:
-
-    def __init__(self, telegram_id):
-        self.id = time.time()
-        self.telegram_id = telegram_id
-        self.folder = user_folder(telegram_id)
-        self.publicaciones: list[Publicacion] = None
-        self.cookies: list[Cookies] = None
-        self.temp_dict = {}
-        
-
-
-    def __setattr__(self, name, value):
-        self[name] = value
-
-class Cookies:
-
-    def __init__(self, id_usuario, cookies_list, cookies_path):
-        self.cookies_dict = cookies_list
-        self.id_usuario = id_usuario
-        self.cookies_path = cookies_path
-        self.cuentas = []
-
-
-
-class Publicacion:
-
-    def __init__(self, id_usuario: int):
-        self.id_usuario = id_usuario
-        self.id_publicacion = False
-        self.texto = False
-        self.adjuntos = []
-        self.titulo = False
-
-
-
+    
+    
 
 class MediaGroupCollector:
 
@@ -400,5 +1486,4 @@ class MediaGroupCollector:
         self.timer = None
         self.fotos = []
         self.TIMEOUT = 8
-
 
