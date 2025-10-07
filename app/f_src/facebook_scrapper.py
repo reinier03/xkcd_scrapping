@@ -185,6 +185,7 @@ def loguin(scrapper: scrapping, user, bot, **kwargs):
     
     elif scrapper.driver.get_cookies():
         scrapper.wait.until(ec.any_of(
+            ec.visibility_of_element_located((By.CSS_SELECTOR, 'input#m_login_email')),
             ec.visibility_of_element_located((By.XPATH, '//*[contains(text(), "Usar otro perfil")]')),
             ec.visibility_of_element_located((By.XPATH, '//*[contains(text(), "Use another profile")]'))
         )).click()

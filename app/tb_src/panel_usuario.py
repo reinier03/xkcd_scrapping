@@ -8,7 +8,7 @@ from .main_classes import *
 
 def definir_repiticion(c, scrapper: scrapping):
 
-    msg = scrapper.bot.send_message(c.message.chat.id, "A continuación, establece un tiempo de espera luego de finalizada la publicación masiva para volver a repetir el proceso en bucle\nIngresa el tiempo de repetición en HORAS\n\nSi solo deseas que no se repita y se publique solamente una vez en todos tus grupos pulsa en '<b>No Repetir</b>'", reply_markup=ReplyKeyboardMarkup(True, True).add("No Repetir"))
+    msg = scrapper.bot.send_message(c.message.chat.id, "A continuación, establece un tiempo de espera luego de finalizada la publicación masiva para reiniciar el proceso en bucle\nIngresa el tiempo de repetición en HORAS\n\nSi solo deseas que no se repita y se publique solamente una vez en todos tus grupos pulsa en '<b>No Repetir</b>'", reply_markup=ReplyKeyboardMarkup(True, True).add("No Repetir"))
 
 
     scrapper.bot.register_next_step_handler(msg, set_repeticion, scrapper)
@@ -33,7 +33,7 @@ def set_repeticion(m, scrapper: scrapping):
 
 
         
-        scrapper.bot.send_message(m.chat.id, "Muy bien, cada {} hora(s) y {} minuto(s) estaré difundiendo la publicación por todos los grupos de esta cuenta\n\nCuando quieras cancelar la difusión por los grupos envíame /cancelar\n\n<b>Comenzaré la publicación en breve...</b>".format(int(scrapper.entrada.obtener_usuario(m.from_user.id).plan.tiempo_repeticion / 60 / 60), int(scrapper.entrada.obtener_usuario(m.from_user.id).plan.tiempo_repeticion / 60 % 60)), reply_markup=telebot.types.ReplyKeyboardRemove())
+        scrapper.bot.send_message(m.chat.id, "Muy bien, {} hora(s) y {} minuto(s) será el tiempo de espera para reiniciar la publicación masiva en la cuenta".format(int(scrapper.entrada.obtener_usuario(m.from_user.id).plan.tiempo_repeticion / 60 / 60), int(scrapper.entrada.obtener_usuario(m.from_user.id).plan.tiempo_repeticion / 60 % 60)), reply_markup=telebot.types.ReplyKeyboardRemove())
 
 
 
