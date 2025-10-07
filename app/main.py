@@ -814,9 +814,20 @@ def cmd_panel_usuario(c):
         bot.delete_message(c.from_user.id, c.message.message_id)
 
 
+    if c.data in ["c/a/w/user", "c/a/w/main_vars", "c/a/w/vars"]:
+        panel_admin.watch(c, scrapper)
+
+    elif c.data == "c/a/w":
+        panel_admin.call_ver(c, scrapper)
+
+    elif c.data in ["c/a/pass/r", "c/a/pass/cancel", "c/a/pass/pass"]:
+        panel_admin.modificar_entrada(c, scrapper)
+
+    elif c.data == "c/a/pass":
+        panel_admin.entrada(c, scrapper)
 
     #para el delay entre cada publicacion masiva
-    if "c/d" == c.data:
+    elif "c/d" == c.data:
         if scrapper.entrada.obtener_usuario(c.from_user.id).plan.repetir or c.from_user.id in [scrapper.admin, scrapper.creador]:
             panel_usuario.definir_repiticion(c, scrapper)
 
@@ -886,24 +897,9 @@ def cmd_panel_usuario(c):
 
 
 
+
+
     
-
-@bot.callback_query_handler(lambda c: c.data == "c/a")
-def cmd_panel_admin(c):
-
-    bot.delete_message(c.from_user.id, c.message.message_id)
-
-    if c.data in ["c/a/w/user", "c/a/w/main_vars", "c/a/w/vars"]:
-        panel_admin.watch(c, scrapper)
-
-    elif c.data == "c/a/w":
-        panel_admin.call_ver(c, scrapper)
-
-    elif c.data in ["c/a/pass/r", "c/a/pass/cancel", "c/a/pass/pass"]:
-        panel_admin.modificar_entrada(c, scrapper)
-
-    elif c.data == "c/a/pass":
-        panel_admin.entrada(c, scrapper)
 
 
 

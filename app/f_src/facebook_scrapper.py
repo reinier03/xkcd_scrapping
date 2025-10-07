@@ -516,7 +516,7 @@ def seleccionar_perfil(scrapper : scrapping, user):
                 try:
                     scrapper.wait_s.until(ec.any_of(
                         ec.visibility_of_element_located((By.XPATH, '//*[contains(text(), "Try another way")]')),
-                        ec.visibility_of_element_located((By.XPATH, '//*[contains(text(), "Usar otro")]')),
+                        ec.visibility_of_element_located((By.XPATH, '//*[contains(text(), "Usar otro m")]')),
                         ec.visibility_of_element_located((By.XPATH, '//*[contains(text(), "email")]')),
                         lambda driver: driver.current_url.endswith("#")
                     ))
@@ -678,7 +678,7 @@ def doble_auth(scrapper: scrapping , user, bot: telebot.TeleBot):
     try:
         scrapper.wait_s.until(ec.any_of(
             ec.visibility_of_element_located((By.XPATH, '//*[contains(text(), "Try another way")]')),
-            ec.visibility_of_element_located((By.XPATH, '//*[contains(text(), "Usar otro")]')),
+            ec.visibility_of_element_located((By.XPATH, '//*[contains(text(), "Usar otro m")]')),
             ec.visibility_of_element_located((By.XPATH, '//*[contains(text(), "email")]')),
             lambda driver: driver.current_url.endswith("#")
         ))
@@ -690,13 +690,13 @@ def doble_auth(scrapper: scrapping , user, bot: telebot.TeleBot):
 
         scrapper.temp_dict[user]["res"] = scrapper.wait_s.until(ec.any_of(
             ec.visibility_of_element_located((By.XPATH, '//*[contains(text(), "Try another way")]')),
-            ec.visibility_of_element_located((By.XPATH, '//*[contains(text(), "Usar otro")]')),
+            ec.visibility_of_element_located((By.XPATH, '//*[contains(text(), "Usar otro m")]')),
             ec.visibility_of_element_located((By.XPATH, '//*[contains(text(), "email")]'))
         ))
 
 
 
-        if scrapper.temp_dict[user]["res"].text in "Try another way" or "Usar otro" in scrapper.temp_dict[user]["res"].text:
+        if scrapper.temp_dict[user]["res"].text in "Try another way" or "Usar otro m" in scrapper.temp_dict[user]["res"].text:
             scrapper.temp_dict[user]["doble"] = True
             try:
                 #Si este elemento no está es que aún está en el loguin debido a que los datos introducidos fueron incorrectos (es el mismo de arriba)

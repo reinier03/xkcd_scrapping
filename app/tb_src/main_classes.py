@@ -932,12 +932,6 @@ class scrapping():
                 
         except:
             try:
-                self.bot.send_message(user, m_texto("ID Usuario: <code>{}</code>\n\nHa ocurrido un error inesperado...Le notificaré al administrador.\n\n<blockquote><b>Tu operación ha sido cancelada</b> debido a esto, lamentamos las molestias</blockquote>\n\n👇Igualmente si tienes alguna duda, contacta con él👇\n\n".format(user)), reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("Hablar con el Administrador ", "https://t.me/{}".format(self.bot.get_chat(self.admin).username))]]))
-
-                print("Ha ocurrido un error! Revisa el bot, te dará más detalles")
-
-                self.bot.send_photo(self.admin, telebot.types.InputFile(make_screenshoot(self.driver, user)), caption="Captura de error del usuario: <code>{}</code>".format(user))
-
                 self.bot.send_message(self.admin, "Ha ocurrido un error inesperado! ID usuario: {}\n\n".format(user) + self.temp_dict[user]["res"], parse_mode=False)
                 
             except:

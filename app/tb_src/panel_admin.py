@@ -10,7 +10,6 @@ from tb_src.main_classes import *
 
 def call_ver(c, scrapper: scrapping):
 
-    scrapper.bot.delete_message(c.message.chat.id, c.message.message_id)
 
     scrapper.bot.send_message(c.from_user.id, "Qué deseas saber?", reply_markup=InlineKeyboardMarkup(
         [
@@ -26,7 +25,6 @@ def watch(c, scrapper: scrapping):
     bot = scrapper.bot
     admin = scrapper.admin
 
-    bot.delete_message(c.message.chat.id, c.message.message_id)
 
     if c.data == "c/a/w/user":
             
@@ -105,8 +103,6 @@ def entrada(c, scrapper: scrapping):
     bot = scrapper.bot
     admin = scrapper.admin
 
-    bot.delete_message(c.message.chat.id, c.message.message_id)
-
 
     msg = bot.send_message(c.from_user.id, 
 """Qué quieres hacer?
@@ -155,7 +151,6 @@ def modificar_entrada(c, scrapper):
     bot = scrapper.bot
     admin = scrapper.admin
 
-    bot.delete_message(c.message.chat.id, c.message.message_id)
 
     if c.data == "c/a/pass/cancel":
         bot.send_message(c.from_user.id, 
