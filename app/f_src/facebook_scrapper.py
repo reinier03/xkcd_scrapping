@@ -83,152 +83,6 @@ def esperar(scrapper: scrapping, etiqueta, elementos, selector="css", intentos=2
 
 
 
-
-    
-
-
-
-
-
-
-        
-
-def captcha(scrapper: scrapping, user, bot: telebot.TeleBot):
-    try:
-        if "captcha" in  scrapper.find_element(By.CSS_SELECTOR, "img.xz74otr.x168nmei.x13lgxp2.x5pf9jr.xo71vjh").get_attribute("src"):
-            
-            while True:
-                #el enlace del captcha cambia cuando se introduce uno erróneo, ya que se vuelve a generar uno nuevo desde una dirección diferente
-                scrapper.temp_dict[user]["url_captcha"] = scrapper.find_element(By.CSS_SELECTOR, "img.xz74otr.x168nmei.x13lgxp2.x5pf9jr.xo71vjh").get_attribute("src")
-                #Esperar a que la foto se muestre adecuadamente en la pantalla para que selenium pueda hacerle captura
-                scrapper.wait.until(ec.visibility_of_element_located((By.CSS_SELECTOR, "img.xz74otr.x168nmei.x13lgxp2.x5pf9jr.xo71vjh")))
-                
-            
-                handlers(bot, user, "ATENCION!\nHa aparecido un captcha!\n\nIntroduce el código proporcionado en la foto CORRECTAMENTE para continuar...", "captcha", scrapper, file=telebot.types.InputFile(make_captcha_screenshoot(scrapper.find_element(By.CSS_SELECTOR, "img.xz74otr.x168nmei.x13lgxp2.x5pf9jr.xo71vjh"), user)))
-                                   
-                
-                for i in scrapper.temp_dict[user]["res"]:
-                    scrapper.find_element(By.CSS_SELECTOR, "input#«r1»").send_keys(i)
-                    time.sleep(0.5)
-                
-                #click en continuar    
-                
-                scrapper.find_elements(By.CSS_SELECTOR, "span.x1lliihq.x193iq5w.x6ikm8r.x10wlt62.xlyipyv.xuxw1ft")[-1].click()
-                
-                try:
-                    
-                    scrapper.wait.until(ec.url_changes(scrapper.driver.current_url))
-                    
-                except:
-                    pass
-                    
-                finally:
-                    try:                                   
-                        if "captcha" in  scrapper.find_element(By.CSS_SELECTOR, "img.xz74otr.x168nmei.x13lgxp2.x5pf9jr.xo71vjh").get_attribute("src"):
-                            
-                            if scrapper.find_element(By.CSS_SELECTOR, "img.xz74otr.x168nmei.x13lgxp2.x5pf9jr.xo71vjh").get_attribute("src") != scrapper.temp_dict[user]["url_captcha"]:
-                                
-                                # scrapper.temp_dict[user]["info"] = bot.edit_message_text(text="🆕 Mensaje de Información\n\nEl codigo que introduciste es incorrecto! :( \n\nVuelve a intentarlo", chat_id=user, message_id=scrapper.temp_dict[user]["info"].message_id)
-                                
-                                bot.send_message(user, m_texto("El codigo que introduciste es incorrecto! :( \n\nVuelve a intentarlo"))
-                                
-                                continue
-                            
-                        else:
-                                                
-                            # scrapper.temp_dict[user]["info"] = bot.edit_message_text(text="🆕 Mensaje de Información\n\nEl código introducido es correcto :)\n\nSeguiré procediendo...", chat_id=user, message_id=scrapper.temp_dict[user]["info"].message_id)
-                            
-                            bot.send_message(user, m_texto("El código introducido es correcto :)\n\nSeguiré procediendo..."))
-                            
-                            return ("ok", "captcha resuelto!")    
-                            
-                    except NoSuchElementException:
-                        print("captcha resuelto")
-                        return ("ok", "captcha resuelto!")    
-
-                
-                    
-                
-                
-                
-                
-        else: 
-            return ("no", "Al parecer no hay captcha")
-    except NoSuchElementException:
-        return ("no", "Al parecer no hay captcha")
-    
-    except:
-        raise Exception("ID usuario: " + str(user) + "\n\nDescripción del error:\n" + str(format_exc()))
-
-
-def cookies_caducadas(scrapper: scrapping, user, bot):
-
-    
-    if scrapper.find_element(By.CSS_SELECTOR, 'div[class="_45ks"]'):
-        scrapper.temp_dict[user]["perfiles"] = scrapper.find_elements(By.CSS_SELECTOR, 'div[class="removableItem _95l5 _63fz"]')
-        scrapper.temp_dict[user]["texto"] = ""
-        scrapper.temp_dict[user]["lista_perfiles"] = []
-        scrapper.temp_dict[user]["teclado"] = ReplyKeyboardMarkup(True, True, row_width=1, input_field_placeholder="Selecciona una cuenta")
-        
-        for e,i in enumerate(scrapper.temp_dict[user]["perfiles"], 1):
-            scrapper.temp_dict[user]["lista_perfiles"].append(i.text)
-            scrapper.temp_dict[user]["texto"] += str(e) + " => " + i.text
-            scrapper.temp_dict[user]["teclado"].add(i.text)
-            
-        
-        handlers(bot, user, "¿Cual cuenta deseas usar?\n\n" + str(scrapper.temp_dict[user]["texto"]), "perfil_seleccion", scrapper, markup=scrapper.temp_dict[user]["teclado"])
-        
-
-        
-        #le resto uno para coincidir con el índice
-        ActionChains(scrapper.driver).click(scrapper.temp_dict[user]["perfiles"][scrapper.temp_dict[user]["res"]]).perform()
-        
-        while True:
-            handlers(bot, user, "Introduce la contraseña de esta cuenta a continuación", "password" ,scrapper)
-            
-
-                        
-            scrapper.wait.until(ec.visibility_of_all_elements_located((By.CSS_SELECTOR, 'input[id="pass"][type="password"]')))[-1].send_keys(scrapper.temp_dict[user]["password"])
-            
-            
-            try:
-                e = scrapper.find_element(By.CSS_SELECTOR, 'input#email"')
-                
-            except:
-                e = None
-                
-            if e:
-                handlers(bot, user, "Introduce a continuación tu <b>Correo</b> o <b>Número de Teléfono</b> con el que te autenticas en Facebook (En caso de ser el número de teléfono el que usarás, agrega también código de tu país por delante, ejemplos: +53, +01, +52, etc)", "user", scrapper)
-                
-
-                
-                scrapper.find_element(By.CSS_SELECTOR, 'input#email"').send_keys(scrapper.temp_dict[user]["user"])
-
-            
-            
-            try:
-                #click para recordar contraseña
-                ActionChains(scrapper.driver).click(scrapper.find_element(By.CSS_SELECTOR, 'span[class="_9ai8"]')).perform()
-            
-            except NoSuchElementException:
-                pass
-            
-            #click en iniciar sesión
-            scrapper.find_elements(By.CSS_SELECTOR, 'button[name="login"]')[-1].click()
-            scrapper.wait.until(ec.url_changes(scrapper.driver.current_url))
-            scrapper.wait.until(ec.visibility_of_element_located((By.CSS_SELECTOR, 'body')))
-            scrapper.temp_dict[user]["res"] = captcha(scrapper, user, bot)
-            if scrapper.temp_dict[user]["res"] == "error":
-                print(scrapper.temp_dict[user]["res"][1])
-                
-            elif scrapper.temp_dict[user]["res"][0] in ["ok", "no"]:
-                scrapper.guardar_datos(user)
-                break
-
-            elif scrapper.find_element(By.CSS_SELECTOR, 'div[class="mvm _akly"]'):
-                scrapper.driver.back()
-                continue
-
 def entrar_facebook(scrapper: scrapping, user, cargar_loguin = False):
     """
     Carga la página de Facebook y quita la presentacion
@@ -1076,14 +930,10 @@ def publicacion(scrapper: scrapping, bot:telebot.TeleBot, user, load_url=True, c
     if kwargs.get("diccionario"):
         scrapper.temp_dict = kwargs["diccionario"]
 
-    if scrapper.temp_dict[user].get("repetir") and not scrapper.interrupcion:
+    if scrapper.entrada.obtener_usuario(user).plan.repetir and not scrapper.interrupcion:
         bot.send_message(user, m_texto("A continuación, comenzaré a publicar en breve...\n\nEsta será la vez #<b>{}</b> que publicaré por todos los grupos disponibles". format(scrapper.temp_dict[user]["c_r"])))
 
 
-    
-
-    scrapper.temp_dict[user]["repetir"] = scrapper.entrada.obtener_usuario(user).plan.tiempo_repeticion
-    
     scrapper.temp_dict[user]["a"] = ActionChains(scrapper.driver, duration=0)
 
     scrapper.temp_dict[user]["tiempo_debug"] = []
@@ -1099,6 +949,8 @@ def publicacion(scrapper: scrapping, bot:telebot.TeleBot, user, load_url=True, c
 
 
     scrapper.load("https://m.facebook.com/groups/")
+
+    scrapper.temp_dict[user]["top"] = obtener_diferencia_scroll(scrapper, user)
     
     
     #bucle para publicar por los grupos
@@ -1118,17 +970,13 @@ def publicacion(scrapper: scrapping, bot:telebot.TeleBot, user, load_url=True, c
             
 
 
-        # if scrapper.temp_dict[user]["publicacion"].get("nombre"):
-        #     if not re.search(scrapper.temp_dict[user]["publicacion"]["nombre"] , scrapper.temp_dict[user]["publicacion"]["texto_publicacion"]):
-        #         enviar_grupos()
+        # if contador % 10 == 0 and contador != 0:
+        #     try:
+        #         scrapper.driver.refresh()
+        #     except:
+        #         pass
 
-        if contador % 10 == 0 and contador != 0:
-            try:
-                scrapper.driver.refresh()
-            except:
-                pass
-
-            scrapper.wait.until(ec.visibility_of_element_located((By.CSS_SELECTOR, "body")))
+        #     scrapper.wait.until(ec.visibility_of_element_located((By.CSS_SELECTOR, "body")))
 
         #Esta variable es para poder luego guardarla en la BD de MongoDB
         
@@ -1150,7 +998,6 @@ def publicacion(scrapper: scrapping, bot:telebot.TeleBot, user, load_url=True, c
 
         get_time_debug(scrapper, user)
 
-        scrapper.temp_dict[user]["top"] = obtener_diferencia_scroll(scrapper, user)
 
         scrapper.temp_dict[user]["tiempo_debug"].append(get_time_debug(scrapper, user, "obtener diferencia de scroll linea {}".format(traceback.extract_stack()[-1].lineno)))
         
@@ -1178,7 +1025,7 @@ def publicacion(scrapper: scrapping, bot:telebot.TeleBot, user, load_url=True, c
 
                 bot.unpin_all_chat_messages(user)
                 
-                if not scrapper.temp_dict[user].get("repetir"):
+                if not scrapper.entrada.obtener_usuario(user).plan.repetir:
 
                     bot.send_message(user, "Se ha publicado exitosamente en " + str(len(scrapper.temp_dict[user]["publicacion"]["publicados"]) + len(scrapper.temp_dict[user]["publicacion"]["incompletas"])) + " grupo(s)")
 
@@ -1186,7 +1033,7 @@ def publicacion(scrapper: scrapping, bot:telebot.TeleBot, user, load_url=True, c
                 
                 else:
                     
-                    bot.send_message(user, m_texto("Publiqué en " + str(len(scrapper.temp_dict[user]["publicacion"]["publicados"]) + len(scrapper.temp_dict[user]["publicacion"]["incompletas"])) + " grupos satisfactoriamente\nAhora esperaré {} hora(s) y {} minuto(s) antes de volver a publicar masivamente\n\nCuando quieras cancelar envíame /cancelar".format(int(scrapper.temp_dict[user]["repetir"] / 60 / 60), int(scrapper.temp_dict[user]["repetir"] / 60 % 60))))
+                    bot.send_message(user, m_texto("Publiqué en " + str(len(scrapper.temp_dict[user]["publicacion"]["publicados"]) + len(scrapper.temp_dict[user]["publicacion"]["incompletas"])) + " grupos satisfactoriamente\nAhora esperaré {} hora(s) y {} minuto(s) antes de volver a publicar masivamente\n\nCuando quieras cancelar envíame /cancelar".format(int(scrapper.entrada.obtener_usuario(user).plan.repetir / 60 / 60), int(scrapper.entrada.obtener_usuario(user).plan.repetir / 60 % 60))))
                     
                     return ("repetir", scrapper.temp_dict[user]["c_r"])
 
@@ -1212,9 +1059,13 @@ def publicacion(scrapper: scrapping, bot:telebot.TeleBot, user, load_url=True, c
 
         def click_grupo():
 
+            scrapper.temp_dict[user]["res"] = scrapper.driver.execute_script("return window.pageYOffset;")
+
             hacer_scroll(scrapper, user,
-                        scrapper.temp_dict[user]["publicacion"]["lista_grupos"][contador].size["height"] * contador + scrapper.temp_dict[user]["top"] - scrapper.driver.execute_script("return window.pageYOffset;"),
-                        (scrapper.temp_dict[user]["publicacion"]["lista_grupos"][contador].size["height"] * contador + scrapper.temp_dict[user]["top"] - scrapper.driver.execute_script("return window.pageYOffset;")) // (scrapper.temp_dict[user]["publicacion"]["lista_grupos"][contador].size["height"] * 8 + scrapper.temp_dict[user]["top"]))
+
+                        scrapper.temp_dict[user]["publicacion"]["lista_grupos"][contador].size["height"] * contador + scrapper.temp_dict[user]["top"] - scrapper.temp_dict[user]["res"],
+
+                        (scrapper.temp_dict[user]["publicacion"]["lista_grupos"][contador].size["height"] * contador + scrapper.temp_dict[user]["top"] - scrapper.temp_dict[user]["res"]) // (scrapper.temp_dict[user]["publicacion"]["lista_grupos"][contador].size["height"] * 8 + scrapper.temp_dict[user]["top"]))
 
             # hacer_scroll(scrapper, user, scrapper.temp_dict[user]["publicacion"]["lista_grupos"][contador], (contador + 1) // 4, contador)
 
@@ -1353,7 +1204,7 @@ def hacer_publicacion(scrapper: scrapping, bot : telebot.TeleBot, user: int, pub
     
     
 
-    scrapper.wait_s.until(ec.invisibility_of_element_located((By.XPATH, '//*[@id="screen-root"]/div/div[3]/div[6]/div[2]/div')))
+    scrapper.wait.until(ec.invisibility_of_element_located((By.XPATH, '//*[@id="screen-root"]/div/div[3]/div[6]/div[2]/div')))
 
     scrapper.temp_dict[user]["tiempo_debug"].append(get_time_debug(scrapper, user, "-------[Publicación: {}]-----\nEspera del elemento 'Write something' hacer scroll y darle click al elemento para entrar en el formulario de publicacion del grupo #{}, linea {}".format(publicacion.titulo, contador + 1, traceback.extract_stack()[-1].lineno)))
 
@@ -1917,8 +1768,24 @@ def main(scrapper: scrapping, bot: telebot.TeleBot, user: int):
     scrapper.temp_dict[user]["if_cancelar"] = lambda scrapper=scrapper, user=user, bot=bot: if_cancelar(scrapper, user, bot)
         
 
-    if not scrapper.interrupcion and not scrapper.temp_dict[user].get("repetir"):
-        bot.send_message(user, m_texto("Empezaré a procesar tu petición..."), reply_markup=telebot.types.ReplyKeyboardRemove())
+    if not scrapper.interrupcion and not scrapper.entrada.obtener_usuario(user).plan.repetir:
+        texto = """
+Empezaré a procesar tu petición...
+
+<u><b>Información sobre la publicación actual</b></u>:
+
+{}
+{}
+{}
+""".format(
+    "Publicacion(es) a compartir: " + ", ".join([publicacion.titulo for publicacion in scrapper.entrada.obtener_usuario(user).publicaciones]),
+
+    "Perfil(es) en los que compartir: " + scrapper.temp_dict[user].get("perfil_seleccionado") if scrapper.temp_dict[user].get("perfil_seleccionado") else "Perfil(es) en los que compartir: (Se entrará con un perfil nuevo)",
+
+    "Tiempo para repetir publicación: " + str(scrapper.entrada.obtener_usuario(user).plan.repetir) if isinstance(scrapper.entrada.obtener_usuario(user).plan.repetir, int) else "Tiempo para repetir publicación: (No hay tiempo definido por el usuario, <b>no se repetirá la publicación masiva</b>)" if scrapper.entrada.obtener_usuario(user).plan.repetir == True else "Tiempo para repetir publicación: (Debe comprar un mejor plan para poder acceder a esto, <b>no se repetirá la publicación masiva</b>)"
+    ).strip()
+
+        bot.send_message(user, m_texto(texto), reply_markup=telebot.types.ReplyKeyboardRemove())
 
 
     scrapper.temp_dict[user]["if_cancelar"]()
@@ -2009,7 +1876,7 @@ def main(scrapper: scrapping, bot: telebot.TeleBot, user: int):
     while not scrapper.temp_dict[user]["publicacion_res"][0] == "ok":
         
 
-        scrapper.temp_dict[user]["publicacion"]["hora_reinicio"] = time.time() + scrapper.temp_dict[user]["repetir"]
+        scrapper.temp_dict[user]["publicacion"]["hora_reinicio"] = time.time() + scrapper.entrada.obtener_usuario(user).plan.repetir
 
         scrapper.guardar_datos(user)
                         

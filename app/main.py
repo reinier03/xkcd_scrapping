@@ -767,7 +767,7 @@ def cmd_panel(m: telebot.types.Message):
 
 @bot.callback_query_handler(lambda c: c.data.startswith("publicar/"))
 def cual_publicar(c):
-    if (not re.search("elegir", c.data) and not re.search(r"\d+", c.data)) or c.data == "publicar/elegir/publicar" or c.data.endswith("/b"):
+    if (not re.search("elegir", c.data) and not re.search(r"\d+", c.data)) or c.data == "publicar/elegir/publicar" or "/b" in c.data:
         try:
             bot.delete_message(c.message.chat.id, c.message.message_id)
 

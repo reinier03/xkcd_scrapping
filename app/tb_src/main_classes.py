@@ -1039,12 +1039,12 @@ class Baneado:
     ban = True
     
 class Sin_Plan(Baneado):
+    cantidad_adjuntos = False
     plan = False
     ban = False
-    repetir = False
     grupos_publicados = False
     publicaciones = False
-    tiempo_repeticion = False
+    repetir = False #indica si el usuario puede repetir de forma masiva, si es True o tiene algún valor positivo es que sí puede
 
 
 class Basico(Sin_Plan): #200 CUP?
@@ -1053,6 +1053,7 @@ class Basico(Sin_Plan): #200 CUP?
         self.caducidad = caducidad
         self.bot_id = bot_id
 
+    cantidad_adjuntos = 2
     plan = True
     grupos_publicados = 10
     publicaciones = 2
@@ -1073,6 +1074,7 @@ class Medio(Basico): #500CUP?
     def __init__(self, caducidad, bot_id):
         super().__init__(caducidad, bot_id)
 
+    cantidad_adjuntos = 5
     grupos_publicados = 20
     publicaciones = 5
 
@@ -1092,10 +1094,10 @@ class Pro(Medio): #700CUP
     def __init__(self, caducidad, bot_id):
         super().__init__(caducidad, bot_id)
 
+    cantidad_adjuntos = 8
     grupos_publicados = 40
     publicaciones = 9
     repetir = True
-    tiempo_repeticion = None
 
     def show(self):
         return """
@@ -1114,6 +1116,7 @@ class Ilimitado(Pro): #1000 CUP
     def __init__(self, caducidad, bot_id):
         super().__init__(caducidad, bot_id)
 
+    cantidad_adjuntos = True
     grupos_publicados = True
     publicaciones = True
 
@@ -1132,11 +1135,11 @@ class Ilimitado(Pro): #1000 CUP
 
 class Administrador: #SOLO PARA ADMINS
 
+    cantidad_adjuntos = True
     caducidad = False
     grupos_publicados = True
     publicaciones = True
     repetir = True
-    tiempo_repeticion = None
     plan = True
     ban = False
 

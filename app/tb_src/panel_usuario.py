@@ -8,7 +8,7 @@ from .main_classes import *
 
 def definir_repiticion(c, scrapper: scrapping):
 
-    msg = scrapper.bot.send_message(c.message.chat.id, "A continuación, establece un tiempo de espera luego de finalizada la publicación masiva para reiniciar el proceso en bucle\nIngresa el tiempo de repetición en HORAS\n\nSi solo deseas que no se repita y se publique solamente una vez en todos tus grupos pulsa en '<b>No Repetir</b>'", reply_markup=ReplyKeyboardMarkup(True, True).add("No Repetir"))
+    msg = scrapper.bot.send_message(c.message.chat.id, "A continuación, establece un tiempo de espera luego de finalizada la publicación masiva para reiniciar el proceso en bucle\nIngresa el tiempo de repetición en HORAS\n\nSi solo deseas que no se repita y se publique solamente una vez en todos tus grupos pulsa en '<b>No Repetir</b>'\n\n{}".format("Actualmente tu tiempo de repetición es de: " + str(scrapper.entrada.obtener_usuario(c.from_user.id).plan.repetir) + " horas" if isinstance(scrapper.entrada.obtener_usuario(c.from_user.id).plan.repetir, int) and scrapper.entrada.obtener_usuario(c.from_user.id).plan.repetir != True else "Aún no has establecido un tiempo de repetición"), reply_markup=ReplyKeyboardMarkup(True, True).add("No Repetir"))
 
 
     scrapper.bot.register_next_step_handler(msg, set_repeticion, scrapper)

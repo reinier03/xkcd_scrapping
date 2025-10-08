@@ -448,6 +448,9 @@ Operación Cancelada :(
         else:
             bot.send_message(m.chat.id, "Actualmente nadie está publicando en este bot")
 
+
+    
+
     elif re.search("/cancelar_plan", m.text):
         if bot.get_chat(int(re.search(r"\d+", m.text).group())):
             scrapper.entrada.obtener_usuario(int(re.search(r"\d+", m.text).group())).plan = Sin_Plan()
@@ -504,9 +507,8 @@ def comandos_creador(user, scrapper: scrapping, comando = False):
 <code>/c s</code> - Captura de pantalla
 <code>/c b</code> - breakpoint
 <code>/c bots</code> - Muestra todos los bots y sus respectivos administradores
-<code>/c del_db</code> - borra la base de datos y todos los datos de los bots (a excepcion de quien lo administra). Util para cuando hay actualizaciones en el codigo que requieren nuevos valores
-<code>/c del_local</code> - Hace lo mismo que el de arriba pero lo hace unicamente con el bot actual (tanto en la nube como en la pc)
-<code>/c notificar_planes</code> - notificar cuando alguien compre un plan                  
+<code>/c del_db</code> [BOT_ID] - borra la base de datos y todos los datos de los bots (a excepcion de quien lo administra), en caso de que se le especifique un [BOT_ID] pues hace este proceso solamente en ese bot concretamente. Esto es útil para cuando hay actualizaciones en el codigo que requieren nuevos valores
+<code>/c set_admin</code> <bot_id> <new_admin_id> - Establece un nuevo admin en un bot específico
 """)
         return False
 
@@ -540,6 +542,25 @@ def comandos_creador(user, scrapper: scrapping, comando = False):
             print("ocurrio un error con el breakpoint pero lo controlé, al parecer estás usando el host\n\nEste comando aquí es inserbible")
 
         return True
+    
+    elif re.search("set_admin", comando) and re.findall(r"\d+", comando) == 2:
+        #/c set_admin <bot_id> <new_admin_id>
+        if scrapper.bot.get_chat(int(re.findall(r"\d+", comando)[0])) and scrapper.bot.get_chat(int(re.findall(r"\d+", comando)[1])):
+
+            if scrapper.collection.find_element({"tipo": "telegram_bot", "telegram_id": scrapper.bot.get_chat(int(re.findall(r"\d+", comando)[0])).id}):
+                scrapper_copia = dill.loads(scrapper.collection.find_element({"tipo": "telegram_bot", "telegram_id": scrapper.bot.get_chat(int(re.findall(r"\d+", comando)[0])).id})["cookies"])["scrapper"]
+
+                scrapper_copia.admin = int(re.findall(r"\d+", comando)[1])
+                scrapper_copia.env.update({"admin": int(re.findall(r"\d+", comando)[1])})
+                scrapper_copia.administrar_BD()
+
+                scrapper.bot.send_message(user, "Muy bien, ahora el nuevo admin de: @{} es: {}".format(scrapper.bot.get_chat(int(re.findall(r"\d+", comando)[0])).username, "@" + scrapper.bot.get_chat(int(re.findall(r"\d+", comando)[1])).username if scrapper.bot.get_chat(int(re.findall(r"\d+", comando)[1])).username else scrapper.bot.get_chat(int(re.findall(r"\d+", comando)[1])).firs_name))
+
+            else:
+                scrapper.bot.send_message(user, "El ID del bot que ingresaste ni siquiera te pertenece!")
+
+        else:
+            scrapper.bot.send_message(user, "No has ingresado un ID correcto! ")
 
     elif comando == "bots":
         #muestra todos los bots en la base de datos
