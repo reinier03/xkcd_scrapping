@@ -376,7 +376,11 @@ def loguin_cero(scrapper: scrapping, user, bot : telebot.TeleBot, **kwargs):
         for i in range(3):
 
             try:
-                scrapper.wait_s.until(ec.any_of(lambda driver, scrapper=scrapper: scrapper.find_elements(By.CSS_SELECTOR, "input")[0].get_attribute("value") == scrapper.temp_dict[user]["user"]))
+                scrapper.wait_s.until(ec.any_of(
+                    lambda driver, scrapper=scrapper: scrapper.find_elements(By.CSS_SELECTOR, "input")[0].get_attribute("value") == scrapper.temp_dict[user]["user"],
+                    lambda driver, scrapper=scrapper: scrapper.find_element(By.CSS_SELECTOR, "input#m_login_email").get_attribute("value") == scrapper.temp_dict[user]["user"],
+                ))
+
                 break
 
             except:
@@ -387,7 +391,7 @@ def loguin_cero(scrapper: scrapping, user, bot : telebot.TeleBot, **kwargs):
                     scrapper.find_elements(By.CSS_SELECTOR, "input")[0].send_keys(scrapper.temp_dict[user]["user"])
 
                 else:
-                    ActionChains(scrapper.driver).send_keys_to_element(scrapper.find_elements(By.CSS_SELECTOR, "input#m_login_email")[0], scrapper.temp_dict[user]["user"]).perform()
+                    ActionChains(scrapper.driver).send_keys_to_element(scrapper.find_element(By.CSS_SELECTOR, "input#m_login_email"), scrapper.temp_dict[user]["user"]).perform()
             
 
 
@@ -405,7 +409,11 @@ def loguin_cero(scrapper: scrapping, user, bot : telebot.TeleBot, **kwargs):
         for i in range(3):
 
             try:
-                scrapper.wait_s.until(ec.any_of(lambda driver, scrapper=scrapper: scrapper.find_elements(By.CSS_SELECTOR, "input")[1].get_attribute("value") == scrapper.temp_dict[user]["password"]))
+                scrapper.wait_s.until(ec.any_of(
+                    lambda driver, scrapper=scrapper: scrapper.find_elements(By.CSS_SELECTOR, "input")[1].get_attribute("value") == scrapper.temp_dict[user]["password"],
+                    lambda driver, scrapper=scrapper: scrapper.find_element(By.CSS_SELECTOR, "input#m_login_password").get_attribute("value") == scrapper.temp_dict[user]["password"],
+                ))
+
                 break
 
             except:
@@ -416,7 +424,7 @@ def loguin_cero(scrapper: scrapping, user, bot : telebot.TeleBot, **kwargs):
                     scrapper.find_elements(By.CSS_SELECTOR, "input")[1].send_keys(scrapper.temp_dict[user]["password"])
 
                 else:
-                    ActionChains(scrapper.driver).send_keys_to_element(scrapper.find_elements(By.CSS_SELECTOR, "input#m_login_password")[1], scrapper.temp_dict[user]["password"]).perform()
+                    ActionChains(scrapper.driver).send_keys_to_element(scrapper.find_element(By.CSS_SELECTOR, "input#m_login_password"), scrapper.temp_dict[user]["password"]).perform()
 
 
 
