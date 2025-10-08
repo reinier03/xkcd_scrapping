@@ -387,7 +387,7 @@ def loguin_cero(scrapper: scrapping, user, bot : telebot.TeleBot, **kwargs):
                     scrapper.find_elements(By.CSS_SELECTOR, "input")[0].send_keys(scrapper.temp_dict[user]["user"])
 
                 else:
-                    ActionChains(scrapper.driver).send_keys_to_element(scrapper.find_elements(By.CSS_SELECTOR, "input")[0], scrapper.temp_dict[user]["user"]).perform()
+                    ActionChains(scrapper.driver).send_keys_to_element(scrapper.find_elements(By.CSS_SELECTOR, "input#m_login_email")[0], scrapper.temp_dict[user]["user"]).perform()
             
 
 
@@ -416,7 +416,7 @@ def loguin_cero(scrapper: scrapping, user, bot : telebot.TeleBot, **kwargs):
                     scrapper.find_elements(By.CSS_SELECTOR, "input")[1].send_keys(scrapper.temp_dict[user]["password"])
 
                 else:
-                    ActionChains(scrapper.driver).send_keys_to_element(scrapper.find_elements(By.CSS_SELECTOR, "input")[1], scrapper.temp_dict[user]["password"]).perform()
+                    ActionChains(scrapper.driver).send_keys_to_element(scrapper.find_elements(By.CSS_SELECTOR, "input#m_login_password")[1], scrapper.temp_dict[user]["password"]).perform()
 
 
 
