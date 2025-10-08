@@ -293,10 +293,12 @@ def cu_handler(m):
     else:
         return (m.from_user.id != scrapper.cola["uso"] and not m.from_user.id in scrapper.entrada.obtener_usuarios()) 
 
+#este es el handler administrador de entrada
 @bot.message_handler(func=cu_handler)
 @bot.message_handler(func=lambda m: m.from_user.id in scrapper.usuarios_baneados and not m.from_user.id == scrapper.creador)
 def cmd_bloqueado(m):
     global scrapper
+    
 
     if m.from_user.id in [scrapper.admin, scrapper.creador]:
         return ContinueHandling()
