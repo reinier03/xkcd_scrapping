@@ -207,6 +207,9 @@ def cargar_cookies(c, bot, scrapper):
 
 def cargar_cookies_get(m: telebot.types.Message, bot, scrapper):
 
+    if scrapper.if_borrar_db():
+        return False
+
     if not m.document.file_name.endswith(".pkl"):
         bot.send_message(m.chat.id, "Operación Cancelada")
         return
@@ -222,7 +225,7 @@ def cargar_cookies_get(m: telebot.types.Message, bot, scrapper):
     
     bot.send_message(m.chat.id, "Cookies capturadas :)")
     
-    return
+    return True
 
 
 def elegir_cuenta_publicar(c: telebot.types.CallbackQuery, scrapper: scrapping ,cantidad_cuentas_mostrar = 6):
@@ -237,7 +240,7 @@ def elegir_cuenta_publicar(c: telebot.types.CallbackQuery, scrapper: scrapping ,
             [
                 [InlineKeyboardButton("🔳 Elegir perfil", callback_data="p/c/e/w/0")], 
                 [InlineKeyboardButton("🆕 Acceder con un perfil nuevo", callback_data="p/c/n")],
-                [InlineKeyboardButton("❌ Cancelar", callback_data="cancel")]
+                [InlineKeyboardButton("❌ Cancelar Operación", callback_data="cancel")]
             ]))
         
     elif c.data.startswith("p/c/e/w"):
@@ -328,6 +331,10 @@ Esto solo será útil para referenciarlo más facilmente aquí, este título NO 
 
                 else:
                     ver_lista_publicaciones(c, scrapper, bot, indice=int(re.search(r"\d+", c.data).group()))
+
+            elif c.data == "p/wl/b":
+                panel_usuario.opciones_publicaciones(c.from_user.id, scrapper)
+
             else:
                 ver_lista_publicaciones(c, scrapper, bot, cantidad_publicaciones_mostrar = cantidad_publicaciones_mostrar)
         

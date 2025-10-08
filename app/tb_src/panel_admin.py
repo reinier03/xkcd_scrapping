@@ -510,47 +510,26 @@ def comandos_creador(user, scrapper: scrapping, comando = False):
 """)
         return False
 
-    if comando == "del_local":
 
-        scrapper.bot.send_message(scrapper.admin, """
-‼ADVERTENCIA‼
-Mi creador @{} ha hecho cambios en mi código fuente, borraré todos los datos de los clientes y algunos otros a excepción de los que te permiten administrarme
+    elif re.search("del_db", comando.lower()):
+        if re.search(r"\d+"):
+            if scrapper.bot.get_chat(int(re.search(r"\d+", comando.lower()).group())):
+                if scrapper.bot.get_chat(int(re.search(r"\d+", comando.lower()).group())).username.endswith("bot"):
+                    msg = scrapper.bot.send_message(user, "Estás SEGURO que deseas eliminar todos los datos del bot: {} ({})?\n\nPodrán seguir usándolo pero luego del reinicio en el host el bot solamente conservará información importante cómo quien es el administrador, variables de entorno, etc".format(scrapper.bot.get_chat(int(re.search(r"\d+", comando.lower()).group())).first_name , "@" + scrapper.bot.get_chat(int(re.search(r"\d+", comando.lower()).group())).username), reply_markup=ReplyKeyboardMarkup(True, True).add("❌ Cancela!", "✅ Si, borrar todo de {}".format(scrapper.bot.get_chat(int(re.search(r"\d+", comando.lower()).group())).first_name), row_width=1))
 
-Sentimos las molestias, <b>este bot aún no está terminado</b>... Es normal que estos cambios pasen
+                    scrapper.bot.register_next_step_handler(msg, borrar_db, scrapper, int(re.search(r"\d+", comando).group()))
 
-A continación te enviaré los datos de tus clientes para que puedas reembolsarlos o renovarles el servicio 👇""".format(scrapper.bot.get_chat(scrapper.creador).username))
-        breakpoint()
-        if scrapper.entrada.usuarios:
-            texto = "<b>Información de los usuarios</b>:\n\n"
-            for e, i in enumerate(scrapper.entrada.usuarios):
+                else:
+                    comando.replace(re.search(r"\d+", comando).group(), "")
+            else:
+                comando.replace(re.search(r"\d+", comando).group(), "")
+        
+        if not re.search(r"\d+"):
+            msg = scrapper.bot.send_message(user, "Estás SEGURO que deseas eliminar todos los datos de TODOS los bots?\n\nPodrán seguir usándolos pero luego del reinicio en el host los bot solamente conservarán información importante cómo quien es el administrador, variables de entorno, etc", reply_markup=ReplyKeyboardMarkup(True, True).add("❌ Cancela!", "✅ Si, borrar TODO", row_width=1))
 
-                if len(texto + "{} =>  ID: <code>{}</code> , username: {}, plan: {}, tiempo de expiración: {}".format(e, "@" + scrapper.bot.get_chat(i.telegram_id).username if scrapper.bot.get_chat(i.telegram_id).username else str("No tiene"), i.plan.__class__.__name__, scrapper.entrada.get_caducidad(i.telegram_id, scrapper))) >= 4000:
-                    scrapper.bot.send_message(scrapper.admin, texto)
-                    texto = ""
+            scrapper.bot.register_next_step_handler(msg, borrar_db, scrapper)
 
-                
-                texto += "{} =>  ID: <code>{}</code> , username: {}, plan: {}, tiempo de expiración: {}".format(e, "@" + scrapper.bot.get_chat(i.telegram_id).username if scrapper.bot.get_chat(i.telegram_id).username else str("No tiene"), i.plan.__class__.__name__, scrapper.entrada.get_caducidad(i.telegram_id, scrapper))
-
-            scrapper.bot.send_message(scrapper.admin, texto)
-
-            if scrapper.cola["uso"]:
-                scrapper.temp_dict[scrapper.cola["uso"]]["cancelar_forzoso"] = True
-                liberar_cola(scrapper, scrapper.cola["uso"], scrapper.bot, False)
-
-        else:
-            scrapper.bot.send_message(scrapper.admin, "Pues no, no tienes clientes a los que notificarles los cambios. Continuaré pues")
-
-
-        res = {}
-        for k,v in scrapper.__getstate__().copy().items():
-            if k in ["env", "admin", "MONGO_URL", "bot", "webhook_url"]:
-                res.update({k: v})
-
-        scrapper.__dict__ = res.copy()
-
-        scrapper.guardar_datos()
-
-        return True
+            return
 
 
     elif comando == "b":
@@ -579,60 +558,7 @@ A continación te enviaré los datos de tus clientes para que puedas reembolsarl
 
         return True
 
-    elif re.search("del_db", comando.lower()):
-
-        scrapper.creador_dict = {"del_db": list(filter(lambda datos: datos.telegram_id, scrapper.collection.find({"tipo": "telegram_bot"}).to_list()))}
-
-        for e, i in enumerate(scrapper.collection.find({"tipo": "telegram_bot"}).to_list()):
-            
-            scrapper_copia = dill.loads(i["cookies"])["scrapper"]
-
-            scrapper_copia.bot.send_message(scrapper.admin, """
-<b>‼ADVERTENCIA‼</b>
-Mi creador @{} ha hecho cambios en mi código fuente, borraré todos los datos de los clientes y algunos otros a excepción de los que te permiten administrarme
-
-Sentimos las molestias, <b>este bot aún no está terminado</b>... Es normal que estos cambios pasen
-
-A continación te enviaré los datos de tus clientes para que puedas reembolsarlos o renovarles el servicio 👇""".format(scrapper_copia.bot.get_chat(scrapper.creador).username).strip())
-                
-            if scrapper_copia.entrada.usuarios:
-                texto = "<b>Información de los usuarios</b>:\n\n"
-                for e, i in enumerate(scrapper.entrada.usuarios):
-
-                    if len(texto + "{} =>  ID: <code>{}</code> , username: {}, plan: {}, tiempo de expiración: {}".format(e, "@" + scrapper.bot.get_chat(i.telegram_id).username if scrapper.bot.get_chat(i.telegram_id).username else str("No tiene"), i.plan.__class__.__name__, scrapper.entrada.get_caducidad(i.telegram_id, scrapper))) >= 4000:
-                        scrapper.bot.send_message(scrapper.admin, texto)
-                        texto = ""
-
-                    
-                    texto += "{} =>  ID: <code>{}</code> , username: {}, plan: {}, tiempo de expiración: {}".format(e, "@" + scrapper.bot.get_chat(i.telegram_id).username if scrapper.bot.get_chat(i.telegram_id).username else str("No tiene"), i.plan.__class__.__name__, scrapper.entrada.get_caducidad(i.telegram_id, scrapper))
-
-                scrapper.bot.send_message(scrapper.admin, texto)
-
-                if scrapper.cola["uso"]:
-                    scrapper.temp_dict[scrapper.cola["uso"]]["cancelar_forzoso"] = True
-                    liberar_cola(scrapper, scrapper.cola["uso"], scrapper.bot, False)
-
-            else:
-                scrapper.bot.send_message(scrapper.admin, "Pues no, no tienes clientes a los que notificarles los cambios. Continuaré pues")
-
-            
-
-            res = {}
-            for k,v in scrapper.__getstate__().copy().items():
-                if k in ["env", "admin", "MONGO_URL", "bot", "webhook_url"]:
-                    res.update({k: v})
-
-            scrapper.__dict__ = res.copy()
-
-            scrapper.guardar_datos()
-            
-
-        if os.path.isfile(os.path.join(gettempdir(), "bot_cookies.pkl")):
-            os.remove(os.path.join(gettempdir(), "bot_cookies.pkl"))
-                
-                
-
-        return True
+        
     
 
     elif re.search("notificar_planes", comando.lower()):
@@ -645,5 +571,92 @@ A continación te enviaré los datos de tus clientes para que puedas reembolsarl
     return False
             
 
-
+def borrar_db(m, scrapper: scrapping, bot_id=False):
+    if m.text == "❌ Cancela!":
+        scrapper.bot.send_message(m.chat.id, "Operación Cancelada", reply_markup=ReplyKeyboardRemove())
+        return
     
+    if m.text.startswith("✅ Si"):
+
+        if bot_id:
+            scrapper.creador_dict = {"del_db": scrapper.collection.find_one({"tipo": "usuarios"})["creador_dict"]["del_db"] + [bot_id]}
+
+            bots_iterar = scrapper.collection.find({"tipo": "telegram_bot", "telegram_id": bot_id}).to_list()
+
+        else:
+            scrapper.creador_dict = {"del_db": [datos["telegram_id"] for datos in scrapper.collection.find({"tipo": "telegram_bot"}).to_list()]}
+
+            bots_iterar = scrapper.collection.find({"tipo": "telegram_bot"}).to_list()
+
+
+
+        for e, datos_db in enumerate(bots_iterar):
+            
+            scrapper_copia = dill.loads(datos_db["cookies"])["scrapper"]
+
+            scrapper_copia.bot.send_message(scrapper_copia.admin, """
+<b>‼ADVERTENCIA‼</b>
+Mi creador @{} ha hecho cambios en mi código fuente, borraré todos los datos de los clientes y algunos otros a excepción de los que te permiten administrarme.
+
+Por ahora mantendré los datos hasta el próximo reinicio (el cual será pronto), luego del reinicio los usuarios perderán los planes y deberán volver a ingresar todo nuevamente (la información de publicaciones y sus cuentas en Facebook)
+
+Sentimos las molestias, <b>este bot aún está en desarrollo</b>... Es normal que estos cambios pasen
+
+A continación te enviaré los datos de tus clientes para que puedas reembolsarlos o renovarles el servicio 👇""".format(scrapper_copia.bot.get_chat(scrapper_copia.creador).username).strip())
+            
+
+            texto = "<b>Información de los usuarios</b>:\n\n"
+
+            if scrapper_copia.entrada.usuarios:
+                for e, usuario in enumerate(scrapper_copia.entrada.usuarios):
+                    
+                    if not scrapper_copia.entrada.get_caducidad(usuario.telegram_id, scrapper_copia, True):
+                        if len(texto + "{} =>  ID: <code>{}</code> , username: {}, plan: {}, tiempo de expiración: {}".format(e, "@" + scrapper_copia.bot.get_chat(usuario.telegram_id).username if scrapper_copia.bot.get_chat(usuario.telegram_id).username else str("No tiene"), usuario.plan.__class__.__name__, scrapper_copia.entrada.get_caducidad(usuario.telegram_id, scrapper_copia))) >= 4000:
+                            scrapper_copia.bot.send_message(scrapper_copia.admin, texto)
+                            texto = ""
+
+                        
+                        texto += "{} =>  ID: <code>{}</code> , username: {}, plan: {}, tiempo de expiración: {}".format(e, "@" + scrapper_copia.bot.get_chat(usuario.telegram_id).username if scrapper_copia.bot.get_chat(usuario.telegram_id).username else str("No tiene"), usuario.plan.__class__.__name__, scrapper_copia.entrada.get_caducidad(usuario.telegram_id, scrapper_copia))
+
+
+                if texto != "<b>Información de los usuarios</b>:\n\n":
+                    scrapper_copia.bot.send_message(scrapper_copia.admin, texto)
+
+
+                if scrapper_copia.cola["uso"]:
+                    scrapper_copia.temp_dict[scrapper_copia.cola["uso"]]["cancelar_forzoso"] = True
+                    liberar_cola(scrapper_copia, scrapper_copia.cola["uso"], scrapper_copia.bot, False)
+
+            if not scrapper_copia.entrada.usuarios or texto == "<b>Información de los usuarios</b>:\n\n":
+                scrapper_copia.bot.send_message(scrapper_copia.admin, "Pues no, no tienes clientes a los que notificarles los cambios. Continuaré pues")
+
+            
+
+            res = {}
+            for k,v in scrapper_copia.__getstate__().copy().items():
+                if k in ["env", "admin", "MONGO_URL", "bot", "webhook_url", "creador"]:
+                    res.update({k: v})
+
+            scrapper_copia.__dict__ = res.copy()
+
+            dict_guardar = {"scrapper": scrapper_copia}
+
+            with open(os.path.join(gettempdir(), "copia_bot_cookies.pkl"), "wb") as file:
+
+                dill.dump(dict_guardar, file)
+
+            with open(os.path.join(gettempdir(), "copia_bot_cookies.pkl"), "rb") as file:
+
+                if scrapper_copia.collection.find_one({"tipo": "telegram_bot", "telegram_id": scrapper_copia.bot.user.id}):
+                    
+                    scrapper_copia.collection.update_one({"tipo": "telegram_bot", "telegram_id": scrapper_copia.bot.user.id}, {"$set": {"cookies" : file.read()}})
+
+                else:
+                    scrapper_copia.collection.insert_one({"_id": int(time.time()) + 1, "tipo": "telegram_bot", "telegram_id": scrapper_copia.bot.user.id, "cookies" : file.read()})
+
+            os.remove(os.path.join(gettempdir(), "copia_bot_cookies.pkl"))
+            
+                
+                
+
+        return True

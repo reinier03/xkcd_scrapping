@@ -145,7 +145,7 @@ class scrapping():
             self.entrada.usuarios.append(Usuario(int(os.environ["admin"]), Administrador()))
 
         if not self.collection.find_one({"tipo": "datos"}):
-            self.collection.insert_one({"_id": int(time.time()), "tipo": "datos", "usuarios_baneados": [], "creador_dict": {"notificar_planes": True} , "admin_dict": {}})
+            self.collection.insert_one({"_id": int(time.time()), "tipo": "datos", "usuarios_baneados": [], "creador_dict": {"notificar_planes": True, "del_db" : []} , "admin_dict": {}})
             
 
         self.reestablecer_BD(bot)
@@ -193,6 +193,9 @@ class scrapping():
     
     @creador_dict.getter
     def creador_dict(self):
+        if self._creador_dict != self.collection.find_one({"tipo": "datos"})["creador_dict"]:
+            self._creador_dict = self.collection.find_one({"tipo": "datos"})["creador_dict"]
+
         return self._creador_dict
 
     @creador_dict.setter
@@ -204,6 +207,8 @@ class scrapping():
         self.collection.update_one({"tipo": "datos"}, {"$set": {"creador_dict": res}})
         self._creador_dict = self.collection.find_one({"tipo": "datos"})["creador_dict"]
 
+        return self._creador_dict
+
 
     @property
     def admin_dict(self):
@@ -211,7 +216,17 @@ class scrapping():
     
     @admin_dict.getter
     def admin_dict(self):
-        pass
+        if not self.collection.find_one({"tipo": "datos"})["admin_dict"].get(self.admin):
+
+            res = self.collection.find_one({"tipo": "datos"})["admin_dict"]
+            res.update({self.admin: {}})
+            
+            self.collection.update_one({"tipo": "datos"}, {"$set": {"admin_dict": res}})
+
+        if len(self._admin_dict) < len(self.collection.find_one({"tipo": "datos"})["admin_dict"][self.admin]):
+            self._admin_dict = self.collection.find_one({"tipo": "datos"})["admin_dict"][self.admin]
+
+        return self._admin_dict
 
     @admin_dict.setter
     def admin_dict(self, value: dict):
@@ -223,9 +238,15 @@ class scrapping():
             self.collection.update_one({"tipo": "datos"}, {"$set": {"admin_dict": res}})
 
         res = self.collection.find_one({"tipo": "datos"})["admin_dict"][self.admin]
-        res.update({value})
+        res.update(value)
+        actualizacion = self.collection.find_one({"tipo": "datos"})["admin_dict"]
+        actualizacion.update({self.admin : res})
 
-        self.collection.update_one({"tipo": "datos"}, {"$set": {"admin_dict": res}})
+        self.collection.update_one({"tipo": "datos"}, {"$set": {"admin_dict": actualizacion}})
+
+        self._admin_dict = self.find_one({"tipo": "datos"})["admin"]
+
+        return 
 
 
 
@@ -548,7 +569,7 @@ class scrapping():
     
 
 
-    def administrar_BD(self, cargar_cookies=False, user=False, **kwargs):
+    def administrar_BD(self, cargar_cookies=False, user=False, cargar_local=True ,**kwargs):
         """
         El parametro 'cargar_cookies' si es True, cargará el estado actual del bot, Si es False lo guardará
         """
@@ -566,6 +587,9 @@ class scrapping():
 
         #GUARDAR
         if cargar_cookies == False:
+
+            if self.if_borrar_db():
+                return ("fail", "Se va a borrar la Base de Datos")
             #si va a guardarse el estado...
 
             if user:
@@ -613,6 +637,9 @@ class scrapping():
         #CARGAR
         elif cargar_cookies == True:
             
+            if self.if_borrar_db():
+                return ("fail", "Se va a borrar la Base de Datos")
+            
             if user:
                 if self.collection.find_one({"tipo": "usuario", "telegram_id": user}):
                     for usuario_iter in self.entrada.usuarios:
@@ -623,7 +650,7 @@ class scrapping():
                             with open(os.path.join(user_folder(user), "cookies_usuario.pkl"), "wb") as cookies_usuario:
                                 dill.dump(self.entrada.obtener_usuario(user), cookies_usuario)
 
-                elif os.path.isfile(os.path.join(user_folder(user), "cookies_usuario.pkl")):
+                elif os.path.isfile(os.path.join(user_folder(user), "cookies_usuario.pkl")) and cargar_local:
                     with open(os.path.join(user_folder(user), "cookies_usuario.pkl"), "rb") as usuario_cookies:
                         for usuario in self.entrada.usuarios:
                             if usuario.telegram_id == user:
@@ -666,7 +693,7 @@ class scrapping():
 
             else:
                 #si no hay ningun archivo del bot en la base de datos primero compruebo si hay una copia local para insertarla en la BD
-                if os.path.isfile(os.path.join(gettempdir(), "bot_cookies.pkl")):
+                if os.path.isfile(os.path.join(gettempdir(), "bot_cookies.pkl")) and cargar_local:
 
                     with open(os.path.join(gettempdir(), "bot_cookies.pkl"), "rb") as file:
                         self.collection.insert_one({"_id": int(time.time()) + 1, "tipo": "telegram_bot", "telegram_id": self.bot.user.id, "cookies": file.read()})
@@ -725,7 +752,26 @@ class scrapping():
 
 
     def reestablecer_BD(self, bot):
-        res = self.administrar_BD(True)
+        #en caso de que se haya solicitado borrar la BD en el cluster:
+        if self.if_borrar_db():
+
+            if os.path.isfile(os.path.join(gettempdir(), "bot_cookies.pkl")):
+                os.remove(os.path.join(gettempdir(), "bot_cookies.pkl"))
+
+            res = self.collection.find_one({"tipo": "datos"})["creador_dict"]["del_db"]
+            res.remove(self.bot.user.id)
+            actualizacion = self.collection.find_one({"tipo": "datos"})["creador_dict"]
+            actualizacion.update({"del_db": res})
+            self.collection.update_one({"tipo": "datos"}, {"$set": {"creador_dict": actualizacion}})
+
+            res = self.administrar_BD(True)
+
+
+        #sino, carga normal
+        else:
+            res = self.administrar_BD(True)
+
+
         if res[0] == "ok":
 
             for k, v in res[1].items():
@@ -745,7 +791,8 @@ class scrapping():
                     if self.env:
                         for k,v in self.env.items():
                             os.environ[k] = v
-                        
+                    
+
 
                         
                     
@@ -767,7 +814,16 @@ class scrapping():
             return "no"
         
     
-    
+    def if_borrar_db(self):
+        """
+        Devuelve True si el creador ha definido que se debe de borrar la BD y aún este bot no se ha reiniciado
+        Devuelve False en caso de que sí se haya reiniciado o en caso de que simplemente no se ha definido nada
+        """
+        if self.creador_dict["del_db"].count(self.bot.user.id):
+            return True
+
+        else:
+            return False
 
     def cargar_datos_usuario(self, user):
         """
@@ -777,32 +833,37 @@ class scrapping():
         Devuelve True si se pudieron cargar los datos de los usuarios
         Devuelve False si no se pudieron cargar porque no existe por ejemplo
         """
-        if self.collection.find_one({"tipo": "usuario", "telegram_id": user}):
-        
-            if self.collection.find_one({"tipo": "usuario", "telegram_id": user}).get("cookies"):
-                usuario = dill.loads(self.collection.find_one({"tipo": "usuario", "telegram_id": user})["cookies"])
 
-                if len(usuario.publicaciones) > len(self.entrada.obtener_usuario(user).publicaciones):
-                    usuario = self.entrada.obtener_usuario(user)
-                    usuario.publicaciones = usuario.publicaciones
-                    usuario.cuentas = usuario.cuentas
+        if self.if_borrar_db():
+            return False
 
+        else:
+            if self.collection.find_one({"tipo": "usuario", "telegram_id": user}):
+            
+                if self.collection.find_one({"tipo": "usuario", "telegram_id": user}).get("cookies"):
+                    usuario = dill.loads(self.collection.find_one({"tipo": "usuario", "telegram_id": user})["cookies"])
 
-                    for publicacion in usuario.publicaciones:
-
-                        if publicacion._fotos:
-
-                            for k, v in publicacion._fotos.items():
-
-                                if not os.path.isfile(os.path.join(user_folder(user), os.path.basename(k))):
-
-                                    with open(os.path.join(user_folder(user), os.path.basename(k)), "wb") as file:
-                                        file.write(v)
-
-                True
+                    if len(usuario.publicaciones) > len(self.entrada.obtener_usuario(user).publicaciones):
+                        usuario = self.entrada.obtener_usuario(user)
+                        usuario.publicaciones = usuario.publicaciones
+                        usuario.cuentas = usuario.cuentas
 
 
-        return False
+                        for publicacion in usuario.publicaciones:
+
+                            if publicacion._fotos:
+
+                                for k, v in publicacion._fotos.items():
+
+                                    if not os.path.isfile(os.path.join(user_folder(user), os.path.basename(k))):
+
+                                        with open(os.path.join(user_folder(user), os.path.basename(k)), "wb") as file:
+                                            file.write(v)
+
+                    return True
+
+
+            return False
 
     def cargar_cookies(self, user = False):
         
@@ -885,7 +946,8 @@ class scrapping():
         """
         Guarda tanto las cookies como los datos del usuario
         """
-
+        if self.if_borrar_db():
+            return (False, "Se va a borrar la Base de datos")
         
         if user:
             if guardar_cookies:
@@ -958,8 +1020,9 @@ class scrapping():
 
         self.guardar_datos()
 
-        if self.collection.find_one({"tipo": "usuario", "telegram_id": user}).get("cookies_facebook"):
-            self.collection.update_one({"tipo": "usuario", "telegram_id": user}, {"$set": {"cookies_facebook" : None}})
+        if not self.if_borrar_db():
+            if self.collection.find_one({"tipo": "usuario", "telegram_id": user}).get("cookies_facebook"):
+                self.collection.update_one({"tipo": "usuario", "telegram_id": user}, {"$set": {"cookies_facebook" : None}})
         
         self.cola["uso"] = False
 
@@ -1436,8 +1499,8 @@ class Entrada():
     
     def get_caducidad(self, usuario:int , scrapper : scrapping, confirmar = False):
         """
-        Si ya no le queda tiempo al usuario
-        Devuelve True y lo elimina de los usuarios que pueden usar el bot
+        
+        Devuelve True si ya no le queda tiempo al usuario y lo elimina de los usuarios que pueden usar el bot
         Devuelve False si no tiene caducidad el plan de este usuario (Ya sea porque es administrador o mi creador)
 
         Si aun queda tiempo para el usuario:

@@ -186,18 +186,6 @@ def get_time(scrapper, user , tz_country = "America/Havana"):
         return "{}:{}".format(str(int((time.time() - horario) // 60)).zfill(2), str(int((time.time() - horario) % 60)).zfill(2))  
 
 
-
-    
-
-
-    
-
-
-
-
-
-
-
 def liberar_cola(scrapper, user, bot, notificar_usuarios=True):
 
     if not user in list(scrapper.temp_dict):
@@ -475,7 +463,21 @@ def hacer_scroll(scrapper , user: int, elemento, pasos: int, contador: int = Tru
                 raise Exception("No encuentro el elemento para hacer el scroll...")
 
         if esperar:
-            time.sleep(esperar)
+            #aparece un "cargando..." cuando hay mas grupos en el scroll
+            try:
+                WebDriverWait(scrapper.driver, esperar).until(ec.any_of(
+                    ec.visibility_of_element_located((By.XPATH, '//*[contains(text(), "Loading")]')),
+                    ec.visibility_of_element_located((By.XPATH, '//*[contains(text(), "Cargando")]'))
+                ))
+
+                scrapper.wait.until(ec.any_of(
+                    ec.invisibility_of_element_located((By.XPATH, '//*[contains(text(), "Loading")]')),
+                    ec.invisibility_of_element_located((By.XPATH, '//*[contains(text(), "Cargando")]'))
+                ))
+
+                time.sleep(esperar)
+            except:
+                pass
 
 
     del scrapper.temp_dict[user]["y_scroll"]
@@ -610,13 +612,20 @@ def ver_publicacion(c: telebot.types.CallbackQuery, scrapper, bot: telebot.TeleB
     if usuario_info == False:
         usuario_info = c.from_user.id
 
-
-    p_markup=InlineKeyboardMarkup(
+    if scrapper.cola["uso"] == c.from_user.id:
+        p_markup=InlineKeyboardMarkup(
         [
-            [InlineKeyboardButton("🗑 Eliminar Publicación", callback_data="p/del/conf/{}".format(indice))],
             [InlineKeyboardButton("↩ Volver Atrás", callback_data="p/wl/a/{}".format(indice if indice % cantidad_publicaciones_mostrar == 0 else indice - indice % cantidad_publicaciones_mostrar))],
         ]
     )
+
+    else:
+        p_markup=InlineKeyboardMarkup(
+            [
+                [InlineKeyboardButton("🗑 Eliminar Publicación", callback_data="p/del/conf/{}".format(indice))],
+                [InlineKeyboardButton("↩ Volver Atrás", callback_data="p/wl/a/{}".format(indice if indice % cantidad_publicaciones_mostrar == 0 else indice - indice % cantidad_publicaciones_mostrar))],
+            ]
+        )
     
     for usuario in scrapper.entrada.obtener_usuarios(False):
         res = usuario.publicaciones[indice].enviar(scrapper, c.message.chat.id)
@@ -653,7 +662,13 @@ def ver_lista_publicaciones(m, scrapper, bot: telebot.TeleBot, indice = 0, usuar
     if elegir:
         TEXTO = "👇 Elige las publicaciones que serán compartidas en Facebook 👇\n\n"
     else:
-        TEXTO = "👇 Lista de Publicaciones Creadas 👇\n\nToca en alguna para ver más información de ella / eliminarla / editarla / seleccionarla"
+        if scrapper.cola["uso"] == m.from_user.id:
+
+           TEXTO = "👇 Lista de Publicaciones Creadas 👇\n\nToca en alguna para ver más información de ella / eliminarla / editarla / seleccionarla\n\n<b>Nota IMPORTANTE</b>:\nActualmente estoy PUBLICANDO, no puedes ni agregar ni ELIMINAR publicaciones hasta que no termine o hasta que canceles la operación (para cancelar envíame /cancelar)" 
+
+        else:
+
+            TEXTO = "👇 Lista de Publicaciones Creadas 👇\n\nToca en alguna para ver más información de ella / eliminarla / editarla / seleccionarla"
 
 
     markup = InlineKeyboardMarkup(row_width=1)
@@ -674,10 +689,11 @@ def ver_lista_publicaciones(m, scrapper, bot: telebot.TeleBot, indice = 0, usuar
     if elegir:
         if scrapper.temp_dict[usuario_info]["obj_publicacion"]:
             markup.row(InlineKeyboardButton("✅ Publicar Seleccionados", callback_data="publicar/elegir/publicar"))
-            markup.row(InlineKeyboardButton("🔙 Volver atrás", callback_data="publicar/elegir/b"))
+        
+        markup.row(InlineKeyboardButton("🔙 Volver atrás", callback_data="publicar/elegir/b"))
 
-        else:
-            markup.row(InlineKeyboardButton("🔙 Volver atrás", callback_data="publicar/elegir/b"))
+    else:
+        markup.row(InlineKeyboardButton("🔙 Volver atrás", callback_data="p/wl/b"))
 
 
     try:

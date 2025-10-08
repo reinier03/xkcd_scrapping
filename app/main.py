@@ -711,7 +711,7 @@ def get_work(m: telebot.types.Message):
                 [
                     [InlineKeyboardButton("🔳 Elegir perfil", callback_data="p/c/e/w/0")], 
                     [InlineKeyboardButton("🆕 Acceder con un perfil nuevo", callback_data="p/c/n")],
-                    [InlineKeyboardButton("❌ Cancelar", callback_data="cancel")]
+                    [InlineKeyboardButton("❌ Cancelar Operación", callback_data="cancel")]
                 ]))
 
         else:
@@ -765,7 +765,7 @@ def cmd_panel(m: telebot.types.Message):
 
 @bot.callback_query_handler(lambda c: c.data.startswith("publicar/"))
 def cual_publicar(c):
-    if (not re.search("elegir", c.data) and not re.search(r"\d+", c.data)) or c.data == "publicar/elegir/publicar":
+    if (not re.search("elegir", c.data) and not re.search(r"\d+", c.data)) or c.data == "publicar/elegir/publicar" or c.data.endswith("/b"):
         try:
             bot.delete_message(c.message.chat.id, c.message.message_id)
 

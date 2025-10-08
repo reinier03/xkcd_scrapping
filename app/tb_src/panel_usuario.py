@@ -54,21 +54,46 @@ def opciones_publicaciones(user, scrapper: scrapping):
         scrapper.bot.send_message(user, "Lo siento pero ni siquiera tienes ninguna publicación creada :(\n\n👇 Agrega alguna 👇", reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("Agregar Publicación", callback_data="p/add")]]))
 
     else:
-        bot.send_message(user, """
-Hola @{} :D
+        if scrapper.cola["uso"] == user:
+            bot.send_message(user, """
+Hola {} :D
 Este es el panel para administrar las publicaciones que hago en facebook... Actualmente tienes {} publicaciones
 
-Nota:
-Si quieres <b>Eliminar</b> alguna publicación primero debes de darle en "<b>Ver Publicaciones Creadas</b>" y entonces seleccionar alguna, luego te saldrá la opción de eliminar dicha publicación
+<b>Nota IMPORTANTE</b>:
+Actualmente estoy PUBLICANDO, no puedes ni agregar ni ELIMINAR publicaciones hasta que no termine o hasta que canceles la operación (para cancelar envíame /cancelar)"
 
 Entonces? Qué harás?
-""".format(bot.get_chat(user).username, len(scrapper.entrada.obtener_usuario(user).publicaciones)).strip() if scrapper.entrada.usuarios else 0, reply_markup=InlineKeyboardMarkup(
-            [
-                [InlineKeyboardButton("Agregar Publicación", callback_data="p/add")], 
-                [InlineKeyboardButton("Ver Publicaciones Creadas", callback_data="p/wl")],
-            ]
-        ))
+""".format(bot.get_chat(user).first_name, len(scrapper.entrada.obtener_usuario(user).publicaciones)).strip() if scrapper.entrada.usuarios else 0, reply_markup=InlineKeyboardMarkup(
+                [
+                    [InlineKeyboardButton("Ver Publicaciones Creadas", callback_data="p/wl")],
+                    [InlineKeyboardButton("Cancelar Operación (Limpiar)", callback_data="p/cancel")]
+                ]
+            ))
 
+        else:
+
+            bot.send_message(user, """
+    Hola {} :D
+    Este es el panel para administrar las publicaciones que hago en facebook... Actualmente tienes {} publicaciones
+
+    Nota:
+    Si quieres <b>Eliminar</b> alguna publicación primero debes de darle en "<b>Ver Publicaciones Creadas</b>" y entonces seleccionar alguna, luego te saldrá la opción de eliminar dicha publicación
+
+    Entonces? Qué harás?
+    """.format(bot.get_chat(user).first_name, len(scrapper.entrada.obtener_usuario(user).publicaciones)).strip() if scrapper.entrada.usuarios else 0, reply_markup=InlineKeyboardMarkup(
+                [
+                    [InlineKeyboardButton("Agregar Publicación", callback_data="p/add")], 
+                    [InlineKeyboardButton("Ver Publicaciones Creadas", callback_data="p/wl")],
+                    [InlineKeyboardButton("Cancelar Operación (Limpiar)", callback_data="p/cancel")]
+                ]
+            ))
+
+    scrapper.bot.register_callback_query_handler(limpiar_publicaciones_panel, lambda c: c.data == "p/cancel", True)
+
+    return
+
+def limpiar_publicaciones_panel(c, bot: telebot.TeleBot):
+    bot.delete_message(c.message.chat.id, c.message.message_id)
     return
 
 
