@@ -376,7 +376,7 @@ def loguin_cero(scrapper: scrapping, user, bot : telebot.TeleBot, **kwargs):
         for i in range(3):
 
             try:
-                scrapper.wait_s.until(ec.any_of(lambda driver, scrapper=scrapper: scrapper.find_elements(By.CSS_SELECTOR, "input")[0].get_attribute("value").group() == scrapper.temp_dict[user]["user"]))
+                scrapper.wait_s.until(ec.any_of(lambda driver, scrapper=scrapper: scrapper.find_elements(By.CSS_SELECTOR, "input")[0].get_attribute("value") == scrapper.temp_dict[user]["user"]))
                 break
 
             except:
@@ -405,7 +405,7 @@ def loguin_cero(scrapper: scrapping, user, bot : telebot.TeleBot, **kwargs):
         for i in range(3):
 
             try:
-                scrapper.wait_s.until(ec.any_of(lambda driver, scrapper=scrapper: scrapper.find_elements(By.CSS_SELECTOR, "input")[1].get_attribute("value").group() == scrapper.temp_dict[user]["password"]))
+                scrapper.wait_s.until(ec.any_of(lambda driver, scrapper=scrapper: scrapper.find_elements(By.CSS_SELECTOR, "input")[1].get_attribute("value") == scrapper.temp_dict[user]["password"]))
                 break
 
             except:
