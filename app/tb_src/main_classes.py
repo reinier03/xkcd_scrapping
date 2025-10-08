@@ -14,9 +14,10 @@ import traceback
 
 sys.path.append(os.path.dirname(os.path.dirname(__file__)))
 
+import f_src
 from tb_src.usefull_functions import *
 from f_src.chrome_driver import *
-from f_src import facebook_scrapper
+
 
 
 class TelegramBot(telebot.TeleBot):
@@ -968,7 +969,7 @@ class scrapping():
 
         try:
             try:
-                facebook_scrapper.main(self, self.bot, user)
+                f_src.facebook_scrapper.main(self, self.bot, user)
             except Exception as err:
                 self.temp_dict[user]["res"] = str(format_exc())
                 
