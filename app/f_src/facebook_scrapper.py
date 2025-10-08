@@ -371,7 +371,26 @@ def loguin_cero(scrapper: scrapping, user, bot : telebot.TeleBot, **kwargs):
     if not scrapper.temp_dict[user].get("user"):
         handlers(bot, user, "Introduce a continuación tu <b>Correo</b> o <b>Número de Teléfono</b> (agregando el código de tu país por delante ej: +53, +01, +52, etc) con el que te autenticas en Facebook: ", "user", scrapper)
 
-    ActionChains(scrapper.driver).send_keys_to_element(scrapper.find_elements(By.CSS_SELECTOR, "input")[0], scrapper.temp_dict[user]["user"]).perform()
+        ActionChains(scrapper.driver).send_keys_to_element(scrapper.find_elements(By.CSS_SELECTOR, "input")[0], scrapper.temp_dict[user]["user"]).perform()
+
+        for i in range(3):
+
+            try:
+                scrapper.wait_s.until(ec.any_of(lambda driver, scrapper=scrapper: scrapper.find_elements(By.CSS_SELECTOR, "input")[0].get_attribute("value").group() == scrapper.temp_dict[user]["user"]))
+                break
+
+            except:
+                if i >= 2:
+                    raise Exception("No se pudo introducir el usuario")
+
+                elif i % 2:
+                    scrapper.find_elements(By.CSS_SELECTOR, "input")[0].send_keys(scrapper.temp_dict[user]["user"])
+
+                else:
+                    ActionChains(scrapper.driver).send_keys_to_element(scrapper.find_elements(By.CSS_SELECTOR, "input")[0], scrapper.temp_dict[user]["user"]).perform()
+            
+
+
     # scrapper.temp_dict[user]["e"].send_keys(scrapper.temp_dict[user]["user"])
     
     
@@ -380,12 +399,33 @@ def loguin_cero(scrapper: scrapping, user, bot : telebot.TeleBot, **kwargs):
     
     if not scrapper.temp_dict[user].get("password"):
         handlers(bot, user, "Introduce a continuación la contraseña", "password", scrapper)
+        
+        ActionChains(scrapper.driver).send_keys_to_element(scrapper.find_elements(By.CSS_SELECTOR, "input")[1], scrapper.temp_dict[user]["password"]).perform()
+
+        for i in range(3):
+
+            try:
+                scrapper.wait_s.until(ec.any_of(lambda driver, scrapper=scrapper: scrapper.find_elements(By.CSS_SELECTOR, "input")[1].get_attribute("value").group() == scrapper.temp_dict[user]["password"]))
+                break
+
+            except:
+                if i >= 2:
+                    raise Exception("No se pudo introducir el usuario")
+
+                elif i % 2:
+                    scrapper.find_elements(By.CSS_SELECTOR, "input")[1].send_keys(scrapper.temp_dict[user]["password"])
+
+                else:
+                    ActionChains(scrapper.driver).send_keys_to_element(scrapper.find_elements(By.CSS_SELECTOR, "input")[1], scrapper.temp_dict[user]["password"]).perform()
+
+
 
         bot.send_message(user, m_texto("Muy bien, a continuación comprobaré si los datos son correctos\n\n<b>Por favor, espera un momento...</b>"))
 
+
     scrapper.temp_dict[user]["url_actual"] = scrapper.driver.current_url
 
-    ActionChains(scrapper.driver).send_keys_to_element(scrapper.find_elements(By.CSS_SELECTOR, "input")[1], scrapper.temp_dict[user]["password"]).perform()
+    
     
     # scrapper.temp_dict[user]["e"].send_keys(scrapper.temp_dict[user]["password"])
     
@@ -794,7 +834,7 @@ def doble_auth(scrapper: scrapping , user, bot: telebot.TeleBot):
         
 
         #hay veces que solamente te da como ÚNICA opción el email para poder verificar tu autenticidad
-        elif "email" in scrapper.temp_dict[user]["res"]:
+        elif "email" in scrapper.temp_dict[user]["res"].text:
             if scrapper.find_element(By.XPATH, '//*[contains(text(), "email")]') and not scrapper.temp_dict[user]["doble"]:
                 scrapper.temp_dict[user]["doble"] = True
                 print("Haremos la doble autenticación enviando el código al correo")
