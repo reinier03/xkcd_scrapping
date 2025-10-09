@@ -745,8 +745,12 @@ def doble_auth(scrapper: scrapping , user, bot: telebot.TeleBot):
     if not isinstance(scrapper.temp_dict[user]["res"], bool):
         
         if "screen-root" in scrapper.temp_dict[user]["res"].get_attribute("id").lower():
+            
+            if scrapper.temp_dict[user].get("perfil_selecciondo"):
+                bot.send_message(user, m_texto("Ok, el codigo introducido es correcto\n\nEmpezaré a publicar lo antes posible, espera un momento..."), reply_markup=telebot.types.ReplyKeyboardRemove())
 
-            bot.send_message(user, m_texto("Ok, el codigo introducido es correcto"), reply_markup=telebot.types.ReplyKeyboardRemove())
+            else:
+                bot.send_message(user, m_texto("Ok, el codigo introducido es correcto"), reply_markup=telebot.types.ReplyKeyboardRemove())
 
             return ("ok", "se ha dado click en confiar dispositivo")
     
@@ -1089,8 +1093,8 @@ def publicacion(scrapper: scrapping, bot:telebot.TeleBot, user, load_url=True, c
             scrapper.temp_dict[user]["res"] = scrapper.driver.execute_script("return window.pageYOffset;")
 
             hacer_scroll(scrapper, user,
-
-                        scrapper.temp_dict[user]["altura_elemento_grupos"] * contador + scrapper.temp_dict[user]["top"] - scrapper.temp_dict[user]["res"],
+                        #la última resta es para dejar el scroll un poco antes y asegurarme de que el elemento aparezca
+                        scrapper.temp_dict[user]["altura_elemento_grupos"] * contador + scrapper.temp_dict[user]["top"] - scrapper.temp_dict[user]["res"] - scrapper.temp_dict[user]["altura_elemento_grupos"],
 
                         (scrapper.temp_dict[user]["altura_elemento_grupos"] * contador + scrapper.temp_dict[user]["top"] - scrapper.temp_dict[user]["res"]) // (scrapper.temp_dict[user]["altura_elemento_grupos"] * 8 + scrapper.temp_dict[user]["top"]))
 
@@ -1098,7 +1102,12 @@ def publicacion(scrapper: scrapping, bot:telebot.TeleBot, user, load_url=True, c
 
             for i in range(3):
                 try:
-                    scrapper.temp_dict[user]["publicacion"]["lista_grupos"][contador].click()
+                    try:
+                        scrapper.temp_dict[user]["publicacion"]["lista_grupos"][contador].click()
+
+                    except:
+                        scrapper.temp_dict[user]["a"].click(scrapper.temp_dict[user]["publicacion"]["lista_grupos"][contador]).perform()
+
                     break
                 except Exception as e:
                     if i >= 2:
@@ -1110,7 +1119,7 @@ def publicacion(scrapper: scrapping, bot:telebot.TeleBot, user, load_url=True, c
                 
                     scrapper.temp_dict[user]["a"].scroll_to_element(scrapper.temp_dict[user]["publicacion"]["lista_grupos"][contador]).perform()
 
-                    scrapper.temp_dict[user]["a"].click(scrapper.temp_dict[user]["publicacion"]["lista_grupos"][contador]).perform()
+                    ActionChains(scrapper.driver, 0).scroll_by_amount(0, -scrapper.temp_dict[user]["altura_elemento_grupos"] * 2)
 
                     time.sleep(2)
 
