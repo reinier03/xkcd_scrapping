@@ -235,6 +235,12 @@ def obtener_grupos(scrapper, user, all: bool = False):
         scrapper.load("https://m.facebook.com/groups/")
         scrapper.temp_dict[user]["e"] = scrapper.wait.until(ec.visibility_of_element_located((By.XPATH, '//*[@id="screen-root"]/div/div[3]/div[5]')))
 
+    try:
+        #eliminar el elemento "open app" o "abrir app" si se encuentra
+        scrapper.driver.execute_script('document.querySelectorAll("div.m.fixed-container.bottom").forEach(e => e.remove());')
+    except:
+        pass
+    
     if all:
         
         while True:
@@ -419,6 +425,8 @@ def obtener_diferencia_scroll(scrapper, user):
             hacer_scroll(scrapper, user, scrapper.temp_dict[user]["scroll_position"], scrapper.temp_dict[user]["scroll_position"] // 100)
 
             del scrapper.temp_dict[user]["scroll_position"]
+
+            scrapper.wait.until(ec.visibility_of_element_located((By.CSS_SELECTOR, 'body')))
 
             return scrapper.temp_dict[user]["publicacion"]["lista_grupos"][0].location["y"]
 

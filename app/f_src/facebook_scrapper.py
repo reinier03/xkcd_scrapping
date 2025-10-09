@@ -949,8 +949,6 @@ def publicacion(scrapper: scrapping, bot:telebot.TeleBot, user, load_url=True, c
 
 
     scrapper.load("https://m.facebook.com/groups/")
-
-    scrapper.temp_dict[user]["top"] = obtener_diferencia_scroll(scrapper, user)
     
     
     #bucle para publicar por los grupos
@@ -966,6 +964,7 @@ def publicacion(scrapper: scrapping, bot:telebot.TeleBot, user, load_url=True, c
 
         
         if puede_continuar(scrapper, user, "publicacion") == False:
+            bot.send_message(user, "Se ha publicado exitosamente en " + str(len(scrapper.temp_dict[user]["publicacion"]["publicados"])) + " grupo(s)")
             return ("ok", "Se ha publicado exitosamente en " + str(len(scrapper.temp_dict[user]["publicacion"]["publicados"]))+ " grupo(s)")
             
 
@@ -979,9 +978,6 @@ def publicacion(scrapper: scrapping, bot:telebot.TeleBot, user, load_url=True, c
         #     scrapper.wait.until(ec.visibility_of_element_located((By.CSS_SELECTOR, "body")))
 
         #Esta variable es para poder luego guardarla en la BD de MongoDB
-        
-
-        
         
         
         scrapper.temp_dict[user]["demora"] = time.time()
@@ -998,6 +994,7 @@ def publicacion(scrapper: scrapping, bot:telebot.TeleBot, user, load_url=True, c
 
         get_time_debug(scrapper, user)
 
+        scrapper.temp_dict[user]["top"] = obtener_diferencia_scroll(scrapper, user)
 
         scrapper.temp_dict[user]["tiempo_debug"].append(get_time_debug(scrapper, user, "obtener diferencia de scroll linea {}".format(traceback.extract_stack()[-1].lineno)))
         
@@ -1049,8 +1046,9 @@ def publicacion(scrapper: scrapping, bot:telebot.TeleBot, user, load_url=True, c
 
 
 
-
+        
         try:
+            #eliminar el elemento "open app" o "abrir app" si se encuentra
             scrapper.driver.execute_script('document.querySelectorAll("div.m.fixed-container.bottom").forEach(e => e.remove());')
         except:
             pass
