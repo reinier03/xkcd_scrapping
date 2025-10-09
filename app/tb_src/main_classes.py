@@ -463,7 +463,7 @@ class scrapping():
             self.load("https://m.facebook.com/bookmarks/")
 
             WebDriverWait(self.driver, self.wait._timeout).until(ec.visibility_of_element_located((By.CSS_SELECTOR, 'body')))
-            self.driver.find_element(By.CSS_SELECTOR, 'body').send_keys(Keys.END)
+            self.driver.find_element(By.CSS_SELECTOR, 'body').send_keys(Keys.END * 2)
 
             res = WebDriverWait(self.driver, self.wait._timeout).until(ec.any_of(
                 ec.visibility_of_element_located((By.XPATH, '//*[contains(text(), "Log out")]')),

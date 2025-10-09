@@ -746,7 +746,7 @@ def doble_auth(scrapper: scrapping , user, bot: telebot.TeleBot):
         
         if "screen-root" in scrapper.temp_dict[user]["res"].get_attribute("id").lower():
             
-            if scrapper.temp_dict[user].get("perfil_selecciondo"):
+            if scrapper.temp_dict[user].get("perfil_seleccionado"):
                 bot.send_message(user, m_texto("Ok, el codigo introducido es correcto\n\nEmpezaré a publicar lo antes posible, espera un momento..."), reply_markup=telebot.types.ReplyKeyboardRemove())
 
             else:
@@ -1046,6 +1046,7 @@ def publicacion(scrapper: scrapping, bot:telebot.TeleBot, user, load_url=True, c
             
             get_time_debug(scrapper, user)
 
+
             scrapper.temp_dict[user]["e"] = obtener_grupos(scrapper, user, True)
 
             scrapper.temp_dict[user]["tiempo_debug"].append(get_time_debug(scrapper, user, "obtener grupos luego de que el contador fuera mayor linea {}".format(traceback.extract_stack()[-1].lineno)))
@@ -1077,8 +1078,6 @@ def publicacion(scrapper: scrapping, bot:telebot.TeleBot, user, load_url=True, c
 
         
 
-
-
         
         try:
             #eliminar el elemento "open app" o "abrir app" si se encuentra
@@ -1091,6 +1090,8 @@ def publicacion(scrapper: scrapping, bot:telebot.TeleBot, user, load_url=True, c
         def click_grupo():
 
             scrapper.temp_dict[user]["res"] = scrapper.driver.execute_script("return window.pageYOffset;")
+
+            
 
             hacer_scroll(scrapper, user,
                         #la última resta es para dejar el scroll un poco antes y asegurarme de que el elemento aparezca
@@ -1187,7 +1188,11 @@ def hacer_publicacion(scrapper: scrapping, bot : telebot.TeleBot, user: int, pub
             ec.visibility_of_element_located((By.XPATH, '//*[contains(text(), "Escribe algo")]/../../..'))
         ))
 
-        
+        try:
+            #eliminar el elemento "open app" o "abrir app" si se encuentra
+            scrapper.driver.execute_script('document.querySelectorAll("div.m.fixed-container.bottom").forEach(e => e.remove());')
+        except:
+            pass
 
 
         for i in range(3):
@@ -1254,6 +1259,12 @@ def hacer_publicacion(scrapper: scrapping, bot : telebot.TeleBot, user: int, pub
 
     
     get_time_debug(scrapper, user)
+
+    try:
+        #eliminar el elemento "open app" o "abrir app" si se encuentra
+        scrapper.driver.execute_script('document.querySelectorAll("div.m.fixed-container.bottom").forEach(e => e.remove());')
+    except:
+        pass
 
     if not publicacion.fotos:
         # desde: //*[@id="screen-root"]/div/div[2]/div[6]/div[1] 
