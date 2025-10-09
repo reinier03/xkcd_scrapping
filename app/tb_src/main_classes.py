@@ -8,6 +8,7 @@ import pprint
 import sys
 from pymongo import MongoClient
 from telebot.types import *
+import telebot.types
 import undetected_chromedriver as uc
 import telebot
 import traceback
@@ -29,6 +30,7 @@ class TelegramBot(telebot.TeleBot):
             return super().get_chat(chat_id)
         except telebot.apihelper.ApiTelegramException:
             return None
+
 
 class uc_class(uc.Chrome):
 
@@ -278,7 +280,7 @@ class scrapping():
         # Eliminar TODOS los objetos no serializables
         elementos_a_eliminar = [
             "driver", "wait", "wait_s", 
-            "collection", "db", "cliente", "reinicio"
+            "collection", "db", "cliente", "bot"
         ]
 
 
@@ -1037,24 +1039,61 @@ class scrapping():
 class Baneado:
     plan = False
     ban = True
+
+    def show(self):
+        return "Usuario Baneado".strip()
+
+    def __str__(self):
+        return self.show()
     
 class Sin_Plan(Baneado):
-    cantidad_adjuntos = False
-    plan = False
-    ban = False
-    grupos_publicados = False
-    publicaciones = False
-    repetir = False #indica si el usuario puede repetir de forma masiva, si es True o tiene algún valor positivo es que sí puede
+    cantidad_adjuntos = False #cantidad de fotos o videos que puede tener adjuntos a la publicacion
+
+    plan = False #indica si tiene un plan o no
+
+    ban = False #indica si el usuario está baneado o 
+    
+    grupos_publicados = False #indica la cantidad de grupos en los que puede publicar
+
+    publicaciones = False #indica la cantidad de publicaciones que puede hacer
+
+    repetir = False #indica si el usuario puede repetir de forma masiva, si es True o tiene algún valor positivo es que sí puede, en los planes más bajos esta opción está deshabilitada con False
+
+    def show(self):
+        return "Usuario sin Plan".strip()
+
+    def __str__(self):
+        return self.show()
 
 
-class Basico(Sin_Plan): #200 CUP?
+class Prueba(Sin_Plan):
+    def __init__(self, caducidad, bot_id):
+        self.caducidad = caducidad
+        self.bot_id = bot_id
+
+    cantidad_adjuntos = 1
+    plan = True
+    grupos_publicados = 5
+    publicaciones = 1
+
+    def show(self):
+        return """
+|-------👁‍🗨 <b>Plan Prueba</b> 👁‍🗨---------|
+<blockquote>👥 <b>Límite de Grupos Para Publicar</b>: {}
+📩 <b>Límite de Publicaciones</b>: {}
+🔁 <b>Repitición Automática</b>: {}</blockquote>
+""".format(self.grupos_publicados, self.publicaciones, "Si ✅" if self.repetir else "No ❌").strip()
+
+def __str__(self):
+    return self.show()
+
+class Basico(Prueba): #200 CUP?
 
     def __init__(self, caducidad, bot_id):
         self.caducidad = caducidad
         self.bot_id = bot_id
 
     cantidad_adjuntos = 2
-    plan = True
     grupos_publicados = 10
     publicaciones = 2
     

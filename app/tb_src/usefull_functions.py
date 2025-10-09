@@ -672,11 +672,11 @@ def ver_lista_publicaciones(m, scrapper, bot: telebot.TeleBot, indice = 0, usuar
     else:
         if scrapper.cola["uso"] == m.from_user.id:
 
-           TEXTO = "👇 Lista de Publicaciones Creadas 👇\n\nToca en alguna para ver más información de ella / eliminarla / editarla / seleccionarla\n\n<b>Nota IMPORTANTE</b>:\nActualmente estoy PUBLICANDO, no puedes ni agregar ni ELIMINAR publicaciones hasta que no termine o hasta que canceles la operación (para cancelar envíame /cancelar)" 
+           TEXTO = "👇 Lista de Publicaciones Creadas 👇\n\nToca en alguna para ver más información de ella\n\n<b>Nota IMPORTANTE</b>:\nActualmente estoy PUBLICANDO, no puedes ni agregar ni ELIMINAR publicaciones hasta que no termine o hasta que canceles la operación (para cancelar envíame /cancelar)" 
 
         else:
 
-            TEXTO = "👇 Lista de Publicaciones Creadas 👇\n\nToca en alguna para ver más información de ella / eliminarla / editarla / seleccionarla"
+            TEXTO = "👇 Lista de Publicaciones Creadas 👇\n\nToca en alguna para ver más información de ella / eliminarla"
 
 
     markup = InlineKeyboardMarkup(row_width=1)

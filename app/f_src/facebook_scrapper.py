@@ -147,6 +147,10 @@ def entrar_facebook(scrapper: scrapping, user, cargar_loguin = False):
 
 
     elif scrapper.temp_dict[user]["res"].text in ["Usar otro perfil", "Use another profile"]:
+        if not scrapper.temp_dict[user].get("perfil_seleccionado"):
+           scrapper.temp_dict[user]["res"].click() 
+           scrapper.wait_s.until(ec.visibility_of_element_located((By.CSS_SELECTOR, 'input#m_login_email')))
+
         pass
     
     if scrapper.find_element(By.CSS_SELECTOR, "input#m_login_email", True):
@@ -297,8 +301,11 @@ def loguin_cero(scrapper: scrapping, user, bot : telebot.TeleBot, **kwargs):
     
 
     try:
-        scrapper.wait_s.until(ec.element_to_be_clickable((By.XPATH, '//span[contains(text(), "Log in")]')))
-        scrapper.find_element(By.XPATH, '//span[contains(text(), "Log in")]').click()
+        scrapper.wait_s.until(ec.any_of(
+            ec.element_to_be_clickable((By.XPATH, '//span[contains(text(), "Log in")]')),
+            ec.element_to_be_clickable((By.XPATH, '//span[contains(text(), "Iniciar")]')),
+        )).click()
+
     except:
         scrapper.find_elements(By.CSS_SELECTOR, 'div[role="button"]')[2].click()
         
@@ -313,7 +320,12 @@ def loguin_cero(scrapper: scrapping, user, bot : telebot.TeleBot, **kwargs):
 
     try:
         #cuando no introduces bien ninguno de tus datos:
-        if scrapper.wait_s.until(ec.any_of(ec.visibility_of_element_located((By.XPATH, '//*[contains(text(), "Wrong Credentials")]')), ec.visibility_of_element_located((By.CSS_SELECTOR, 'div[class="wbloks_73"]')), ec.visibility_of_element_located((By.XPATH, '//*[contains(text(), "Invalid username or password")]')))):
+        if scrapper.wait_s.until(ec.any_of(
+            ec.visibility_of_element_located((By.XPATH, '//*[contains(text(), "Wrong")]')),
+            ec.visibility_of_element_located((By.CSS_SELECTOR, 'div[class="wbloks_73"]')),
+            ec.visibility_of_element_located((By.XPATH, '//*[contains(text(), "Invalid username or password")]')),
+            ec.visibility_of_element_located((By.XPATH, '//*[contains(text(), "incorrect")]'))
+        )):
             
             bot.send_photo(user, telebot.types.InputFile(make_screenshoot(scrapper.driver, user)), "Al parecer los datos que me has enviado son incorrectos\nTe he enviado una captura de lo que me muestra Facebook\n\nPor favor ingrese <b>correctamente</b> sus datos otra vez...")
             del scrapper.temp_dict[user]["password"]
@@ -930,7 +942,7 @@ def publicacion(scrapper: scrapping, bot:telebot.TeleBot, user, load_url=True, c
     if kwargs.get("diccionario"):
         scrapper.temp_dict = kwargs["diccionario"]
 
-    if scrapper.entrada.obtener_usuario(user).plan.repetir and not scrapper.interrupcion:
+    if scrapper.entrada.obtener_usuario(user).plan.repetir and not scrapper.interrupcion and not scrapper.temp_dict[user]["c_r"] == 1:
         bot.send_message(user, m_texto("A continuación, comenzaré a publicar en breve...\n\nEsta será la vez #<b>{}</b> que publicaré por todos los grupos disponibles". format(scrapper.temp_dict[user]["c_r"])))
 
 
@@ -949,6 +961,26 @@ def publicacion(scrapper: scrapping, bot:telebot.TeleBot, user, load_url=True, c
 
 
     scrapper.load("https://m.facebook.com/groups/")
+
+    #------------------obtener información para el scrolling--------------------------
+    get_time_debug(scrapper, user)
+
+    scrapper.temp_dict[user]["publicacion"]["lista_grupos"] = obtener_grupos(scrapper, user)
+
+    if not scrapper.temp_dict[user]["publicacion"]["lista_grupos"]:
+
+        scrapper.temp_dict[user]["tiempo_debug"].append(get_time_debug(scrapper, user, "¡¡No había ningún grupo en la cuenta!! linea {}".format(traceback.extract_stack()[-1].lineno)))
+            
+        raise Exception("¡No hay ningún grupo al que publicar!\n\nDescripcion del error:\n" + str(format_exc()))
+
+
+    scrapper.temp_dict[user]["top"] = obtener_diferencia_scroll(scrapper, user)        
+
+    scrapper.temp_dict[user]["altura_elemento_grupos"] = scrapper.temp_dict[user]["publicacion"]["lista_grupos"][0].size["height"]
+
+    scrapper.temp_dict[user]["tiempo_debug"].append(get_time_debug(scrapper, user, "obtener diferencia de scroll y la altura de los elementos de grupos (Proceso de única vez) linea {}".format(traceback.extract_stack()[-1].lineno)))
+
+    #------------------obtener información para el scrolling--------------------------
     
     
     #bucle para publicar por los grupos
@@ -969,13 +1001,13 @@ def publicacion(scrapper: scrapping, bot:telebot.TeleBot, user, load_url=True, c
             
 
 
-        # if contador % 10 == 0 and contador != 0:
-        #     try:
-        #         scrapper.driver.refresh()
-        #     except:
-        #         pass
+        if contador % 10 == 0 and contador != 0:
+            try:
+                scrapper.driver.refresh()
+            except:
+                pass
 
-        #     scrapper.wait.until(ec.visibility_of_element_located((By.CSS_SELECTOR, "body")))
+            scrapper.wait.until(ec.visibility_of_element_located((By.CSS_SELECTOR, "body")))
 
         #Esta variable es para poder luego guardarla en la BD de MongoDB
         
@@ -1001,9 +1033,6 @@ def publicacion(scrapper: scrapping, bot:telebot.TeleBot, user, load_url=True, c
     
         
         
-        if not scrapper.temp_dict[user]["publicacion"]["lista_grupos"]:
-            
-            raise Exception("¡No hay ningún grupo al que publicar!\n\nDescripcion del error:\n" + str(format_exc()))
         
         #si ya recorrimos todos los elementos de la lista de grupos el contador tendrá un valor mayor a la cantidad de grupos de la lista ya que en cada vuelta de bucle aumenta (le sumo 1 porque el índice de los grupos comienza en 0)
 
@@ -1061,9 +1090,9 @@ def publicacion(scrapper: scrapping, bot:telebot.TeleBot, user, load_url=True, c
 
             hacer_scroll(scrapper, user,
 
-                        scrapper.temp_dict[user]["publicacion"]["lista_grupos"][contador].size["height"] * contador + scrapper.temp_dict[user]["top"] - scrapper.temp_dict[user]["res"],
+                        scrapper.temp_dict[user]["altura_elemento_grupos"] * contador + scrapper.temp_dict[user]["top"] - scrapper.temp_dict[user]["res"],
 
-                        (scrapper.temp_dict[user]["publicacion"]["lista_grupos"][contador].size["height"] * contador + scrapper.temp_dict[user]["top"] - scrapper.temp_dict[user]["res"]) // (scrapper.temp_dict[user]["publicacion"]["lista_grupos"][contador].size["height"] * 8 + scrapper.temp_dict[user]["top"]))
+                        (scrapper.temp_dict[user]["altura_elemento_grupos"] * contador + scrapper.temp_dict[user]["top"] - scrapper.temp_dict[user]["res"]) // (scrapper.temp_dict[user]["altura_elemento_grupos"] * 8 + scrapper.temp_dict[user]["top"]))
 
             # hacer_scroll(scrapper, user, scrapper.temp_dict[user]["publicacion"]["lista_grupos"][contador], (contador + 1) // 4, contador)
 
@@ -1149,6 +1178,9 @@ def hacer_publicacion(scrapper: scrapping, bot : telebot.TeleBot, user: int, pub
             ec.visibility_of_element_located((By.XPATH, '//*[contains(text(), "Escribe algo")]/../../..'))
         ))
 
+        
+
+
         for i in range(3):
             try:
 
@@ -1214,6 +1246,14 @@ def hacer_publicacion(scrapper: scrapping, bot : telebot.TeleBot, user: int, pub
     
     get_time_debug(scrapper, user)
 
+    if not publicacion.fotos:
+        # desde: //*[@id="screen-root"]/div/div[2]/div[6]/div[1] 
+        # hasta: //*[@id="screen-root"]/div/div[2]/div[6]/div[10]
+
+        scrapper.wait.until(ec.visibility_of_element_located((By.XPATH, '//*[@id="screen-root"]/div/div[2]/div[6]/div[10]')))
+
+        scrapper.find_element(By.XPATH, '//*[@id="screen-root"]/div/div[2]/div[6]/div[{}]'.format(random.randint(1, 10))).click()
+
 
     scrapper.temp_dict[user]["e"] = scrapper.wait.until(ec.any_of(
         lambda driver: driver.find_element(By.XPATH, '//*[@id="screen-root"]/div/div[3]/div[3]/div[16]').find_element(By.CSS_SELECTOR, 'span[role="link"]'),
@@ -1222,11 +1262,12 @@ def hacer_publicacion(scrapper: scrapping, bot : telebot.TeleBot, user: int, pub
         ec.visibility_of_element_located((By.XPATH, '//*[contains(text(), "Escribe algo")]/../../..')),
         ec.visibility_of_element_located((By.XPATH, '//*[contains(text(), "Post something")]/../../..')),
         ec.visibility_of_element_located((By.XPATH, '//*[contains(text(), "Crea una publicación pública")]/../../..')),
-        
+        ec.visibility_of_element_located((By.XPATH, '//*[contains(text(), "public post")]/../../..')),
+        ec.visibility_of_element_located((By.XPATH, '//*[contains(text(), "Submit")]/../../..')),
     ))
 
 
-    if not list(filter(lambda texto_label, scrapper=scrapper, user=user: scrapper.temp_dict[user]["e"].text in texto_label, ["Write something", "Post something", "Escribe algo", "Crea una publicación pública"])):
+    if not list(filter(lambda texto_label, scrapper=scrapper, user=user: re.search(texto_label, scrapper.temp_dict[user]["e"].text), ["Write something", "Post something", "Escribe algo", "publicación pública", "public post"])):
         #Si este elemento se encuentra es que el grupo es de venta , los que dicen "selling" son son grupos atípicos y normalmente no dejan publicar tan facilmente, asi que los omito
 
         
@@ -1766,22 +1807,27 @@ def main(scrapper: scrapping, bot: telebot.TeleBot, user: int):
     scrapper.temp_dict[user]["if_cancelar"] = lambda scrapper=scrapper, user=user, bot=bot: if_cancelar(scrapper, user, bot)
         
 
-    if not scrapper.interrupcion and not scrapper.entrada.obtener_usuario(user).plan.repetir:
+    if not scrapper.interrupcion:
         texto = """
 Empezaré a procesar tu petición...
 
 <u><b>Información sobre la publicación actual</b></u>:
+<blockquote>{}
 
 {}
+
 {}
-{}
+</blockquote>
 """.format(
-    "Publicacion(es) a compartir: " + ", ".join([publicacion.titulo for publicacion in scrapper.entrada.obtener_usuario(user).publicaciones]),
+    "<b>Publicacion(es) a compartir</b>: " + ", ".join(["<b>" + publicacion.titulo + "</b>" for publicacion in scrapper.entrada.obtener_usuario(user).publicaciones]),
 
-    "Perfil(es) en los que compartir: " + scrapper.temp_dict[user].get("perfil_seleccionado") if scrapper.temp_dict[user].get("perfil_seleccionado") else "Perfil(es) en los que compartir: (Se entrará con un perfil nuevo)",
+    "<b>Perfil(es) en los que compartir</b>: " + scrapper.temp_dict[user].get("perfil_seleccionado") if scrapper.temp_dict[user].get("perfil_seleccionado") else "<b>Perfil(es) en los que compartir</b>: (Se entrará con un perfil nuevo)",
 
-    "Tiempo para repetir publicación: " + str(scrapper.entrada.obtener_usuario(user).plan.repetir) if isinstance(scrapper.entrada.obtener_usuario(user).plan.repetir, int) else "Tiempo para repetir publicación: (No hay tiempo definido por el usuario, <b>no se repetirá la publicación masiva</b>)" if scrapper.entrada.obtener_usuario(user).plan.repetir == True else "Tiempo para repetir publicación: (Debe comprar un mejor plan para poder acceder a esto, <b>no se repetirá la publicación masiva</b>)"
+    "<b>Tiempo para repetir publicación</b>: " + str(scrapper.entrada.obtener_usuario(user).plan.repetir) if isinstance(scrapper.entrada.obtener_usuario(user).plan.repetir, int) and not isinstance(scrapper.entrada.obtener_usuario(user).plan.repetir, bool) else "<b>Tiempo para repetir publicación</b>: (No hay tiempo definido por el usuario, <b>solo se repetirá 1 vez</b>)" if scrapper.entrada.obtener_usuario(user).plan.repetir == True else "<b>Tiempo para repetir publicación</b>: (Debe comprar un mejor plan para poder acceder a esto, <b>solo se repetirá 1 vez</b>)"
     ).strip()
+        
+
+
 
         bot.send_message(user, m_texto(texto), reply_markup=telebot.types.ReplyKeyboardRemove())
 

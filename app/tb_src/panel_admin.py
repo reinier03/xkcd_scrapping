@@ -16,6 +16,7 @@ def call_ver(c, scrapper: scrapping):
             [InlineKeyboardButton("Ver Usuarios", callback_data="c/a/w/user")],
             [InlineKeyboardButton("Ver Variables principales", callback_data="c/a/w/main_vars")],
             [InlineKeyboardButton("Ver TODAS las Variables", callback_data= "c/a/w/vars")]
+            [InlineKeyboardButton("❌ Limpiar", callback_data = "clear")]
         ]
     ))
 
@@ -182,8 +183,6 @@ def modificar_entrada(c, scrapper):
 def cambiar_delay(c, scrapper: scrapping):
     bot = scrapper.bot
     admin = scrapper.admin
-    
-    bot.delete_message(c.message.chat.id, c.message.message_id)
 
     msg = bot.send_message(c.message.chat.id, 
         m_texto("A continuación establece el tiempo de espera entre la publicación en cada grupo (En segundos)\n\n"

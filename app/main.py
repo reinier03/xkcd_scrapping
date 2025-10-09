@@ -128,6 +128,8 @@ def cmd_middleware(bot: telebot.TeleBot, update: telebot.types.Update):
 
     return
 
+
+
 @bot.message_handler(func=lambda message: not message.chat.type == "private")
 def not_private(m):
     return
@@ -405,6 +407,7 @@ def cmd_cancelar(m):
 
 @bot.message_handler(["publicaciones"])
 def cmd_administrar_publicaciones(m):
+    bot.delete_message(m.chat.id, m.message_id)
     panel_usuario.opciones_publicaciones(m.from_user.id, scrapper)
     
 # @bot.message_handler(commands=["cambiar"], func=lambda m: m.from_user.id != scrapper.cola["uso"])
@@ -727,7 +730,10 @@ def get_work(m: telebot.types.Message):
 
 @bot.message_handler(commands=["panel"])
 def cmd_panel(m: telebot.types.Message):
-    if not m.from_user.id == int(admin):
+
+    bot.delete_message(m.chat.id, m.message_id)
+
+    if not m.from_user.id == int(admin) and not m.from_user.id == int(scrapper.creador):
         bot.send_message(m.chat.id, "Bienvenido al panel de control <b>{}</b> que deseas hacer? :D\n\nEn este panel podrás administrar lo que puedes hacer con tu plan {}".format(bot.get_chat(m.from_user.id).first_name , scrapper.entrada.obtener_usuario(m.from_user.id).plan.__class__.__name__), reply_markup=InlineKeyboardMarkup(
             [
                 [InlineKeyboardButton("👀 Ver / Administrar Publicaciones", callback_data="c/p")],
@@ -811,7 +817,7 @@ def cual_publicar(c):
 
 @bot.callback_query_handler(lambda c: (c.data.startswith("c/") or c.data.startswith("p/")) or re.search(r"/a/\d+", c.data))
 def cmd_panel_usuario(c):
-    if (not "p/wl" in c.data and not "p/del" in c.data) or c.data.startswith("p/wl/a/") or c.data.startswith("p/u"):
+    if (not "p/wl" in c.data and not "p/del" in c.data) or c.data.startswith("p/wl/a/") or c.data.startswith("p/u") or c.data.endswith("/b"):
         
         bot.delete_message(c.from_user.id, c.message.message_id)
 
@@ -827,6 +833,9 @@ def cmd_panel_usuario(c):
 
     elif c.data == "c/a/pass":
         panel_admin.entrada(c, scrapper)
+
+    elif c.data == "c/a/d":
+        panel_admin.cambiar_delay(c, scrapper)
 
     #para el delay entre cada publicacion masiva
     elif "c/d" == c.data:
@@ -897,23 +906,22 @@ def cmd_panel_usuario(c):
 
     
 
-
-
-
-
-    
-
-
-
-@bot.callback_query_handler(lambda c: c.data == "cancel")
+@bot.callback_query_handler(lambda c: c.data in ["cancel", "clear"])
 def cancelar(c):
 
-    if c.from_user.id == scrapper.cola["uso"]:
-        liberar_cola(scrapper, c.from_user.id, bot)
+    if c.data == "cancel":
 
-    bot.delete_message(c.message.chat.id, c.message.message_id)
+        if c.from_user.id == scrapper.cola["uso"]:
+            liberar_cola(scrapper, c.from_user.id, bot)
 
-    bot.send_message(c.message.chat.id, "Muy Bien, la operación ha sido exitosamente cancelada", reply_markup=ReplyKeyboardRemove())
+        bot.delete_message(c.message.chat.id, c.message.message_id)
+
+        bot.send_message(c.message.chat.id, "Muy Bien, la operación ha sido exitosamente cancelada", reply_markup=ReplyKeyboardRemove())
+    
+    elif c.data == "clear":
+        
+        bot.delete_message(c.message.chat.id, c.message.message_id)
+
     return
 
 
@@ -1110,4 +1118,5 @@ if not os.getenv("webhook_url"):
     time.sleep(2)
     if os.environ.get("admin"):
         bot.send_message(int(os.environ.get("admin")), "Estoy usando el método polling")
+
     bot.infinity_polling(timeout=80,)
