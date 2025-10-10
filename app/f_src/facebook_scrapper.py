@@ -1117,10 +1117,13 @@ def publicacion(scrapper: scrapping, bot:telebot.TeleBot, user, load_url=True, c
                     if isinstance(e, IndexError):
                         scrapper.temp_dict[user]["publicacion"]["lista_grupos"] = obtener_grupos(scrapper, user, True)
 
-                
-                    scrapper.temp_dict[user]["a"].scroll_to_element(scrapper.temp_dict[user]["publicacion"]["lista_grupos"][contador]).perform()
+                    try:
+                        ActionChains(scrapper.driver, 0).scroll_to_element(scrapper.temp_dict[user]["publicacion"]["lista_grupos"][contador]).perform()
 
-                    ActionChains(scrapper.driver, 0).scroll_by_amount(0, -scrapper.temp_dict[user]["altura_elemento_grupos"] * 2)
+                        ActionChains(scrapper.driver, 0).scroll_by_amount(0, -scrapper.temp_dict[user]["altura_elemento_grupos"] * 2)
+
+                    except:
+                        scrapper.temp_dict[user]["publicacion"]["lista_grupos"] = obtener_grupos(scrapper, user)
 
                     time.sleep(2)
 
