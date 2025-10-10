@@ -1152,7 +1152,7 @@ def publicacion(scrapper: scrapping, bot:telebot.TeleBot, user, load_url=True, c
                     if not scrapper.driver.current_url.endswith("groups/"):
                         scrapper.load("https://m.facebook.com/groups/")
 
-                    scrapper.temp_dict[user]["e"] = obtener_grupos(scrapper, user)
+                    scrapper.temp_dict[user]["publicacion"]["lista_grupos"] = obtener_grupos(scrapper, user)
 
                     click_grupo()
                     
