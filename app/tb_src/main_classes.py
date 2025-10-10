@@ -386,8 +386,6 @@ class scrapping():
                 ec.visibility_of_element_located((By.XPATH, '//*[contains(text(), "Facebook es mejor en la app")]'))
                 ))            
 
-            
-            breakpoint()
 
         except:
             return False
