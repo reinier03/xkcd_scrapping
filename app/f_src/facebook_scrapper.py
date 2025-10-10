@@ -149,7 +149,7 @@ def entrar_facebook(scrapper: scrapping, user, cargar_loguin = False):
     elif scrapper.temp_dict[user]["res"].text in ["Usar otro perfil", "Use another profile"]:
         if not scrapper.temp_dict[user].get("perfil_seleccionado"):
            scrapper.temp_dict[user]["res"].click() 
-           scrapper.wait_s.until(ec.visibility_of_element_located((By.CSS_SELECTOR, 'input#m_login_email')))
+           scrapper.wait.until(ec.visibility_of_element_located((By.CSS_SELECTOR, 'input#m_login_email')))
 
         pass
     
@@ -1139,7 +1139,7 @@ def publicacion(scrapper: scrapping, bot:telebot.TeleBot, user, load_url=True, c
         scrapper.temp_dict[user]["tiempo_debug"].append(get_time_debug(scrapper, user, "obtener el nombre del grupo #{} linea {}".format(contador + 1, traceback.extract_stack()[-1].lineno)))
 
         
-        for e, publicacion in enumerate(scrapper.temp_dict[user]["obj_publicacion"][len(scrapper.temp_dict[user]["publicacion"]["resultados_publicaciones"]):]):
+        for e, publicacion in enumerate(scrapper.temp_dict[user]["obj_publicacion"][len(scrapper.temp_dict[user]["publicacion"]["resultados_publicaciones"]):], 1):
             
             try:
                 scrapper.temp_dict[user]["publicacion"]["resultados_publicaciones"].append(hacer_publicacion(scrapper, bot, user, publicacion, contador))
@@ -1151,6 +1151,8 @@ def publicacion(scrapper: scrapping, bot:telebot.TeleBot, user, load_url=True, c
 
                     if not scrapper.driver.current_url.endswith("groups/"):
                         scrapper.load("https://m.facebook.com/groups/")
+
+                    scrapper.temp_dict[user]["e"] = obtener_grupos(scrapper, user)
 
                     click_grupo()
                     

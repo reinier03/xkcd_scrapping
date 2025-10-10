@@ -35,6 +35,8 @@ def set_repeticion(m, scrapper: scrapping):
         
         scrapper.bot.send_message(m.chat.id, "Muy bien, {} hora(s) y {} minuto(s) será el tiempo de espera para reiniciar la publicación masiva en la cuenta".format(int(scrapper.entrada.obtener_usuario(m.from_user.id).plan.tiempo_repeticion / 60 / 60), int(scrapper.entrada.obtener_usuario(m.from_user.id).plan.tiempo_repeticion / 60 % 60)), reply_markup=telebot.types.ReplyKeyboardRemove())
 
+        scrapper.administrar_BD(user=m.from_user.id)
+
 
 
     else:

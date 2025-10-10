@@ -386,6 +386,9 @@ class scrapping():
                 ec.visibility_of_element_located((By.XPATH, '//*[contains(text(), "Facebook es mejor en la app")]'))
                 ))            
 
+            
+            breakpoint()
+
         except:
             return False
 
@@ -403,7 +406,7 @@ class scrapping():
                     if i >= 4:
                         raise Exception("No pude sacar el popup de Facebook")
 
-                    res = res.find_element(By.XPATH, '..')
+                    res = res.find_element(By.XPATH, '/..')
                 
 
             return True
@@ -421,7 +424,7 @@ class scrapping():
                     if i >= 4:
                         raise Exception("No pude sacar el popup de Facebook")
 
-                    res = res.find_element(By.XPATH, '..')
+                    res = res.find_element(By.XPATH, '/..')
 
             return True
 
