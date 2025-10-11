@@ -134,6 +134,7 @@ class scrapping():
             self.driver.scrapper = self
         
         # os.environ["MONGO_URL"] = os.environ.get("MONGO_HOST")
+        # self._iniciar_BD(os.environ["MONGO_URL"])
         if not "MONGO_URL" in os.environ and os.name == "nt":
             self._iniciar_BD("mongodb://localhost:27017")
 
@@ -144,11 +145,16 @@ class scrapping():
             else:
                 self.MONGO_URL = None
 
-        #
+        
+        
         for k,v in os.environ.items():
-            if k in ["admin", "token", "MONGO_URL", "webhook_url"]:
+            if k.lower() in ["admin", "token", "mongo_url", "webhook_url"]:
                 if k == "admin" and not self.entrada.obtener_usuario(int(v)):
                     self.entrada.usuarios.append(Usuario(int(v), Administrador()))
+
+
+                if k.lower() != "mongo_url":
+                    k = k.lower()
 
                 self.env.update({k: v})
 
@@ -814,6 +820,8 @@ class scrapping():
 
                     self.entrada = variable["entrada"]
                     self.env = variable["env"]
+                    self.admin = variable["admin"]
+                    self.MONGO_URL = variable["MONGO_URL"]
 
                     if self.env:
                         for k,v in self.env.items():
