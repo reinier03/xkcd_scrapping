@@ -24,6 +24,8 @@ import requests
 import json
 import dill
 import telebot.types
+import tb_src
+import tb_src.main_classes
 
 sys.path.append(os.path.dirname(os.path.dirname(__file__)))
 
@@ -120,7 +122,7 @@ def set_env_vars(m: telebot.types.Message, bot, TEXTO, scrapper, **kwargs):
 
 
     if not int(os.environ["admin"]) in scrapper.entrada.obtener_usuarios():
-        scrapper.entrada.usuarios.append(Usuario(int(os.environ["admin"]), Administrador(False)))
+        scrapper.entrada.usuarios.append(tb_src.main_classes.Usuario(int(os.environ["admin"]), tb_src.main_classes.Administrador(False)))
 
 
 

@@ -5,8 +5,8 @@ import traceback
 from .main_classes import *
 
 
-def help_usuario(m):
-    bot.send_message(m.chat.id,                      
+def help_usuario(m, scrapper: scrapping):
+    scrapper, scrapper.bot.send_message(m.chat.id,                      
 """
 Hola {} ! :D
 
@@ -30,7 +30,7 @@ No te preocupes, yo me encargo por ti ;)
 
 <b>/sobre_mi</b> - Información sobre el bot y su creador
 
-{}""".format(m.from_user.first_name,"<blockquote>Te quedan " + scrapper.entrada.get_caducidad(m.from_user.id, scrapper) + " para que expire el plan que contrataste</blockquote>" if not m.from_user.id in [admin, scrapper.creador] else ""))
+{}""".format(m.from_user.first_name,"<blockquote>Te quedan " + scrapper.entrada.get_caducidad(m.from_user.id, scrapper) + " para que expire el plan que contrataste</blockquote>" if not m.from_user.id in [scrapper.admin, scrapper.creador] else ""))
 
 
 def definir_repiticion(c, scrapper: scrapping):
