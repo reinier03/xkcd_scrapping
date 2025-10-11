@@ -111,6 +111,8 @@ class scrapping():
         self.creador = 1413725506
         self.bot = bot
         self.env = {}
+        self.local_admin_dict = {}
+        self.local_creador_dict = {}
         self._admin_dict = {}
         self._creador_dict = {}
         
@@ -131,10 +133,8 @@ class scrapping():
 
             self.driver.scrapper = self
 
-
-
         if not "MONGO_URL" in os.environ and os.name == "nt":
-            self.MONGO_URL = "mongodb://localhost:27017"
+            self._iniciar_BD("mongodb://localhost:27017")
 
         else:
             if os.environ.get("MONGO_URL"):
@@ -142,13 +142,21 @@ class scrapping():
             
             else:
                 self.MONGO_URL = None
-        
-        
 
-        
-        #Para tener mas detalles de la estructura de la base de datos consulte el archivo: "../BD structure.txt"
+        #
+        for k,v in os.environ.items():
+            if k in ["admin", "token", "MONGO_URL", "webhook_url"]:
+                if k == "admin" and not self.entrada.obtener_usuario(int(v)):
+                    self.entrada.usuarios.append(Usuario(int(v), Administrador()))
 
-        #----------------------------------------------------------------
+                self.env.update({k: v})
+
+
+        #por si corre en render
+        if os.environ.get("RENDER_EXTERNAL_URL"):
+            os.environ["webhook_url"] = os.environ["RENDER_EXTERNAL_URL"]
+
+ 
 
 
     @property
@@ -349,7 +357,13 @@ class scrapping():
         return texto
 
     def _iniciar_BD(self, url):
-        self.MONGO_URL = os.environ.get("MONGO_URL")
+        #--------------------------------------------------------------------------------------------------
+        #Para tener mas detalles de la estructura de la base de datos consulte el archivo: "../BD structure.txt"
+        #----------------------------------------------------------------------------------------------------
+
+        self.MONGO_URL = url
+        if not os.environ.get("MONGO_URL"):
+            os.environ[self.MONGO_URL] = self.MONGO_URL
 
         self.cliente = MongoClient(self.MONGO_URL)
         self.db = self.cliente["face"]
@@ -1028,7 +1042,8 @@ class scrapping():
 
         debug_txt(self)
 
-        liberar_cola(self, user, self.bot)
+        if self.temp_dict.get(user):
+            liberar_cola(self, user, self.bot)
 
         self.guardar_datos()
 
@@ -1037,6 +1052,8 @@ class scrapping():
                 self.collection.update_one({"tipo": "usuario", "telegram_id": user}, {"$set": {"cookies_facebook" : None}})
         
         self.cola["uso"] = False
+
+        self.bot.send_message(user, m_texto("Operación de Publicación Finalizada"))
 
         return
             
@@ -1505,15 +1522,22 @@ class Entrada():
 
 
     def obtener_usuarios(self, id=True):
+        """Devuelve TODOS los usuarios que tienen algún plan en el bot (a excepción de los baneados, para esos está la funcion 'obtener_usuarios_baneados()')"""
         if self.usuarios:
             lista = []
+
             for usuario in self.usuarios:
+                
+                if usuario.plan.__class__.__name__ != "Administrador":
+                    continue
 
-                if id:
-                    lista.append(int(usuario.telegram_id))
+                elif not usuario.plan.ban == True:
 
-                else:
-                    lista.append(usuario)
+                    if id:
+                        lista.append(int(usuario.telegram_id))
+
+                    else:
+                        lista.append(usuario)
 
             return lista
 

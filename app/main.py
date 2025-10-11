@@ -98,22 +98,8 @@ if scrapper.admin:
         BotCommand("/panel", "Panel de ajustes")], 
         BotCommandScopeChat(scrapper.creador))
 
-#por si corre en render
-if os.environ.get("RENDER_EXTERNAL_URL"):
-    os.environ["webhook_url"] = os.environ["RENDER_EXTERNAL_URL"]
-
-
-for k,v in os.environ.items():
-    if k in ["admin", "token", "MONGO_URL", "webhook_url"]:
-        if k == "admin" and not scrapper.entrada.obtener_usuario(int(v)):
-            scrapper.entrada.append(Usuario(int(v), Ilimitado(), False))
-
-        scrapper.env.update({k: v})
-
 
 #para evitar repeticion
-
-
 @bot.middleware_handler()
 def cmd_middleware(bot: telebot.TeleBot, update: telebot.types.Update):
     global scrapper
@@ -135,19 +121,30 @@ def cmd_middleware(bot: telebot.TeleBot, update: telebot.types.Update):
 def not_private(m):
     return
 
+@bot.message_handler(func=lambda m: scrapper.entrada.pasar and m.from_user.id != scrapper.creador)
+def cmd_denegar_paso(m):
+    bot.send_message(m.chat.id, m_texto("Actualmente el bot no está accesible por NADIE, sentimos las molestas ocacionadas\n\nContacta a mi creador para cualquier pregunta"), reply_markup=InlineKeyboardMarkup(
+        [
+            [InlineKeyboardButton("Contacta con mi creador 👨‍💻", "https://t.me/{}?text=Hola,+el+bot+@{},+está+bloqueado".format(scrapper.bot.get_chat(scrapper.creador).username, scrapper.bot.user.username))]
+        ]
+    ))
+
+    return
+
 #en caso de que no tenga las variables de entorno principales:
-@bot.message_handler(func=lambda m : not scrapper.admin or not os.environ.get("admin") or not scrapper.MONGO_URL)
+@bot.message_handler(func=lambda m : not scrapper.admin or not scrapper.MONGO_URL)
 def comprobar_venvs(m):
-    comprobacion_env(m, scrapper)
+    scrapper.entrada.pasar = False
+    panel_admin.comprobacion_env(m, scrapper)
     return
 
 
-@bot.message_handler(func=lambda m, scrapper=scrapper: m.forward_from_chat or m.text.isdigit())
+@bot.message_handler(func=lambda m: m.forward_from or m.text.isdigit())
 def obtener_info(m: telebot.types.Message):
-    if m.forward_from_chat:
-        mostrar_info_usuario(m.chat.id, m.forward_from_chat.id)
+    if m.forward_from:
+        mostrar_info_usuario(m.chat.id, m.forward_from.id, scrapper.bot)
     elif bot.get_chat(int(m.text)):
-        mostrar_info_usuario(m.chat.id, int(m.text))
+        mostrar_info_usuario(m.chat.id, int(m.text), scrapper.bot)
 
     return
 
@@ -305,8 +302,13 @@ def cmd_cancelar(m):
 
         # if not scrapper.temp_dict[scrapper.cola["uso"]].get("texto_r"):
         #     liberar_cola(scrapper, scrapper.cola["uso"], bot)
-
-        liberar_cola(scrapper, m.from_user.id, bot)
+        if scrapper.temp_dict.get(m.from_user.id):
+            liberar_cola(scrapper, m.from_user.id, bot, False)
+        
+        else:
+            scrapper.cola["uso"] = False
+            scrapper.facebook_logout()
+            scrapper.guardar_datos()
         
 
     else:
@@ -645,7 +647,6 @@ def cmd_panel(m: telebot.types.Message):
     if not m.from_user.id == int(admin) and not m.from_user.id == int(scrapper.creador):
         bot.send_message(m.chat.id, "Bienvenido al panel de control <b>{}</b> que deseas hacer? :D\n\nEn este panel podrás administrar lo que puedes hacer con tu plan {}".format(bot.get_chat(m.from_user.id).first_name , scrapper.entrada.obtener_usuario(m.from_user.id).plan.__class__.__name__), reply_markup=InlineKeyboardMarkup(
             [
-                [InlineKeyboardButton("👀 Ver / Administrar Publicaciones", callback_data="c/p")],
                 [InlineKeyboardButton("🔁 Cambiar tiempo repetición", callback_data="c/d")],
                 [InlineKeyboardButton("📨 Información útil", callback_data="c/w")],
             ]))
@@ -657,9 +658,8 @@ def cmd_panel(m: telebot.types.Message):
             reply_markup=InlineKeyboardMarkup([
                 [InlineKeyboardButton("⌛ Cambiar la espera entre CADA grupo", callback_data="c/a/d")],
                 # [InlineKeyboardButton("⛔ Administrar Entrada", callback_data="c/a/pass")],
-                [InlineKeyboardButton("👀 Ver / Administrar Publicaciones", callback_data="c/p")],
                 [InlineKeyboardButton("🔁 Cambiar tiempo repetición", callback_data="c/d")],
-                [InlineKeyboardButton("🛃 Ver información", callback_data="c/a/w")],
+                [InlineKeyboardButton("👀 Ver información", callback_data="c/a/w")],
                 # [InlineKeyboardButton("♻ Reiniciar Bot", callback_data="c/a/reload")]
                 # [InlineKeyboardButton("👥 Administrar Usuarios", callback_data="c/u")]
             ]))
@@ -670,9 +670,8 @@ def cmd_panel(m: telebot.types.Message):
             reply_markup=InlineKeyboardMarkup([
                 [InlineKeyboardButton("⌛ Cambiar la espera entre CADA grupo", callback_data="c/a/d")],
                 # [InlineKeyboardButton("⛔ Administrar Entrada", callback_data="c/a/pass")],
-                [InlineKeyboardButton("👀 Ver / Administrar Publicaciones", callback_data="c/p")],
                 [InlineKeyboardButton("🔁 Cambiar tiempo repetición", callback_data="c/d")],
-                [InlineKeyboardButton("🛃 Ver información", callback_data="c/a/w")],
+                [InlineKeyboardButton("👀 Ver información", callback_data="c/a/w")],
                 # [InlineKeyboardButton("♻ Reiniciar Bot", callback_data="c/a/reload")]
                 # [InlineKeyboardButton("👥 Administrar Usuarios", callback_data="c/u")]
             ]))
@@ -860,6 +859,7 @@ def cmd_command(message):
         dic_temp = {}
         dic_temp[message.from_user.id] = {"comando": False, "res": False, "texto": ""}
         dic_temp[message.from_user.id]["comando"] = message.text.split()
+
         if message.from_user.id == scrapper.creador:
             if len(dic_temp[message.from_user.id]["comando"]) <= 1:
                 panel_admin.comandos_creador(message.from_user.id, scrapper)

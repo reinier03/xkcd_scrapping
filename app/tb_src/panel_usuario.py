@@ -35,7 +35,7 @@ No te preocupes, yo me encargo por ti ;)
 
 def definir_repiticion(c, scrapper: scrapping):
 
-    msg = scrapper.bot.send_message(c.message.chat.id, "A continuación, establece un tiempo de espera luego de finalizada la publicación masiva para reiniciar el proceso en bucle\nIngresa el tiempo de repetición en HORAS\n\nSi solo deseas que no se repita y se publique solamente una vez en todos tus grupos pulsa en '<b>No Repetir</b>'\n\n{}".format("Actualmente tu tiempo de repetición es de: " + str(scrapper.entrada.obtener_usuario(c.from_user.id).plan.repetir) + " horas" if isinstance(scrapper.entrada.obtener_usuario(c.from_user.id).plan.repetir, int) and scrapper.entrada.obtener_usuario(c.from_user.id).plan.repetir != True else "Aún no has establecido un tiempo de repetición"), reply_markup=ReplyKeyboardMarkup(True, True).add("No Repetir"))
+    msg = scrapper.bot.send_message(c.message.chat.id, m_texto("A continuación, establece un tiempo de espera luego de finalizada la publicación masiva para reiniciar el proceso en bucle\nIngresa el tiempo de repetición en HORAS\n\nSi solo deseas que no se repita y se publique solamente una vez en todos tus grupos pulsa en '<b>No Repetir</b>'\n\n<u><b>Actualmente tu tiempo de repetición es de</b></u>:\n<blockquote>{}</blockquote>".format(str(scrapper.entrada.obtener_usuario(c.from_user.id).plan.repetir) + " horas" if isinstance(scrapper.entrada.obtener_usuario(c.from_user.id).plan.repetir, int) and scrapper.entrada.obtener_usuario(c.from_user.id).plan.repetir != True else "Aún no has establecido un tiempo de repetición"), True), reply_markup=ReplyKeyboardMarkup(True, True).add("No Repetir"))
 
 
     scrapper.bot.register_next_step_handler(msg, set_repeticion, scrapper)
@@ -45,9 +45,9 @@ def set_repeticion(m, scrapper: scrapping):
 
     if m.text == "No Repetir":
         scrapper.entrada.obtener_usuario(m.from_user.id).plan.tiempo_repeticion = False
-        scrapper.bot.send_message(m.chat.id, "Muy bien, las publicaciones se enviarán una única vez por todos los grupos")
+        scrapper.bot.send_message(m.chat.id, m_texto("Muy bien, las publicaciones se enviarán una única vez por todos los grupos"), reply_markup=ReplyKeyboardRemove())
 
-    if re.search(r"\d", m.text):
+    elif re.search(r"\d", m.text):
         if re.search(r"\d[.,]\d", m.text):
             if "," in m.text:
                 m.text.replace(",", ".")
@@ -67,7 +67,7 @@ def set_repeticion(m, scrapper: scrapping):
 
 
     else:
-        msg = scrapper.bot.send_message(m_texto("ERROR No has introducido un tiempo específico\n\nA continuación, establece un tiempo de espera luego de finalizada la publicación masiva para volver a repetir el proceso en bucle\nIngresa el tiempo de repetición en HORAS\n\nSi solo deseas que no se repita y se publique solamente una vez en todos tus grupos pulsa en '<b>No Repetir</b>'"), reply_markup=ReplyKeyboardMarkup(True, True).add("No Repetir"))
+        msg = scrapper.bot.send_message(m.chat.id, m_texto("ERROR No has introducido un tiempo específico\n\nA continuación, establece un tiempo de espera luego de finalizada la publicación masiva para volver a repetir el proceso en bucle\nIngresa el tiempo de repetición en HORAS\n\nSi solo deseas que no se repita y se publique solamente una vez en todos tus grupos pulsa en '<b>No Repetir</b>'"), reply_markup=ReplyKeyboardMarkup(True, True).add("No Repetir"))
 
         scrapper.bot.register_next_step_handler(msg, set_repeticion, scrapper)
     

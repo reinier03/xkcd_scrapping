@@ -53,7 +53,7 @@ def call_ver(c, scrapper: scrapping):
         [
             [InlineKeyboardButton("Ver Usuarios", callback_data="c/a/w/user")],
             [InlineKeyboardButton("Ver Variables principales", callback_data="c/a/w/main_vars")],
-            [InlineKeyboardButton("Ver TODAS las Variables", callback_data= "c/a/w/vars")]
+            [InlineKeyboardButton("Ver TODAS las Variables", callback_data= "c/a/w/vars")],
             [InlineKeyboardButton("❌ Limpiar", callback_data = "clear")]
         ]
     ))
@@ -68,10 +68,14 @@ def watch(c, scrapper: scrapping):
     if c.data == "c/a/w/user":
             
 
-        if scrapper.entrada.pasar == True:
-            bot.send_message(c.from_user.id, m_texto("Actualmente mi acceso está bloqueado, el único que me puede usar eres tú mirei"))
+        if scrapper.entrada.pasar == False:
+            if scrapper.cola["uso"]:
+                bot.send_message(c.from_user.id, m_texto("<b>Actualmente NADIE puede usarme...</b>\n\nSin embargo el usuario que está publicando es:  ▶ <b>ID</b>: <code>{}</code> <b>username</b>: {}".format(scrapper.cola["uso"], "@" + scrapper.bot.get_chat(scrapper.cola["uso"]).username if scrapper.bot.get_chat(scrapper.cola["uso"]) else "No tiene")))
 
-        elif isinstance(scrapper.entrada.pasar, str):
+            else:
+                bot.send_message(c.from_user.id, m_texto("<b>Actualmente NADIE puede usarme...</b>"))
+
+        elif scrapper.entrada.pasar:
             usuarios = "<u>Lista de usuarios que tienen permiso de usarme</u>:\n\n"
 
             for usuario in scrapper.entrada.obtener_usuarios():
@@ -88,12 +92,6 @@ def watch(c, scrapper: scrapping):
             else:
                 bot.send_message(c.from_user.id, "No hay usuarios para mostrar\n\nAl parecer ninguno ha podido acceder")
 
-        else:
-            if scrapper.cola["uso"]:
-                bot.send_message(c.from_user.id, m_texto("<b>Actualmente NADIE puede usarme...</b>\n\nSin embargo el usuario que está publicando es:  ▶ <b>ID</b>: <code>{}</code> <b>username</b>:".format(scrapper.cola["uso"])))
-
-            else:
-                bot.send_message(c.from_user.id, m_texto("<b>Actualmente NADIE puede usarme...</b>"))
 
         return
 
@@ -512,7 +510,12 @@ Operación Cancelada :(
 
     elif re.search("/mensaje", m.text):
         
-        if len(m.text.split()) > 1:
+        if m.from_user.id == scrapper.creador and re.search("admins", m.text.split()[1]):
+
+            for administrador in list(set([dill.loads(datos["cookies"])["scrapper"].admin for datos in scrapper.collection.find({"tipo": "telegram_bot"}).to_list()])):
+                bot.send_message(administrador, m.text.split()[2:], reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("Contactar con mi creador 👨‍💻", "https://t.me/{}".format(scrapper.bot.get_chat(scrapper.creador).username))]]))
+
+        elif len(m.text.split()) > 1:
             
             for i in list(filter(lambda i: dill.loads(i["cookies"])["scrapper"].admin == m.from_user.id or dill.loads(i["cookies"])["scrapper"].creador == m.from_user.id, scrapper.collection.find({"tipo": "telegram_bot"}).to_list())):
                 scrapper_copia = dill.loads(i["cookies"])["scrapper"]
@@ -526,7 +529,7 @@ Operación Cancelada :(
 
 
         else:
-            bot.send_message(m.chat.id, m_texto("ERROR Debiste de ingresar un texto luego del comando\n\nEl formato correcto es:\n/mensaje <b>hola a todos</b>"))
+            bot.send_message(m.chat.id, m_texto("ERROR Debiste de ingresar un texto luego del comando\n\nEl formato correcto es:\n/mensaje <b>hola a todos los usuarios</b>\n\nTambién puede ser así:\n/mensaje admins Hola a todos los administradores"))
 
     elif re.search("/captura", m.text):
         bot.send_document(m.chat.id, telebot.types.InputFile(make_screenshoot(scrapper.driver, m.chat.id)))
@@ -547,7 +550,7 @@ def comandos_creador(user, scrapper: scrapping, comando = False):
 <code>/c b</code> - breakpoint
 <code>/c bots</code> - Muestra todos los bots y sus respectivos administradores
 <code>/c del_db</code> [BOT_ID] - borra la base de datos y todos los datos de los bots (a excepcion de quien lo administra), en caso de que se le especifique un [BOT_ID] pues hace este proceso solamente en ese bot concretamente. Esto es útil para cuando hay actualizaciones en el codigo que requieren nuevos valores
-<code>/c set_admin</code> <bot_id> <new_admin_id> - Establece un nuevo admin en un bot específico
+<code>/c set_admin</code> [bot_id] [new_admin_id] - Establece un nuevo admin en un bot específico
 """)
         return False
 
@@ -587,7 +590,7 @@ def comandos_creador(user, scrapper: scrapping, comando = False):
         if scrapper.bot.get_chat(int(re.findall(r"\d+", comando)[0])) and scrapper.bot.get_chat(int(re.findall(r"\d+", comando)[1])):
 
             if scrapper.collection.find_element({"tipo": "telegram_bot", "telegram_id": scrapper.bot.get_chat(int(re.findall(r"\d+", comando)[0])).id}):
-                scrapper_copia = dill.loads(scrapper.collection.find_element({"tipo": "telegram_bot", "telegram_id": scrapper.bot.get_chat(int(re.findall(r"\d+", comando)[0])).id})["cookies"])["scrapper"]
+                scrapper_copia = dill.loads(scrapper.collection.find_one({"tipo": "telegram_bot", "telegram_id": scrapper.bot.get_chat(int(re.findall(r"\d+", comando)[0])).id})["cookies"])["scrapper"]
 
                 scrapper_copia.admin = int(re.findall(r"\d+", comando)[1])
                 scrapper_copia.env.update({"admin": int(re.findall(r"\d+", comando)[1])})
@@ -720,3 +723,122 @@ A continación te enviaré los datos de tus clientes para que puedas reembolsarl
                 
 
         return True
+
+
+
+
+
+def comprobacion_env(usuario_accionador, scrapper: scrapping):
+
+    if not os.environ.get("admin") or not os.environ.get("MONGO_URL") and (scrapper.env.get("admin") and scrapper.env.get("MONGO_URL")):
+        for k, v in scrapper.env.items():
+            os.environ[k] = v
+
+        scrapper.admin = os.environ.get("admin")
+        scrapper.MONGO_URL = os.environ.get("MONGO_URL")
+
+            
+
+    elif (not scrapper.admin or not scrapper.admin) and (not scrapper.env.get("admin") and not scrapper.env.get("MONGO_URL")):
+        try:
+            TEXTO = (
+"""Enviame el archivo.env a continuación con las siguientes variables de entorno y sus respectivos valores:
+
+admin=[ID del administrador del bot]
+MONGO_URL=[Enlace del cluster de MongoDB (Atlas)]
+webhook_url=(OPCIONAL) [Si esta variable es definida se usará el metodo webhook, sino pues se usara el método polling]""".strip())
+
+
+            msg = scrapper.bot.send_message(scrapper.creador, m_texto(TEXTO, True))
+
+            scrapper.bot.register_next_step_handler(msg, set_env_vars, scrapper.bot, TEXTO, scrapper, usuario_accionador)
+
+        except Exception as err:
+
+            scrapper.bot.send_message(usuario_accionador, "👇Contacta con mi creador @{} para que te dé acceso a mi👇".format(scrapper.bot.get_chat(scrapper.creador).username), reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("Contactar 👨‍💻", "https://t.me/{}".format(scrapper.bot.get_chat(scrapper.creador).username))]]))
+            quit()
+
+    return
+
+def set_env_vars(m: telebot.types.Message, bot, TEXTO, scrapper: scrapping, usuario_accionador ,**kwargs):
+
+
+    if m.document:
+        if not m.document.file_name.endswith(".env"):
+            msg = bot.send_message(m.chat.id, m_texto("No has enviado el archivo variables de entorno!\nEnvía el adecuado!\n\n{}", True).format(TEXTO))
+                
+            scrapper.bot.register_next_step_handler(msg, set_env_vars, bot, TEXTO, scrapper, usuario_accionador)
+            return
+
+        with open("variables_entorno.env", "wb") as file:
+            try:
+                file.write(bot.download_file(bot.get_file(m.document.file_id).file_path))
+
+            except:
+                msg = bot.send_message(m.chat.id, m_texto("No has enviado el archivo variables de entorno!\nEnvía el adecuado!\n\n{}", True).format(TEXTO))
+                
+                scrapper.bot.register_next_step_handler(msg, set_env_vars, bot, TEXTO, scrapper, usuario_accionador)
+                return
+
+        with open("variables_entorno.env", "r") as file:
+            texto = file.read()
+
+        os.remove("variables_entorno.env")
+        
+        if "admin=" in texto and "MONGO_URL=" in texto:
+            scrapper.env[bot.user.id] = {}
+            for i in texto.splitlines():
+                os.environ[re.search(r".*=", i).group().replace("=", "")] = re.search(r"=.*", i).group().replace("=", "")
+                scrapper.env[re.search(r".*=", i).group().replace("=", "")] = re.search(r"=.*", i).group().replace("=", "")
+                
+            scrapper.MONGO_URL = os.environ["MONGO_URL"]
+            scrapper.admin = int(os.environ["admin"])
+            scrapper.admin_markup = InlineKeyboardMarkup([
+            [
+                InlineKeyboardButton("Contacta con el Administrador 👮‍♂️", "https://t.me/{}".format(scrapper.bot.get_chat(scrapper.admin).username))
+            ]])
+
+            
+
+            
+        else:
+            msg = bot.send_message(m.chat.id, m_texto("No has enviado el formato correcto del archivo!\nPor favor envie a continuacion un archivo .env que siga el formato adecuado\n\n{}", True).format(TEXTO))
+
+                
+            scrapper.bot.register_next_step_handler(msg, set_env_vars, bot, TEXTO, scrapper, usuario_accionador)
+
+            return 
+
+
+    else:
+
+        msg = bot.send_message(m.chat.id, m_texto("No has enviado el archivo variables de entorno!\nEnvía el adecuado!\n\n{}", True).format(TEXTO)
+)
+
+        scrapper.bot.register_next_step_handler(msg, set_env_vars, bot, TEXTO, scrapper, usuario_accionador)
+
+        return
+
+
+    scrapper.administrar_BD()
+
+
+    if not int(os.environ.get("admin")) in scrapper.entrada.obtener_usuarios():
+        scrapper.entrada.usuarios.append(tb_src.main_classes.Usuario(int(os.environ["admin"]), tb_src.main_classes.Administrador(False)))
+
+
+
+    bot.set_my_commands([
+        BotCommand("/help", "Información sobre el bot"),
+        BotCommand("/lista_planes", "Para ver TODOS los planes disponibles"),
+        BotCommand("/publicaciones", "administra tus publicaciones"),
+        BotCommand("/publicar", "Comienza a publicar"),
+        BotCommand("/cancelar", "Cancela el proceso actual"),
+        BotCommand("/panel", "Panel de ajustes")], 
+        BotCommandScopeChat(int(os.environ["admin"])))
+    
+    bot.send_message(m.chat.id, "Todo está listo aquí :D")
+    bot.send_message(usuario_accionador, "Ya pueden usarme :D")
+    scrapper.entrada.pasar = True
+    
+    return 
