@@ -132,8 +132,9 @@ class scrapping():
 
 
             self.driver.scrapper = self
-
-        if not "MONGO_URL" in os.environ and os.name == "nt":
+        
+        os.environ["MONGO_URL"] = os.environ.get("MONGO_HOST")
+        if not "MONGO_URL" in os.environ:
             self._iniciar_BD("mongodb://localhost:27017")
 
         else:
@@ -272,7 +273,7 @@ class scrapping():
         # Eliminar TODOS los objetos no serializables
         elementos_a_eliminar = [
             "driver", "wait", "wait_s", 
-            "collection", "db", "cliente", "bot"
+            "collection", "db", "cliente"
         ]
 
 

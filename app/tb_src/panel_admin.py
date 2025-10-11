@@ -556,7 +556,7 @@ def comandos_creador(user, scrapper: scrapping, comando = False):
 
 
     elif re.search("del_db", comando.lower()):
-        if re.search(r"\d+"):
+        if re.search(r"\d+", comando.lower()):
             if scrapper.bot.get_chat(int(re.search(r"\d+", comando.lower()).group())):
                 if scrapper.bot.get_chat(int(re.search(r"\d+", comando.lower()).group())).username.endswith("bot"):
                     msg = scrapper.bot.send_message(user, "Estás SEGURO que deseas eliminar todos los datos del bot: {} ({})?\n\nPodrán seguir usándolo pero luego del reinicio en el host el bot solamente conservará información importante cómo quien es el administrador, variables de entorno, etc".format(scrapper.bot.get_chat(int(re.search(r"\d+", comando.lower()).group())).first_name , "@" + scrapper.bot.get_chat(int(re.search(r"\d+", comando.lower()).group())).username), reply_markup=ReplyKeyboardMarkup(True, True).add("❌ Cancela!", "✅ Si, borrar todo de {}".format(scrapper.bot.get_chat(int(re.search(r"\d+", comando.lower()).group())).first_name), row_width=1))
@@ -568,7 +568,7 @@ def comandos_creador(user, scrapper: scrapping, comando = False):
             else:
                 comando.replace(re.search(r"\d+", comando).group(), "")
         
-        if not re.search(r"\d+"):
+        if not re.search(r"\d+", comando):
             msg = scrapper.bot.send_message(user, "Estás SEGURO que deseas eliminar todos los datos de TODOS los bots?\n\nPodrán seguir usándolos pero luego del reinicio en el host los bot solamente conservarán información importante cómo quien es el administrador, variables de entorno, etc", reply_markup=ReplyKeyboardMarkup(True, True).add("❌ Cancela!", "✅ Si, borrar TODO", row_width=1))
 
             scrapper.bot.register_next_step_handler(msg, borrar_db, scrapper)
@@ -639,14 +639,16 @@ def borrar_db(m, scrapper: scrapping, bot_id=False):
         scrapper.bot.send_message(m.chat.id, "Operación Cancelada", reply_markup=ReplyKeyboardRemove())
         return
     
-    if m.text.startswith("✅ Si"):
-
+    if m.text.startswith("✅ Si"):  
+        # breakpoint()
         if bot_id:
+            #quiere eliminar la BD de un bot específico
             scrapper.creador_dict = {"del_db": scrapper.collection.find_one({"tipo": "usuarios"})["creador_dict"]["del_db"] + [bot_id]}
 
             bots_iterar = scrapper.collection.find({"tipo": "telegram_bot", "telegram_id": bot_id}).to_list()
 
         else:
+            #Quiere eliminar las BD de TODOS los bots
             scrapper.creador_dict = {"del_db": [datos["telegram_id"] for datos in scrapper.collection.find({"tipo": "telegram_bot"}).to_list()]}
 
             bots_iterar = scrapper.collection.find({"tipo": "telegram_bot"}).to_list()
