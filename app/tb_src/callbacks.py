@@ -14,91 +14,6 @@ sys.path.append(os.path.dirname(os.path.dirname(__file__)))
 from tb_src.usefull_functions import *
 
 
-def set_env_vars(m: telebot.types.Message, bot, TEXTO, scrapper: scrapping ,**kwargs):
-    if m.document:
-        if not m.document.file_name.endswith(".env"):
-            msg = bot.send_message(m.chat.id, m_texto("Ese archivo no es de las variables de entorno!\nEnvía el adecuado!\n\n{}", True).format(TEXTO), False)
-                
-            bot.register_next_step_handler(msg, set_env_vars, TEXTO)
-            return
-
-        with open("variables_entorno.env", "wb") as file:
-            try:
-                file.write(bot.download_file(bot.get_file(m.document.file_id).file_path))
-
-            except:
-                msg = bot.send_message(m.chat.id, m_texto("Ese archivo no es de las variables de entorno!\nEnvía el adecuado!\n\n{}".format(TEXTO), True), False)
-                
-                bot.register_next_step_handler(msg, set_env_vars, TEXTO)
-                return
-
-        with open("variables_entorno.env", "r") as file:
-            texto = file.read()
-
-        os.remove("variables_entorno.env")
-        
-        if "admin=" in texto and "MONGO_URL=" in texto:
-            scrapper.env[bot.user.id] = {}
-            for i in texto.splitlines():
-                os.environ[re.search(r".*=", i).group().replace("=", "")] = re.search(r"=.*", i).group().replace("=", "")
-                scrapper.env[bot.user.id][re.search(r".*=", i).group().replace("=", "")] = re.search(r"=.*", i).group().replace("=", "")
-                
-            scrapper.MONGO_URL = os.environ["MONGO_URL"]
-            scrapper.admin = int(os.environ["admin"])
-            scrapper.admin_markup = InlineKeyboardMarkup([
-            [
-                InlineKeyboardButton("Contacta con el Administrador 👮‍♂️", "https://t.me/{}".format(scrapper.bot.get_chat(scrapper.admin).username))
-            ]])
-
-            
-
-            
-        else:
-            msg = bot.send_message(m.chat.id, m_texto("No has enviado el formato correcto del archivo!\nPor favor envie a continuacion un archivo .env que siga el formato adecuado\n\n{}", True).format(TEXTO), False)
-
-                
-            bot.register_next_step_handler(msg, set_env_vars, TEXTO)
-
-
-    else:
-        msg = bot.send_message(m.chat.id, m_texto("No has enviado el archivo variables de entorno!\nEnvía el adecuado!\n\n{}", True).format(TEXTO), False)
-
-        bot.register_next_step_handler(msg, set_env_vars, TEXTO)
-
-
-    scrapper.administrar_BD()
-
-
-    if not int(os.environ["admin"]) in scrapper.entrada.obtener_usuarios():
-        scrapper.entrada.usuarios.append(Usuario(int(os.environ["admin"]), Administrador(False)))
-
-
-
-    bot.set_my_commands([
-        BotCommand("/help", "Información sobre el bot"),
-        BotCommand("/lista_planes", "Para ver TODOS los planes disponibles"),
-        BotCommand("/publicaciones", "administra tus publicaciones"),
-        BotCommand("/publicar", "Comienza a publicar"),
-        BotCommand("/cancelar", "Cancela el proceso actual"),
-        BotCommand("/panel", "Panel de ajustes")], 
-        BotCommandScopeChat(int(os.environ["admin"])))
-        
-    bot.send_message(m.chat.id, "Ya pueden usarme :D")
-    return 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 def set_pass(m, bot: telebot.TeleBot, scrapper):
     if m.text == "Cancelar Operación":
         bot.send_message(m.from_user.id, m_texto("Operación cancelada exitosamente"), reply_markup=telebot.types.ReplyKeyboardRemove())
@@ -270,13 +185,26 @@ def mensaje_elegir_publicacion(user, scrapper: scrapping):
 
     if len(scrapper.entrada.obtener_usuario(user).publicaciones) > 1:
 
-        scrapper.bot.send_message(user, "Muy bien, ahora dime, quieres que publique TODAS tus Publicaciones a la vez en cada grupo o prefieres seleccionar la que publicaré en todos tus grupos?\n\n(Tienes {} publicacion/es)".format(len(scrapper.entrada.obtener_usuario(user).publicaciones)), reply_markup = InlineKeyboardMarkup(
-            [
-                [InlineKeyboardButton("⬛ Publicar TODAS", callback_data="publicar/all")], 
-                [InlineKeyboardButton("🔲 Seleccionar qué publicar", callback_data="publicar/seleccionar")],
-                [InlineKeyboardButton("❌ Cancelar Operación", callback_data="cancel")]
-            ]
-        ))
+        if len(scrapper.entrada.obtener_usuario(user).publicaciones) > len(scrapper.entrada.obtener_usuario(user).plan.publicaciones) and not user != scrapper.creador and user != scrapper.admin:
+
+            markup = InlineKeyboardMarkup(
+                [ 
+                    [InlineKeyboardButton("🔲 Seleccionar qué publicar", callback_data="publicar/seleccionar")],
+                    [InlineKeyboardButton("❌ Cancelar Operación", callback_data="cancel")]
+                ]
+            )
+
+        else:
+
+            markup = InlineKeyboardMarkup(
+                [
+                    [InlineKeyboardButton("⬛ Publicar TODAS", callback_data="publicar/all")], 
+                    [InlineKeyboardButton("🔲 Seleccionar qué publicar", callback_data="publicar/seleccionar")],
+                    [InlineKeyboardButton("❌ Cancelar Operación", callback_data="cancel")]
+                ]
+            )
+
+        scrapper.bot.send_message(user, "Muy bien, ahora dime, quieres que publique TODAS tus Publicaciones a la vez en cada grupo o prefieres seleccionar la que publicaré en todos tus grupos?\n\n(Tienes {} publicacion/es)".format(len(scrapper.entrada.obtener_usuario(user).publicaciones)), reply_markup = markup)
 
         # scrapper.bot.register_callback_query_handler(cual_publicar, lambda c: c.data in ["publicar/all", "publicar/seleccionar"])
 

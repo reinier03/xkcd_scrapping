@@ -8,6 +8,44 @@ import telebot.types
 from tb_src.main_classes import *
 
 
+def help_admin(m, bot: telebot.TeleBot):
+    if isinstance(m, telebot.types.CallbackQuery):
+        m = m.message
+
+
+    bot.send_message(m.chat.id, """
+---- <b>Ayuda para Administradores</b> ----:
+Primero que todo, este bot fué creado por @mistakedelalaif, si tienes dudas de mi funcionamiento, preguntale a él
+
+<b><u>Nota Aclaratoria</u></b>:
+Para saber el ID de un usuario, simplemente reenvia uno de sus mensajes a mi chat y te daré toda la información de él
+
+<b><u>Comandos</u></b>:
+/admin - Para acceder a esta ayuda directamente
+                    
+/panel - Accede al panel de control de administración, este panel tiene casi que las mismas funciones que estos comandos, solo que este es más interactivo y claro
+                    
+/entrada <b>[id_usuario]</b> - Le da permiso a un usuario para acceder al bot LUEGO de que este haya pagado
+                    
+/ban <b>[id_usuario]</b> - Banea a un usuario de TODOS los bots. Luego del baneo el usuario no podrá interactuar con el bot
+Si no se especifica el [id_usuario] mostrará los usuarios baneados en TODOS los bots
+                    
+/unban <b>[id_usuario]</b> - Para permitirle nuevamente la entrada del bot a un usuario
+                    
+/usuario_actual - Muestra el usuario actual que me está usando para publicar
+                    
+/cancelar <b>[id_usuario]</b> - Cancela el proceso de publicación en Facebook de un usuario específico EN ESTE BOT, debes de ingresar el ID de un usuario que ya esté usando el bot, para saber este ID de usuario envíame /usuario_actual
+                    
+/cancelar_plan <b>[id_usuario]</b> - Elimina el plan dado a un usuario y si esta publicando para automáticamente de publicar
+                    
+/mensaje - Le envia un mensaje a cada usuario que pagó por el servicio en todos los bots que TÚ administras, ya sea de alguna noticia o un cambio importante que quieres que todos sepan
+                    
+/captura - Te envia una captura del navegador con el que se accede a facebook mostrando su estado actual
+""")
+    
+    return
+
+
 def call_ver(c, scrapper: scrapping):
 
 

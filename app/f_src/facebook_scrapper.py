@@ -1168,11 +1168,17 @@ def publicacion(scrapper: scrapping, bot:telebot.TeleBot, user, load_url=True, c
         scrapper.temp_dict[user]["contador"] = contador
 
         #el boton para ir atrás, a los grupos
-        scrapper.wait.until(ec.visibility_of_element_located((By.CSS_SELECTOR, 'div[role="button"]')))
-        ActionChains(scrapper.driver).click(scrapper.find_element(By.CSS_SELECTOR, 'div[role="button"]')).perform()
+        try:
+            scrapper.wait.until(ec.visibility_of_element_located((By.CSS_SELECTOR, 'div[role="button"]')))
+            ActionChains(scrapper.driver).click(scrapper.find_element(By.CSS_SELECTOR, 'div[role="button"]')).perform()
+
+        except:
+            scrapper.load("https://m.facebook.com/groups/")
+            scrapper.wait.until(ec.visibility_of_element_located((By.CSS_SELECTOR, 'body')))
 
         scrapper.temp_dict[user]["demora"] = time.time() - scrapper.temp_dict[user]["demora"]
         scrapper.temp_dict[user]["tiempo_debug"].append("=> " + "{}:{}".format(int(scrapper.temp_dict[user]["demora"] / 60), int(scrapper.temp_dict[user]["demora"] % 60)) + " minutos <= tiempo para publicar en el grupo")
+
 
         scrapper.temp_dict[user]["timeout"] = time.time() + scrapper.delay
 
@@ -1271,7 +1277,7 @@ def hacer_publicacion(scrapper: scrapping, bot : telebot.TeleBot, user: int, pub
     except:
         pass
 
-    if not publicacion.fotos:
+    if not publicacion.adjuntos:
         # desde: //*[@id="screen-root"]/div/div[2]/div[6]/div[1] 
         # hasta: //*[@id="screen-root"]/div/div[2]/div[6]/div[10]
 
@@ -1407,8 +1413,8 @@ def hacer_publicacion(scrapper: scrapping, bot : telebot.TeleBot, user: int, pub
     scrapper.temp_dict[user]["tiempo_debug"].append(get_time_debug(scrapper, user, "-------[Publicación: {}]-----\nintroducir el texto dentro del formulario de publicación en el grupo #{} linea {}".format(publicacion.titulo, contador + 1, traceback.extract_stack()[-1].lineno)))
 
 
-    if publicacion.fotos:
-        for foto in publicacion.fotos:
+    if publicacion.adjuntos:
+        for foto in publicacion.adjuntos:
             get_time_debug(scrapper, user)
 
             envia_fotos_input(scrapper, user, foto)

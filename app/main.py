@@ -98,6 +98,7 @@ if scrapper.admin:
         BotCommand("/panel", "Panel de ajustes")], 
         BotCommandScopeChat(scrapper.creador))
 
+#por si corre en render
 if os.environ.get("RENDER_EXTERNAL_URL"):
     os.environ["webhook_url"] = os.environ["RENDER_EXTERNAL_URL"]
 
@@ -134,37 +135,10 @@ def cmd_middleware(bot: telebot.TeleBot, update: telebot.types.Update):
 def not_private(m):
     return
 
-@bot.message_handler(func=lambda m : not scrapper.admin or not scrapper.MONGO_URL)
-def comprobacion_env(m):
-    global scrapper
-
-    if (not scrapper.admin or not scrapper.admin) and (scrapper.env.get("admin") and scrapper.env.get("MONGO_URL")):
-        for k, v in scrapper.env.items():
-            os.environ[k] = v
-
-        scrapper.admin = os.environ.get("admin")
-        scrapper.MONGO_URL = os.environ.get("MONGO_URL")
-
-            
-
-    elif (not scrapper.admin or not scrapper.admin) and (not scrapper.env.get("admin") and not scrapper.env.get("MONGO_URL")):
-        try:
-            TEXTO = """
-Enviame el archivo.env a continuación con las siguientes variables de entorno y sus respectivos valores:
-
-admin=<ID del administrador del bot>
-MONGO_URL=<Enlace del cluster de MongoDB (Atlas)>
-webhook_url=<[OPCIONAL]Si esta variable es definida se usará el metodo webhook, sino pues se usara el método polling>""".strip()
-
-
-            msg = bot.send_message(scrapper.creador, TEXTO, False)
-
-            bot.register_next_step_handler(msg, callbacks.set_env_vars, bot, TEXTO, scrapper)
-
-        except:
-            # bot.send_message(m.chat.id, "👇Contacta con mi creador @{} para que te dé acceso a mi👇".format(bot.get(scrapper.creador).username), reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("Contactar 👨‍💻", "https://t.me/{}".format(bot.get_chat(scrapper.creador).username))]]))
-            quit()
-
+#en caso de que no tenga las variables de entorno principales:
+@bot.message_handler(func=lambda m : not scrapper.admin or not os.environ.get("admin") or not scrapper.MONGO_URL)
+def comprobar_venvs(m):
+    comprobacion_env(m, scrapper)
     return
 
 
@@ -193,7 +167,7 @@ def start(m):
     global scrapper
     
     if m.text.strip() == "/admin" and m.from_user.id in [scrapper.admin, scrapper.creador]:
-        start_admin(m, bot)
+        panel_admin.help_admin(m, bot)
 
     elif m.from_user.id == admin:
         bot.send_message(m.chat.id, "¿Quieres ver la ayuda para administradores o la ayuda para usuarios?", reply_markup=InlineKeyboardMarkup([
@@ -201,37 +175,12 @@ def start(m):
             [InlineKeyboardButton("Ayuda para usuarios", callback_data="help/users")]
             ]))
 
-        bot.register_callback_query_handler(start_admin, lambda c: c.data == "help/admin", True)
+        bot.register_callback_query_handler(panel_admin.help_admin, lambda c: c.data == "help/admin", True)
+        bot.register_callback_query_handler(panel_usuario.help_usuario, lambda c: c.data == "help/users", True)
 
     elif not scrapper.entrada.get_caducidad(m.from_user.id, scrapper) == True:
-        bot.send_message(m.chat.id,                      
-"""
-Hola {} ! :D
-
-¿Te parece tedioso estar re publicando por TODOS tus grupos en Facebook?
-No te preocupes, yo me encargo por ti ;)
-
-<u><b>Lista de Comandos</b></u>:
-<b>/help</b> - Para ver la ayuda que muestro ahora mismo
-
-<b>/lista_planes</b> - Para ver TODOS los planes disponibles
-
-<b>/info</b> - Para obtener más información de comenzar a publicar
-
-<b>/publicaciones</b> - Administra tus publicaciones, crea nuevas , elimina o edita las que ya tienes
-
-<b>/publicar</b> - ¡Comienza a publicar! :D
-
-<b>/cancelar</b> - Para CANCELAR la operación y no publicar (esto solo funciona si estás publicando)
-
-<b>/panel</b> - Para administrar tu información y tus PUBLICACIONES
-
-<b>/sobre_mi</b> - Información sobre el bot y su creador
-
-{}
-""".format(m.from_user.first_name,"<blockquote>Te quedan " + scrapper.entrada.get_caducidad(m.from_user.id, scrapper) + " para que expire el plan que contrataste</blockquote>" if not m.from_user.id in [admin, scrapper.creador] else ""))
+        panel_usuario.help_usuario(m)
         
-    
         
     else:
          bot.send_message(m.chat.id,                      
@@ -324,46 +273,6 @@ def cmd_bloqueado(m):
         bot.send_message(m.chat.id, m_texto("Lo siento tigre, por ahora mi acceso está restringido hasta que el administrador lo decida\n👇Si tienes alguna queja contáctalo👇"), reply_markup=scrapper.admin_markup)
 
     return 
-
-
-def start_admin(m, bot: telebot.TeleBot):
-    if isinstance(m, telebot.types.CallbackQuery):
-        m = m.message
-
-
-    bot.send_message(m.chat.id, """
----- <b>Ayuda para Administradores</b> ----:
-Primero que todo, este bot fué creado por @mistakedelalaif, si tienes dudas de mi funcionamiento, preguntale a él
-
-<b><u>Nota Aclaratoria</u></b>:
-    Para saber el ID de un usuario, simplemente reenvia uno de sus mensajes a mi chat y te daré toda la información de él
-
-<b><u>Comandos</u></b>:
-    /admin - Para acceder a esta ayuda directamente
-                     
-    /panel - Accede al panel de control de administración, este panel tiene casi que las mismas funciones que estos comandos, solo que este es más interactivo y claro
-                     
-    /entrada <b>[id_usuario]</b> - Le da permiso a un usuario para acceder al bot LUEGO de que este haya pagado
-                     
-    /ban <b>[id_usuario]</b> - Banea a un usuario de TODOS los bots. Luego del baneo el usuario no podrá interactuar con el bot
-    Si no se especifica el [id_usuario] mostrará los usuarios baneados en TODOS los bots
-                     
-    /unban <b>[id_usuario]</b> - Para permitirle nuevamente la entrada del bot a un usuario
-                     
-    /usuario_actual - Muestra el usuario actual que me está usando para publicar
-                     
-    /cancelar <b>[id_usuario]</b> - Cancela el proceso de publicación en Facebook de un usuario específico EN ESTE BOT, debes de ingresar el ID de un usuario que ya esté usando el bot, para saber este ID de usuario envíame /usuario_actual
-                     
-    /cancelar_plan <b>[id_usuario]</b> - Elimina el plan dado a un usuario y si esta publicando para automáticamente de publicar
-                     
-    /mensaje - Le envia un mensaje a cada usuario que pagó por el servicio en todos los bots que TÚ administras, ya sea de alguna noticia o un cambio importante que quieres que todos sepan
-                     
-    /captura - Te envia una captura del navegador con el que se accede a facebook mostrando su estado actual
-""")
-    
-    return
-
-
 
 
 @bot.message_handler(commands=["cancelar"])
@@ -590,7 +499,7 @@ def call_notificar(c):
 #             if user_media.timer:
 #                 user_media.timer.close()
 
-#             user_media.fotos.append(bot.get_file(m.photo[-1].file_id).file_path)
+#             user_media.adjuntos.append(bot.get_file(m.photo[-1].file_id).file_path)
             
 #             user_media.timer = threading.Timer(user_media.TIMEOUT, get_photos, (media_group_clases, user_media))
 #             user_media.timer.start()
@@ -604,7 +513,7 @@ def call_notificar(c):
 #     if not os.path.isdir(os.path.join(user_folder(user_media.telegram_id), "publicaciones")):
 #         os.mkdir(os.path.join(user_folder(user_media.telegram_id), "publicaciones"))
 
-#     for foto in user_media.fotos:
+#     for foto in user_media.adjuntos:
 #         with open(os.path.join(user_folder(user_media.telegram_id), "publicaciones" , "u-{}_i-{}.jpg").format(user_media.user_id, len(usuarios[user_media.telegram_id].publicaciones)), "wb") as foto:
             
 #             foto.write(bot.download_file(foto))

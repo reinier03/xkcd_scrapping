@@ -5,6 +5,33 @@ import traceback
 from .main_classes import *
 
 
+def help_usuario(m):
+    bot.send_message(m.chat.id,                      
+"""
+Hola {} ! :D
+
+¿Te parece tedioso estar re publicando por TODOS tus grupos en Facebook?
+No te preocupes, yo me encargo por ti ;)
+
+<u><b>Lista de Comandos</b></u>:
+<b>/help</b> - Para ver la ayuda que muestro ahora mismo
+
+<b>/lista_planes</b> - Para ver TODOS los planes disponibles
+
+<b>/info</b> - Para obtener más información de comenzar a publicar
+
+<b>/publicaciones</b> - Administra tus publicaciones, crea nuevas , elimina o edita las que ya tienes
+
+<b>/publicar</b> - ¡Comienza a publicar! :D
+
+<b>/cancelar</b> - Para CANCELAR la operación y no publicar (esto solo funciona si estás publicando)
+
+<b>/panel</b> - Para administrar tu información y tus PUBLICACIONES
+
+<b>/sobre_mi</b> - Información sobre el bot y su creador
+
+{}""".format(m.from_user.first_name,"<blockquote>Te quedan " + scrapper.entrada.get_caducidad(m.from_user.id, scrapper) + " para que expire el plan que contrataste</blockquote>" if not m.from_user.id in [admin, scrapper.creador] else ""))
+
 
 def definir_repiticion(c, scrapper: scrapping):
 

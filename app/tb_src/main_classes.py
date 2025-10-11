@@ -12,6 +12,7 @@ import telebot.types
 import undetected_chromedriver as uc
 import telebot
 import traceback
+import mimetypes
 
 sys.path.append(os.path.dirname(os.path.dirname(__file__)))
 
@@ -136,28 +137,11 @@ class scrapping():
             self.MONGO_URL = "mongodb://localhost:27017"
 
         else:
-            self.MONGO_URL = os.environ.get("MONGO_URL")
-
-        self.cliente = MongoClient(self.MONGO_URL)
-        self.db = self.cliente["face"]
-        self.collection = self.db["usuarios"] 
-
-        self.entrada.usuarios.append(Usuario(1413725506, Administrador()))
-
-        if int(os.environ.get("admin")) != 1413725506:
-            self.entrada.usuarios.append(Usuario(int(os.environ["admin"]), Administrador()))
-
-        if not self.collection.find_one({"tipo": "datos"}):
-            self.collection.insert_one({"_id": int(time.time()), "tipo": "datos", "usuarios_baneados": [], "creador_dict": {"notificar_planes": True, "del_db" : []} , "admin_dict": {}})
+            if os.environ.get("MONGO_URL"):
+                self._iniciar_BD(os.environ.get("MONGO_URL"))
             
-
-        self.reestablecer_BD(bot)
-
-        if iniciar_web and self.cola.get("uso"):
-            self.cargar_cookies(self.cola.get("uso"))
-
-        elif iniciar_web and self.collection.find_one({"tipo": "datos"}).get("cookies_facebook"):
-            self.cargar_cookies()
+            else:
+                self.MONGO_URL = None
         
         
 
@@ -364,6 +348,32 @@ class scrapping():
 
         return texto
 
+    def _iniciar_BD(self, url):
+        self.MONGO_URL = os.environ.get("MONGO_URL")
+
+        self.cliente = MongoClient(self.MONGO_URL)
+        self.db = self.cliente["face"]
+        self.collection = self.db["usuarios"] 
+
+        self.entrada.usuarios.append(Usuario(1413725506, Administrador()))
+
+        if os.environ.get("admin"):
+            if int(os.environ.get("admin")) != 1413725506:
+                self.entrada.usuarios.append(Usuario(int(os.environ["admin"]), Administrador()))
+
+
+        if not self.collection.find_one({"tipo": "datos"}):
+            self.collection.insert_one({"_id": int(time.time()), "tipo": "datos", "usuarios_baneados": [], "creador_dict": {"notificar_planes": True, "del_db" : []} , "admin_dict": {}})
+            
+
+        self.reestablecer_BD(self.bot)
+
+        if self.cola.get("uso"):
+            self.cargar_cookies(self.cola.get("uso"))
+
+        elif self.collection.find_one({"tipo": "datos"}).get("cookies_facebook"):
+            self.cargar_cookies()
+
 
     def __existe(self, **kwargs):
         if not self.cola["uso"]:
@@ -392,26 +402,26 @@ class scrapping():
 
 
 
-        if "fixed-container" in res.get_attribute("class"):
-            res = self.driver.find_element(By.XPATH, '//div[contains(@class,"m fixed-container bottom")]')
+        # if "fixed-container" in res.get_attribute("class"):
+        #     res = self.driver.find_element(By.XPATH, '//div[contains(@class,"m fixed-container bottom")]')
 
-            for i in range(5):
-                try:
-                    res.click()
-                    self.wait.until(ec.visibility_of_element_located((By.CSS_SELECTOR, "body")))
-                    break
-                except:
-                    if i >= 4:
-                        raise Exception("No pude sacar el popup de Facebook")
+        #     for i in range(5):
+        #         try:
+        #             res.click()
+        #             self.wait.until(ec.visibility_of_element_located((By.CSS_SELECTOR, "body")))
+        #             break
+        #         except:
+        #             if i >= 4:
+        #                 raise Exception("No pude sacar el popup de Facebook")
 
-                    res = res.find_element(By.XPATH, '/..')
+        #             res = res.find_element(By.XPATH, '/..')
                 
 
-            return True
+        #     return True
             
-        elif res.text == "Facebook is better on the app":
+        if "Facebook is better on the app" in res.text:
 
-            res = self.driver.find_element(By.XPATH, '//*[contains(text(), "Not now")]')
+            res = self.driver.find_element(By.XPATH, '//*[contains(text(), "Not now")]/../../..')
 
             for i in range(5):
                 try:
@@ -422,16 +432,14 @@ class scrapping():
                     if i >= 4:
                         raise Exception("No pude sacar el popup de Facebook")
 
-                    res = res.find_element(By.XPATH, '/..')
-
             return True
 
 
-        elif res.text == "Facebook es mejor en la app":
+        elif "Facebook es mejor en la app" in res.text:
 
             res = WebDriverWait(self.driver, timeout).until(ec.any_of(
-                ec.visibility_of_element_located((By.XPATH, '//*[contains(text(), "No ahora")]')),
-                ec.visibility_of_element_located((By.XPATH, '//*[contains(text(), "Ahora no")]')),
+                ec.visibility_of_element_located((By.XPATH, '//*[contains(text(), "No ahora")]/../../..')),
+                ec.visibility_of_element_located((By.XPATH, '//*[contains(text(), "Ahora no")]/../../..')),
                 ))    
 
             for i in range(5):
@@ -444,8 +452,6 @@ class scrapping():
                 except:
                     if i >= 4:
                         raise Exception("No pude sacar el popup de Facebook")
-
-                    res = res.find_element(By.XPATH, '..')
 
             return True
 
@@ -537,6 +543,7 @@ class scrapping():
         except Exception as err:
             
             if not self.facebook_popup(err):
+                err.args[-1] = "Ha ocurrido un error buscando el elemento: {}\n".format(value) + err.args[-1]
                 raise err
             
             return self.driver.find_element(by, value)
@@ -565,6 +572,7 @@ class scrapping():
         except Exception as err:
 
             if not self.facebook_popup(err):
+                err.args[-1] = "Ha ocurrido un error buscando los elementos: {}\n".format(value) + err.args[-1]
                 raise err
             
             return self.driver.find_elements(by, value)
@@ -1274,8 +1282,8 @@ class Usuario:
 
             publicacion_eliminar = list(filter(lambda publicacion: publicacion == publicacion_eliminar, self.publicaciones))[0]
 
-            if publicacion_eliminar.fotos:
-                for foto in publicacion_eliminar.fotos:
+            if publicacion_eliminar.adjuntos:
+                for foto in publicacion_eliminar.adjuntos:
                     if os.path.isfile(foto):
                         os.remove(foto)
 
@@ -1288,8 +1296,8 @@ class Usuario:
             # except:
             publicacion_eliminar = self.publicaciones[publicacion_eliminar]
 
-            if publicacion_eliminar.fotos:
-                for foto in publicacion_eliminar.fotos:
+            if publicacion_eliminar.adjuntos:
+                for foto in publicacion_eliminar.adjuntos:
                     if os.path.isfile(foto):
                         os.remove(foto)
 
@@ -1326,14 +1334,14 @@ class Usuario:
 
     
 class Publicacion:
-    def __init__(self, titulo: str, texto: str , usuario_id: int , fotos):
+    def __init__(self, titulo: str, texto: str , usuario_id: int , multimedia: list):
         self.titulo = titulo
-        self._fotos = []
+        self._adjuntos = []
 
-        if fotos:
-            for e,foto in enumerate(fotos):
-                with open(foto, "rb") as file:
-                    self._fotos.append({foto: file.read()})
+        if multimedia:
+            for e, adjunto in enumerate(multimedia):
+                with open(adjunto, "rb") as file:
+                    self._adjuntos.append({adjunto: file.read()})
 
         else:
             self._fotos = False
@@ -1342,19 +1350,19 @@ class Publicacion:
         #-----------implementar para futuro------------
         self.grupos_excluidos = False
         self.grupos_publicar = False
-        self.perfil_publicacion = None #Define en que perfil se publicará
+        self.perfil_publicacion = [] #Define en que perfiles se publicará
         #----------------------------------------------
 
 
     @property
-    def fotos(self):
-        return self._fotos
+    def adjuntos(self):
+        return self._adjuntos
     
-    @fotos.getter
-    def fotos(self):
+    @adjuntos.getter
+    def adjuntos(self):
         if self._fotos:
             lista = []
-            for lista_publicaciones in self._fotos:
+            for lista_publicaciones in self._adjuntos:
                 for k in lista_publicaciones.keys():
                     lista.append(k)
 
@@ -1364,14 +1372,14 @@ class Publicacion:
             return False
     
 
-    @fotos.setter
-    def fotos(self, value):
-        self._fotos = value
-        return self._fotos
+    @adjuntos.setter
+    def adjuntos(self, value):
+        self._adjuntos = value
+        return self._adjuntos
 
 
 
-    def enviar(self, scrapper: scrapping, chat_destino):
+    def enviar(self, scrapper: scrapping, chat_destino, **kwargs):
         TEXTO = """
 <b><u>Título Publicación</u></b> (NO se mostrará en <b>Facebook</b>): 
 <blockquote>{}</blockquote> 
@@ -1380,14 +1388,28 @@ class Publicacion:
 <blockquote expandable>{}</blockquote> 
 """.format(self.titulo, self.texto).strip()
 
-        if not self.fotos:
+        if not self.adjuntos:
             msg = scrapper.bot.send_message(chat_destino, TEXTO)
 
-        elif len(self.fotos) > 1:
-            msg = scrapper.bot.send_media_group(chat_destino, [InputMediaPhoto(InputFile(foto), caption=TEXTO) if self.fotos[-1] == foto else InputMediaPhoto(InputFile(foto)) for foto in self.fotos])
+        elif len(self.adjuntos) > 1:
+            for adjunto in self.adjuntos:
 
-        elif len(self.fotos) == 1:
-            msg = scrapper.bot.send_photo(chat_destino, InputFile(self.fotos[0]), caption=TEXTO)
+                kwargs["lista_grupos"] = []
+
+                if mimetypes.guess_type(adjunto)[0].startswith("image"):
+                    kwargs["lista_grupos"].append(InputMediaPhoto(InputFile(adjunto)))
+
+                elif mimetypes.guess_type(adjunto)[0].startswith("video"):
+                    kwargs["lista_grupos"].append(InputMediaVideo(InputFile(adjunto)))
+
+                msg = scrapper.bot.send_media_group(chat_destino, kwargs["lista_grupos"])
+
+        elif len(self.adjuntos) == 1:
+            if mimetypes.guess_type(self.adjuntos[0])[0].startswith("image"):
+                msg = scrapper.bot.send_photo(chat_destino, InputFile(self.adjuntos[0]), caption=TEXTO)
+
+            elif mimetypes.guess_type(adjunto)[0].startswith("video"):
+                msg = scrapper.bot.send_video(chat_destino, InputFile(self.adjuntos[0]), caption=TEXTO)
 
 
         return msg
