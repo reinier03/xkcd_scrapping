@@ -2,7 +2,7 @@ import telebot
 import sys
 import os
 import traceback
-from usefull_functions import *
+from tb_src.usefull_functions import *
 import telebot.types
 
 from tb_src.main_classes import *
