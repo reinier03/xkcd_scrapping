@@ -792,10 +792,10 @@ def cmd_panel_usuario(c):
 
         
         if c.data.startswith("p/c/e"):
+            #elegir perfil 
             callbacks.elegir_cuenta_publicar(c, scrapper)
 
         elif c.data == "p/c/n":
-
             callbacks.mensaje_elegir_publicacion(c.from_user.id, scrapper)
 
             return
