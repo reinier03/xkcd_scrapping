@@ -879,7 +879,7 @@ def obtener_texto(scrapper, user, contador, error: bool, aprobar=False):
             return ("no", scrapper.temp_dict[user]["publicacion"]["texto_publicacion"])
 
     
-def enviar_grupos(scrapper, user, bot, contador, resultantes_publicados: list):
+def enviar_grupos(scrapper, user, bot: telebot.TeleBot, contador, resultantes_publicados: list):
     
 
     # if scrapper.temp_dict[user]["publicacion"]["nombre"] in scrapper.temp_dict[user]["publicacion"]["publicados"]:
@@ -920,19 +920,23 @@ def enviar_grupos(scrapper, user, bot, contador, resultantes_publicados: list):
     if scrapper.temp_dict[user]["res"][0] == "nuevo":
         scrapper.temp_dict[user]["publicacion"]["msg_publicacion"] = bot.send_message(user, scrapper.temp_dict[user]["res"][1])
 
+        bot.unpin_all_chat_messages(user)
+        bot.pin_chat_message(user , scrapper.temp_dict[user]["publicacion"]["msg_publicacion"].message_id, True)
+
     else:
 
-        try:
-            scrapper.temp_dict[user]["publicacion"]["msg_publicacion"] = bot.edit_message_text(scrapper.temp_dict[user]["res"][1] , user, scrapper.temp_dict[user]["publicacion"]["msg_publicacion"].message_id)
+        if scrapper.temp_dict[user]["publicacion"].get("msg_publicacion"):
+            try:
+                scrapper.temp_dict[user]["publicacion"]["msg_publicacion"] = bot.edit_message_text(scrapper.temp_dict[user]["res"][1] , user, scrapper.temp_dict[user]["publicacion"]["msg_publicacion"].message_id)
 
-        except Exception as e:
-            if "specified new message content and reply markup are exactly the same as a current content and reply markup of the message" in str(e.args):
-                pass
+            except Exception as e:
+                if "specified new message content and reply markup are exactly the same as a current content and reply markup of the message" in str(e.args):
+                    pass
 
-            else:
-                scrapper.temp_dict[user]["publicacion"]["msg_publicacion"] = bot.send_message(user, scrapper.temp_dict[user]["res"][1])
+        else:
+            scrapper.temp_dict[user]["publicacion"]["msg_publicacion"] = bot.send_message(user, scrapper.temp_dict[user]["res"][1])
 
-                bot.pin_chat_message(user , scrapper.temp_dict[user]["publicacion"]["msg_publicacion"].message_id, True)
+            bot.pin_chat_message(user , scrapper.temp_dict[user]["publicacion"]["msg_publicacion"].message_id, True)
 
     return
 
@@ -958,12 +962,8 @@ def publicacion(scrapper: scrapping, bot:telebot.TeleBot, user, load_url=True, c
 
     scrapper.temp_dict[user]["tiempo_debug"] = []
     
-    if kwargs.get("temp_dic"):
-        scrapper.temp_dict[user]["publicacion"] = kwargs.get("info_publicacion")
-    
-    elif not scrapper.temp_dict[user].get("publicacion"):
-        scrapper.temp_dict[user]["publicacion"] = {"publicados" : [], "error" : [], "incompletas": [], "lista_grupos": [] ,"texto_publicacion": "Lista de Grupos en los que se ha Publicado:\n\n", "resultados_publicaciones": []}
-        
+    if not scrapper.temp_dict[user].get("publicacion"):
+        scrapper.temp_dict[user]["publicacion"] = {"publicados" : [], "error" : [], "incompletas": [], "lista_grupos": [] ,"texto_publicacion": "Lista de Grupos en los que se ha Publicado:\n\n", "resultados_publicaciones": [], "msg_publicacion": ""}
         
     scrapper.temp_dict[user]["publicacion"]["lista_grupos"] = []
 
