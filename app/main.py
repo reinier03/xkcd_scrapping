@@ -958,9 +958,7 @@ if scrapper.cola["uso"] and scrapper.temp_dict.get(scrapper.cola["uso"]):
 else:
     scrapper.cola["uso"] = False
 
-
-if not scrapper.interrupcion and os.environ.get("admin"):
-    bot.send_message(admin, "El bot de publicaciones de Facebook está listo :)")
+        
     
 
 app = Flask(__name__)
@@ -1010,7 +1008,10 @@ def flask():
     if os.getenv("webhook_url"):
         bot.remove_webhook()
         time.sleep(2)
-        bot.send_message(int(os.environ.get("admin")), "Estoy usando el método webhook")
+        if os.environ.get("admin"):
+            if int(os.environ.get("admin")) == scrapper.creador and not scrapper.interrupcion:
+                bot.send_message(int(os.environ.get("admin")), "El bot de publicaciones de Facebook está listo :)\n\nEstoy usando el método webhook")
+                
         bot.set_webhook(url=os.environ["webhook_url"])
     
     app.run(host="0.0.0.0", port=5000)
@@ -1027,6 +1028,7 @@ if not os.getenv("webhook_url"):
     bot.remove_webhook()
     time.sleep(2)
     if os.environ.get("admin"):
-        bot.send_message(int(os.environ.get("admin")), "Estoy usando el método polling")
+        if int(os.environ.get("admin")) == scrapper.creador and not scrapper.interrupcion:
+            bot.send_message(int(os.environ.get("admin")), "El bot de publicaciones de Facebook está listo :)\n\nEstoy usando el método polling")
 
     bot.infinity_polling(timeout=80,)

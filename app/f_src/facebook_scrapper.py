@@ -782,7 +782,11 @@ def doble_auth(scrapper: scrapping , user, bot: telebot.TeleBot):
 
     # scrapper.temp_dict[user]["info"] = bot.edit_message_text(text="🆕 Mensaje de Información\n\nOk, el codigo introducido es correcto", chat_id=user, message_id=scrapper.temp_dict[user]["info"].message_id)     
     
-    bot.send_message(user, m_texto("Ok, el codigo introducido es correcto"), reply_markup=telebot.types.ReplyKeyboardRemove())
+    if scrapper.temp_dict[user].get("perfil_seleccionado"):
+        bot.send_message(user, m_texto("Ok, el codigo introducido es correcto\n\nEmpezaré a publicar lo antes posible, espera un momento..."), reply_markup=telebot.types.ReplyKeyboardRemove())
+
+    else:
+        bot.send_message(user, m_texto("Ok, el codigo introducido es correcto\n\nVoy a entrar a Facebook, espera un momento..."), reply_markup=telebot.types.ReplyKeyboardRemove())
 
     scrapper.wait.until(ec.any_of(lambda driver: driver.find_elements(By.CSS_SELECTOR, 'body')))
 

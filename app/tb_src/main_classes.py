@@ -495,25 +495,29 @@ class scrapping():
 
             res = WebDriverWait(self.driver, self.wait._timeout).until(ec.any_of(
                 ec.visibility_of_element_located((By.XPATH, '//*[contains(text(), "Log out")]')),
-                ec.visibility_of_element_located((By.XPATH, '//*[contains(text(), "Salir")]'))
+                ec.visibility_of_element_located((By.XPATH, '//*[contains(text(), "Salir")]')),
+                ec.visibility_of_element_located((By.XPATH, '//*[contains(text(), "Use another profile")]')),
+                ec.visibility_of_element_located((By.XPATH, '//*[contains(text(), "Usar otro perfil")]'))
             ))
+            
+            if not res.text in ["Usar otro perfil", "Use another profile"]:
 
-            res.find_element(By.XPATH, "../../..").click()
+                res.find_element(By.XPATH, "../../..").click()
 
-            res = WebDriverWait(self.driver, self.wait._timeout).until(ec.any_of(
-                ec.visibility_of_element_located((By.XPATH, '//*[contains(text(), "Yes")]')),
-                ec.visibility_of_element_located((By.XPATH, '//*[contains(text(), "Si")]'))
-            ))
+                res = WebDriverWait(self.driver, self.wait._timeout).until(ec.any_of(
+                    ec.visibility_of_element_located((By.XPATH, '//*[contains(text(), "Yes")]')),
+                    ec.visibility_of_element_located((By.XPATH, '//*[contains(text(), "Si")]'))
+                ))
 
-            url_actual = self.driver.current_url
+                url_actual = self.driver.current_url
 
-            res.find_element(By.XPATH, '../../../../..').click()
+                res.find_element(By.XPATH, '../../../../..').click()
 
-                
-            WebDriverWait(self.driver, self.wait._timeout).until(ec.all_of(
-                ec.url_changes(url_actual),
-                ec.visibility_of_element_located((By.CSS_SELECTOR, "body"))
-            ))
+                    
+                WebDriverWait(self.driver, self.wait._timeout).until(ec.all_of(
+                    ec.url_changes(url_actual),
+                    ec.visibility_of_element_located((By.CSS_SELECTOR, "body"))
+                ))
 
             self.guardar_datos()
 
