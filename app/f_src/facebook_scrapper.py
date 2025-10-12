@@ -745,12 +745,12 @@ def doble_auth(scrapper: scrapping , user, bot: telebot.TeleBot):
     if not isinstance(scrapper.temp_dict[user]["res"], bool):
         
         if "screen-root" in scrapper.temp_dict[user]["res"].get_attribute("id").lower():
-            perfil_seleccionado
+            
             if scrapper.temp_dict[user].get("perfil_seleccionado"):
                 bot.send_message(user, m_texto("Ok, el codigo introducido es correcto\n\nEmpezaré a publicar lo antes posible, espera un momento..."), reply_markup=telebot.types.ReplyKeyboardRemove())
 
             else:
-                bot.send_message(user, m_texto("Ok, el codigo introducido es correcto"), reply_markup=telebot.types.ReplyKeyboardRemove())
+                bot.send_message(user, m_texto("Ok, el codigo introducido es correcto\n\nVoy a entrar a Facebook, espera un momento..."), reply_markup=telebot.types.ReplyKeyboardRemove())
 
             return ("ok", "se ha dado click en confiar dispositivo")
     
@@ -1056,13 +1056,13 @@ def publicacion(scrapper: scrapping, bot:telebot.TeleBot, user, load_url=True, c
 
                 bot.unpin_all_chat_messages(user)
                 
-                if not scrapper.entrada.obtener_usuario(user).plan.repetir:
+                if isinstance(scrapper.entrada.obtener_usuario(user).plan.repetir, bool) or not scrapper.entrada.obtener_usuario(user).plan.repetir:
 
                     bot.send_message(user, "Se ha publicado exitosamente en " + str(len(scrapper.temp_dict[user]["publicacion"]["publicados"]) + len(scrapper.temp_dict[user]["publicacion"]["incompletas"])) + " grupo(s)")
 
                     return ("ok", "Se ha publicado exitosamente en " + str(len(scrapper.temp_dict[user]["publicacion"]["publicados"]) + len(scrapper.temp_dict[user]["publicacion"]["incompletas"])) + " grupo(s)")
                 
-                else:
+                elif isinstance(scrapper.entrada.obtener_usuario(user).plan.repetir, (int, float)):
                     
                     bot.send_message(user, m_texto("Publiqué en " + str(len(scrapper.temp_dict[user]["publicacion"]["publicados"]) + len(scrapper.temp_dict[user]["publicacion"]["incompletas"])) + " grupos satisfactoriamente\nAhora esperaré {} hora(s) y {} minuto(s) antes de volver a publicar masivamente\n\nCuando quieras cancelar envíame /cancelar".format(int(scrapper.entrada.obtener_usuario(user).plan.repetir / 60 / 60), int(scrapper.entrada.obtener_usuario(user).plan.repetir / 60 % 60))))
                     
@@ -1854,7 +1854,7 @@ Empezaré a procesar tu petición...
 
     "<b>Perfil(es) en los que compartir</b>: " + scrapper.temp_dict[user].get("perfil_seleccionado") if scrapper.temp_dict[user].get("perfil_seleccionado") else "<b>Perfil(es) en los que compartir</b>: (Se entrará con un perfil nuevo)",
 
-    "<b>Tiempo para repetir publicación</b>: " + str(scrapper.entrada.obtener_usuario(user).plan.repetir) if isinstance(scrapper.entrada.obtener_usuario(user).plan.repetir, int) and not isinstance(scrapper.entrada.obtener_usuario(user).plan.repetir, bool) else "<b>Tiempo para repetir publicación</b>: (No hay tiempo definido por el usuario, <b>solo se repetirá 1 vez</b>)" if scrapper.entrada.obtener_usuario(user).plan.repetir == True else "<b>Tiempo para repetir publicación</b>: (Debe comprar un mejor plan para poder acceder a esto, <b>solo se repetirá 1 vez</b>)"
+    "<b>Tiempo para repetir publicación</b>: " + str(scrapper.entrada.obtener_usuario(user).plan.repetir) if isinstance(scrapper.entrada.obtener_usuario(user).plan.repetir, int) and not isinstance(scrapper.entrada.obtener_usuario(user).plan.repetir, bool) else "<b>Tiempo para repetir publicación</b>: (No hay tiempo definido por el usuario, <b>solo se repetirá 1 vez</b>)" if scrapper.entrada.obtener_usuario(user).plan.repetir else "<b>Tiempo para repetir publicación</b>: (Debe comprar un mejor plan para poder acceder a esto, <b>solo se repetirá 1 vez</b>)"
     ).strip()
         
 
@@ -1918,7 +1918,7 @@ Empezaré a procesar tu petición...
 
                     scrapper.temp_dict[user]["perfil_seleccionado"] = str(scrapper.temp_dict[user]["res"][1])
                     
-                    bot.send_message(user, m_texto("He cambiado al perfil de:\n\n=> <b>" + str(scrapper.temp_dict[user]["res"][1]) + "</b>\n\nLoguin completado exitosamente!"), reply_markup=telebot.types.ReplyKeyboardRemove())
+                    bot.send_message(user, m_texto("He cambiado al perfil de:\n\n=> <b>" + str(scrapper.temp_dict[user]["res"][1]) + "</b>\n\nLoguin completado exitosamente!\nEn breve comenzaré a publicar ☺"), reply_markup=telebot.types.ReplyKeyboardRemove())
 
             else:
                 # scrapper.temp_dict[user]["info"] = bot.edit_message_text(text=f"🆕 Mensaje de Información\n\nMuy bien, continuaré con el perfil actual", chat_id=user, message_id=scrapper.temp_dict[user]["info"].message_id, reply_markup=telebot.types.ReplyKeyboardRemove())

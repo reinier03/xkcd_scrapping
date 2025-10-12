@@ -104,7 +104,7 @@ class scrapping():
     def __init__(self, bot : telebot.TeleBot, iniciar_web=True):
         self.temp_dict = {}
         self.cola = {"uso": False, "cola_usuarios": []}
-        self.delay = 60
+        self.delay = 30
         self.entrada = Entrada()
         self.interrupcion = False
         self.admin = int(os.environ.get("admin")) if os.environ.get("admin") else None
@@ -1171,7 +1171,7 @@ class Pro(Medio): #700CUP
     cantidad_adjuntos = 8
     grupos_publicados = 40
     publicaciones = 9
-    repetir = True
+    repetir = 60 * 60
 
     def show(self):
         return """

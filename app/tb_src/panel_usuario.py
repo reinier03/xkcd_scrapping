@@ -51,7 +51,7 @@ def definir_repiticion(c, scrapper: scrapping):
 def set_repeticion(m, scrapper: scrapping):
 
     if m.text == "No Repetir":
-        scrapper.entrada.obtener_usuario(m.from_user.id).plan.tiempo_repeticion = False
+        scrapper.entrada.obtener_usuario(m.from_user.id).plan.repetir = True
         scrapper.bot.send_message(m.chat.id, m_texto("Muy bien, las publicaciones se enviarán una única vez por todos los grupos"), reply_markup=ReplyKeyboardRemove())
 
     elif re.search(r"\d", m.text):
@@ -59,15 +59,15 @@ def set_repeticion(m, scrapper: scrapping):
             if "," in m.text:
                 m.text.replace(",", ".")
 
-            scrapper.entrada.obtener_usuario(m.from_user.id).plan.tiempo_repeticion = int(float(re.search(r"\d+[.]\d+", m.text).group()) * 60 * 60)
+            scrapper.entrada.obtener_usuario(m.from_user.id).plan.repetir = int(float(re.search(r"\d+[.]\d+", m.text).group()) * 60 * 60)
 
         else:
             
-            scrapper.entrada.obtener_usuario(m.from_user.id).plan.tiempo_repeticion = int(m.text) * 60 * 60
+            scrapper.entrada.obtener_usuario(m.from_user.id).plan.repetir = int(m.text) * 60 * 60
 
 
         
-        scrapper.bot.send_message(m.chat.id, "Muy bien, {} hora(s) y {} minuto(s) será el tiempo de espera para reiniciar la publicación masiva en la cuenta".format(int(scrapper.entrada.obtener_usuario(m.from_user.id).plan.tiempo_repeticion / 60 / 60), int(scrapper.entrada.obtener_usuario(m.from_user.id).plan.tiempo_repeticion / 60 % 60)), reply_markup=telebot.types.ReplyKeyboardRemove())
+        scrapper.bot.send_message(m.chat.id, "Muy bien, {} hora(s) y {} minuto(s) será el tiempo de espera para reiniciar la publicación masiva en la cuenta".format(int(scrapper.entrada.obtener_usuario(m.from_user.id).plan.repetir / 60 / 60), int(scrapper.entrada.obtener_usuario(m.from_user.id).plan.repetir / 60 % 60)), reply_markup=telebot.types.ReplyKeyboardRemove())
 
         scrapper.administrar_BD(user=m.from_user.id)
 
