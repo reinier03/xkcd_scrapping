@@ -745,7 +745,7 @@ def doble_auth(scrapper: scrapping , user, bot: telebot.TeleBot):
     if not isinstance(scrapper.temp_dict[user]["res"], bool):
         
         if "screen-root" in scrapper.temp_dict[user]["res"].get_attribute("id").lower():
-            
+            perfil_seleccionado
             if scrapper.temp_dict[user].get("perfil_seleccionado"):
                 bot.send_message(user, m_texto("Ok, el codigo introducido es correcto\n\nEmpezaré a publicar lo antes posible, espera un momento..."), reply_markup=telebot.types.ReplyKeyboardRemove())
 

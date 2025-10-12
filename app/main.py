@@ -173,10 +173,10 @@ def start(m):
             ]))
 
         bot.register_callback_query_handler(panel_admin.help_admin, lambda c: c.data == "help/admin", True)
-        bot.register_callback_query_handler(panel_usuario.help_usuario, lambda c: c.data == "help/users", True)
+        bot.register_callback_query_handler(help_usuario_show, lambda c: c.data == "help/users")
 
     elif not scrapper.entrada.get_caducidad(m.from_user.id, scrapper) == True:
-        panel_usuario.help_usuario(m)
+        panel_usuario.help_usuario(m, scrapper)
         
         
     else:
@@ -199,6 +199,8 @@ Al parecer no tienes ningún <b>Plan</b> o ya <b>venció</b> el que habías cont
 
     return
 
+def help_usuario_show(c):
+    panel_usuario.help_usuario(c, scrapper)
 
 @bot.message_handler(["planes", "lista_planes"])
 def cmd_lista_planes(m):

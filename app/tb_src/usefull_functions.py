@@ -100,10 +100,6 @@ def debug_txt(scrapper=False):
                 del scrapper.temp_dict[scrapper.admin]["tiempo_debug"]
 
 
-            if not scrapper.temp_dict[scrapper.admin].get("cancelar"):
-                scrapper.bot.send_message(scrapper.admin, m_texto("La Operación ha finalizado") )
-
-
     return
 
 

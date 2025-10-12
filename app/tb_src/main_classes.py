@@ -135,8 +135,8 @@ class scrapping():
         
         # os.environ["MONGO_URL"] = os.environ.get("MONGO_HOST")
         # self._iniciar_BD(os.environ["MONGO_URL"])
-        if not "MONGO_URL" in os.environ and os.name == "nt":
-            self._iniciar_BD("mongodb://localhost:27017")
+        if not "MONGO_URL" in os.environ and os.name == "nt": #
+            self._iniciar_BD("mongodb://localhost:27017") #
 
         else:
             if os.environ.get("MONGO_URL"):
@@ -698,9 +698,9 @@ class scrapping():
 
                     for usuario in self.entrada.obtener_usuario(user).publicaciones:
 
-                        if publicacion._fotos:
+                        if publicacion._adjuntos:
 
-                            for k, v in publicacion._fotos.items():
+                            for k, v in publicacion._adjuntos.items():
 
                                 if not os.path.isfile(os.path.join(user_folder(user), os.path.basename(k))):
 
@@ -768,9 +768,9 @@ class scrapping():
 
                     for publicacion in usuario.publicaciones:
 
-                        if publicacion._fotos:
+                        if publicacion._adjuntos:
                             
-                            for foto_dict in publicacion._fotos:
+                            for foto_dict in publicacion._adjuntos:
                                 
                                 for foto_path, foto_binary in foto_dict.items():
 
@@ -886,9 +886,9 @@ class scrapping():
 
                         for publicacion in usuario.publicaciones:
 
-                            if publicacion._fotos:
+                            if publicacion._adjuntos:
 
-                                for k, v in publicacion._fotos.items():
+                                for k, v in publicacion._adjuntos.items():
 
                                     if not os.path.isfile(os.path.join(user_folder(user), os.path.basename(k))):
 
@@ -1360,17 +1360,17 @@ class Usuario:
 
     
 class Publicacion:
-    def __init__(self, titulo: str, texto: str , usuario_id: int , multimedia: list):
+    def __init__(self, titulo: str, texto: str , usuario_id: int , adjuntos: list):
         self.titulo = titulo
         self._adjuntos = []
 
-        if multimedia:
-            for e, adjunto in enumerate(multimedia):
+        if adjuntos:
+            for e, adjunto in enumerate(adjuntos):
                 with open(adjunto, "rb") as file:
                     self._adjuntos.append({adjunto: file.read()})
 
         else:
-            self._fotos = False
+            self._adjuntos = False
 
         self.texto = texto
         #-----------implementar para futuro------------
@@ -1386,7 +1386,7 @@ class Publicacion:
     
     @adjuntos.getter
     def adjuntos(self):
-        if self._fotos:
+        if self._adjuntos:
             lista = []
             for lista_publicaciones in self._adjuntos:
                 for k in lista_publicaciones.keys():
@@ -1406,6 +1406,7 @@ class Publicacion:
 
 
     def enviar(self, scrapper: scrapping, chat_destino, **kwargs):
+        
         TEXTO = """
 <b><u>Título Publicación</u></b> (NO se mostrará en <b>Facebook</b>): 
 <blockquote>{}</blockquote> 
@@ -1434,7 +1435,7 @@ class Publicacion:
             if mimetypes.guess_type(self.adjuntos[0])[0].startswith("image"):
                 msg = scrapper.bot.send_photo(chat_destino, InputFile(self.adjuntos[0]), caption=TEXTO)
 
-            elif mimetypes.guess_type(adjunto)[0].startswith("video"):
+            elif mimetypes.guess_type(self.adjuntos[0])[0].startswith("video"):
                 msg = scrapper.bot.send_video(chat_destino, InputFile(self.adjuntos[0]), caption=TEXTO)
 
 

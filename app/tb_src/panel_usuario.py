@@ -2,10 +2,17 @@ import telebot
 import sys
 import os
 import traceback
+
+import telebot.types
 from .main_classes import *
 
 
 def help_usuario(m, scrapper: scrapping):
+
+    if isinstance(m, telebot.types.CallbackQuery):
+        m.message.from_user = m.from_user
+        m = m.message
+
     scrapper, scrapper.bot.send_message(m.chat.id,                      
 """
 Hola {} ! :D
@@ -14,7 +21,7 @@ Hola {} ! :D
 No te preocupes, yo me encargo por ti ;)
 
 <u><b>Lista de Comandos</b></u>:
-<b>/help</b> - Para ver la ayuda que muestro ahora mismo
+<blockquote><b>/help</b> - Para ver la ayuda que muestro ahora mismo
 
 <b>/lista_planes</b> - Para ver TODOS los planes disponibles
 
@@ -28,7 +35,7 @@ No te preocupes, yo me encargo por ti ;)
 
 <b>/panel</b> - Para administrar tu información y tus PUBLICACIONES
 
-<b>/sobre_mi</b> - Información sobre el bot y su creador
+<b>/sobre_mi</b> - Información sobre el bot y su creador</blockquote>
 
 {}""".format(m.from_user.first_name,"<blockquote>Te quedan " + scrapper.entrada.get_caducidad(m.from_user.id, scrapper) + " para que expire el plan que contrataste</blockquote>" if not m.from_user.id in [scrapper.admin, scrapper.creador] else ""))
 
