@@ -537,7 +537,7 @@ def call_notificar(c):
 @bot.message_handler(commands=["publicar"])
 def get_work(m: telebot.types.Message):
     global scrapper
-
+    breakpoint()
     if m.from_user.id == int(scrapper.admin) and int(scrapper.admin) != scrapper.creador:
         bot.send_message(m.chat.id, "Los administradores no pueden publicar, solamente los usuarios que han pagado por el servicio o mi creador\n\nOperación Cancelada")
         return

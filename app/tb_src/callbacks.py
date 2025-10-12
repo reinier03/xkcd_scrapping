@@ -185,24 +185,35 @@ def mensaje_elegir_publicacion(user, scrapper: scrapping):
 
     if len(scrapper.entrada.obtener_usuario(user).publicaciones) > 1:
 
-        if len(scrapper.entrada.obtener_usuario(user).publicaciones) > len(scrapper.entrada.obtener_usuario(user).plan.publicaciones) and not user != scrapper.creador and user != scrapper.admin:
-
-            markup = InlineKeyboardMarkup(
-                [ 
-                    [InlineKeyboardButton("🔲 Seleccionar qué publicar", callback_data="publicar/seleccionar")],
-                    [InlineKeyboardButton("❌ Cancelar Operación", callback_data="cancel")]
-                ]
-            )
-
-        else:
-
-            markup = InlineKeyboardMarkup(
+        if isinstance(scrapper.entrada.obtener_usuario(user).plan.publicaciones, bool):
+            if scrapper.entrada.obtener_usuario(user).plan.publicaciones == True:
+                markup = InlineKeyboardMarkup(
                 [
                     [InlineKeyboardButton("⬛ Publicar TODAS", callback_data="publicar/all")], 
                     [InlineKeyboardButton("🔲 Seleccionar qué publicar", callback_data="publicar/seleccionar")],
                     [InlineKeyboardButton("❌ Cancelar Operación", callback_data="cancel")]
                 ]
             )
+                
+        else:
+            if len(scrapper.entrada.obtener_usuario(user).publicaciones) > len(scrapper.entrada.obtener_usuario(user).plan.publicaciones) and not user != scrapper.creador and user != scrapper.admin:
+
+                markup = InlineKeyboardMarkup(
+                    [ 
+                        [InlineKeyboardButton("🔲 Seleccionar qué publicar", callback_data="publicar/seleccionar")],
+                        [InlineKeyboardButton("❌ Cancelar Operación", callback_data="cancel")]
+                    ]
+                )
+
+            else:
+
+                markup = InlineKeyboardMarkup(
+                    [
+                        [InlineKeyboardButton("⬛ Publicar TODAS", callback_data="publicar/all")], 
+                        [InlineKeyboardButton("🔲 Seleccionar qué publicar", callback_data="publicar/seleccionar")],
+                        [InlineKeyboardButton("❌ Cancelar Operación", callback_data="cancel")]
+                    ]
+                )
 
         scrapper.bot.send_message(user, "Muy bien, ahora dime, quieres que publique TODAS tus Publicaciones a la vez en cada grupo o prefieres seleccionar la que publicaré en todos tus grupos?\n\n(Tienes {} publicacion/es)".format(len(scrapper.entrada.obtener_usuario(user).publicaciones)), reply_markup = markup)
 
