@@ -563,6 +563,24 @@ def leer_BD(scrapper = False):
     return res
 
 
+def obtener_tiempo(tiempo: float):
+    """Devuelve el tiempo dado en segundos en un mejor formato"""
+
+    #cuando hay más de un día
+    if tiempo > 86400:
+        return "Día(s): {}, Hora(s): {} y Minuto(s): {}".format(int(tiempo / 86400) , int(tiempo % 86400  / 60 / 60), int(tiempo % 86400  / 60 % 60))
+
+    #cuando hay más de 1 hora
+    elif tiempo > 3600:
+        return "Hora(s): {} y Minuto(s): {}".format(int(tiempo / 60 / 60), int(tiempo / 60 % 60))
+
+    #cuando hay más de 1 minuto
+    elif tiempo > 60:
+        return "Minuto(s): {}".format(int(tiempo / 60 ))
+    
+    #cuando SOLO es segundos
+    else:
+        return "Segundo(s): {}".format(int(tiempo))
 
     
 

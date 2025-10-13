@@ -1658,10 +1658,8 @@ class Entrada():
 
                 tiempo_restante = self.obtener_usuario(usuario).plan.caducidad - time.time()
 
-                if tiempo_restante >= 86400:
-                    return "{} Días, {} Horas y {} Minutos".format(int(tiempo_restante / 86400) , int(tiempo_restante % 86400  / 60 / 60), int(tiempo_restante % 86400  / 60 % 60))
-                else:
-                    return "{} Horas y {} Minutos".format(int(tiempo_restante % 86400  / 60 / 60), int(tiempo_restante % 86400  / 60 % 60))
+                return obtener_tiempo(tiempo_restante)
+
 
             else:
                 return False

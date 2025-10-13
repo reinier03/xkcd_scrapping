@@ -1880,7 +1880,7 @@ Empezaré a procesar tu petición...
 
     "<b>Perfil(es) en los que compartir</b>: " + scrapper.temp_dict[user].get("perfil_seleccionado") if scrapper.temp_dict[user].get("perfil_seleccionado") else "<b>Perfil(es) en los que compartir</b>: (Se entrará con un perfil nuevo)",
 
-    "<b>Tiempo para repetir publicación</b>: " + str(scrapper.entrada.obtener_usuario(user).plan.repetir) if isinstance(scrapper.entrada.obtener_usuario(user).plan.repetir, int) and not isinstance(scrapper.entrada.obtener_usuario(user).plan.repetir, bool) else "<b>Tiempo para repetir publicación</b>: (No hay tiempo definido por el usuario, <b>solo se repetirá 1 vez</b>)" if scrapper.entrada.obtener_usuario(user).plan.repetir else "<b>Tiempo para repetir publicación</b>: (Debe comprar un mejor plan para poder acceder a esto, <b>solo se repetirá 1 vez</b>)"
+    "<b>Tiempo para repetir publicación</b>: " + str(obtener_tiempo(scrapper.entrada.obtener_usuario(user).plan.repetir)) if isinstance(scrapper.entrada.obtener_usuario(user).plan.repetir, int) and not isinstance(scrapper.entrada.obtener_usuario(user).plan.repetir, bool) else "<b>Tiempo para repetir publicación</b>: (No hay tiempo definido por el usuario, <b>solo se repetirá 1 vez</b>)" if scrapper.entrada.obtener_usuario(user).plan.repetir else "<b>Tiempo para repetir publicación</b>: (Debe comprar un mejor plan para poder acceder a esto, <b>solo se repetirá 1 vez</b>)"
     ).strip()
         
 
