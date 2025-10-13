@@ -88,30 +88,36 @@ def entrar_facebook(scrapper: scrapping, user, cargar_loguin = False):
     Carga la página de Facebook y quita la presentacion
     """
     def configurar_idioma():
+
         try:
             scrapper.wait_s.until(ec.visibility_of_element_located((By.XPATH, '//*[contains(text(), "English")]')))
 
         except:
-            scrapper.wait.until(ec.visibility_of_element_located((By.CSS_SELECTOR, 'span[data-bloks-name="bk.components.TextSpan"]'))).click()
+            #clickear en el elemento del idioma
+            scrapper.wait.until(ec.visibility_of_element_located((By.XPATH, '//*[contains(text(), "{}")]'.format(re.search(r"(\D+)", scrapper.find_element(By.CSS_SELECTOR, "body").text).group().split("\n")[0])))).click()
+
+            
 
             scrapper.wait.until(ec.visibility_of_element_located((By.XPATH, '//*[contains(text(), "English (US)")]')))
-            scrapper.find_element(By.XPATH, '//*[contains(text(), "English (US)")]').click()
+            scrapper.find_element(By.XPATH, '//*[contains(text(), "English (US)")]/..').click()
 
             scrapper.wait.until(ec.visibility_of_element_located((By.CSS_SELECTOR, 'body')))
 
             try:
-                scrapper.wait.until(ec.any_of(
+                scrapper.temp_dict[user]["res"] = scrapper.wait.until(ec.any_of(
                     ec.visibility_of_element_located((By.XPATH, '//*[contains(text(), "Usar otro perfil")]')),
                     ec.visibility_of_element_located((By.XPATH, '//*[contains(text(), "Use another profile")]')),
+                    ec.visibility_of_element_located((By.XPATH, '//*[contains(text(), "I already have an account")]')),
                     ec.visibility_of_element_located((By.CSS_SELECTOR, "input#m_login_email"))
-                )).click()
+                ))
 
-                scrapper.wait.until(ec.visibility_of_element_located((By.CSS_SELECTOR, "input#m_login_email")))
+                if scrapper.temp_dict[user]["res"].text in ["I already have an account"]:
+                    scrapper.temp_dict[user]["res"].click()
 
             except:
                 pass
 
-        return 
+        return True
 
 
     if not "login" in scrapper.driver.current_url or cargar_loguin:
@@ -379,16 +385,23 @@ def seleccionar_perfil(scrapper : scrapping, user):
         ec.visibility_of_element_located((By.CSS_SELECTOR, 'input#m_login_email')),
         ec.visibility_of_element_located((By.XPATH, '//*[contains(text(), "Usar otro perfil")]')),
         ec.visibility_of_element_located((By.XPATH, '//*[contains(text(), "Use another profile")]'))
-        ))
+    ))
 
     if scrapper.temp_dict[user]["res"].text in ["Usar otro perfil", "Use another profile"]:
 
         if scrapper.temp_dict[user].get("perfil_seleccionado"):
             scrapper.temp_dict[user]["url_actual"] = scrapper.driver.current_url
-            scrapper.find_element(By.XPATH, '//*[contains(text(), "{}")]'.format(scrapper.entrada.obtener_usuario(user).obtener_cuenta(scrapper.temp_dict[user].get("perfil_seleccionado")).perfil_principal)).click()
 
-            #en caso de que haya solamente 1 perfil logueado
             try:
+                scrapper.find_element(By.XPATH, '//*[contains(text(), "{}")]'.format(scrapper.entrada.obtener_usuario(user).obtener_cuenta(scrapper.temp_dict[user].get("perfil_seleccionado")).perfil_principal)).click()
+
+            except:
+                #cuando la cuenta no se encuentre (por alguna razón)
+                return (False, scrapper.temp_dict[user]["res"])
+
+            
+            try:
+                #en caso de que haya solamente 1 perfil logueado
                 scrapper.temp_dict[user]["res"] = WebDriverWait(scrapper.driver, 3).until(ec.any_of(
                     ec.visibility_of_element_located(((By.XPATH, '//*[contains(text(), "Continuar")]'))),
                     ec.visibility_of_element_located(((By.XPATH, '//*[contains(text(), "Continue")]')))
@@ -464,7 +477,10 @@ def seleccionar_perfil(scrapper : scrapping, user):
 
 
             return (True, "cuenta seleccionada correctamente")
+        
 
+        else:
+            return (False, scrapper.temp_dict[user]["res"])
 
 
     else:
@@ -492,8 +508,20 @@ def doble_auth(scrapper: scrapping , user, bot: telebot.TeleBot):
 
                     scrapper.temp_dict[user]["res"] = scrapper.wait_s.until(ec.any_of(
                         ec.visibility_of_element_located((By.XPATH, '//*[contains(text(), "correct or try a new one")]')),
-                        ec.visibility_of_element_located((By.XPATH, '//*[contains(text(), "correcto o prueba con otro")]'))
+                        ec.visibility_of_element_located((By.XPATH, '//*[contains(text(), "correcto o prueba con otro")]')),
+                        ec.visibility_of_element_located((By.XPATH, '//*[contains(text(), "Wrong")]')),
+                        ec.visibility_of_element_located((By.XPATH, '//*[contains(text(), "incorrectas")]')),
+                        ec.visibility_of_element_located((By.XPATH, '//*[contains(text(), "Incorrectas")]'))
                     ))
+
+                    if scrapper.temp_dict[user]["res"].text in ["Wrong", "incorrectas", "Incorrectas"]:
+                        
+                        bot.send_photo(user, telebot.types.InputFile(make_screenshoot(scrapper.driver, user)) , m_texto("No has introducido tus datos correctamente, vuelve a intentarlo"))
+
+                        del scrapper.temp_dict["user"]
+                        del scrapper.temp_dict["password"]
+
+                        return loguin_cero(scrapper, user, bot)
 
 
                     for i in range(3):
@@ -915,8 +943,6 @@ def enviar_grupos(scrapper, user, bot: telebot.TeleBot, contador, resultantes_pu
         scrapper.temp_dict[user]["res"] = obtener_texto(scrapper , user, contador, True, True)
 
 
-
-
     if scrapper.temp_dict[user]["res"][0] == "nuevo":
         scrapper.temp_dict[user]["publicacion"]["msg_publicacion"] = bot.send_message(user, scrapper.temp_dict[user]["res"][1])
 
@@ -934,6 +960,7 @@ def enviar_grupos(scrapper, user, bot: telebot.TeleBot, contador, resultantes_pu
                     pass
 
         else:
+
             scrapper.temp_dict[user]["publicacion"]["msg_publicacion"] = bot.send_message(user, scrapper.temp_dict[user]["res"][1])
 
             bot.pin_chat_message(user , scrapper.temp_dict[user]["publicacion"]["msg_publicacion"].message_id, True)
@@ -962,8 +989,8 @@ def publicacion(scrapper: scrapping, bot:telebot.TeleBot, user, load_url=True, c
 
     scrapper.temp_dict[user]["tiempo_debug"] = []
     
-    if not scrapper.temp_dict[user].get("publicacion"):
-        scrapper.temp_dict[user]["publicacion"] = {"publicados" : [], "error" : [], "incompletas": [], "lista_grupos": [] ,"texto_publicacion": "Lista de Grupos en los que se ha Publicado:\n\n", "resultados_publicaciones": [], "msg_publicacion": ""}
+    if not scrapper.temp_dict[user].get("publicacion") and not scrapper.interrupcion:
+        scrapper.temp_dict[user]["publicacion"] = {"publicados" : [], "error" : [], "incompletas": [], "lista_grupos": [] ,"texto_publicacion": "Lista de Grupos en los que se ha Publicado:\n\n", "resultados_publicaciones": [], "msg_publicacion": None}
         
     scrapper.temp_dict[user]["publicacion"]["lista_grupos"] = []
 

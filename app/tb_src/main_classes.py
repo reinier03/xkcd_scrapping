@@ -1217,7 +1217,7 @@ class Administrador: #SOLO PARA ADMINS
     caducidad = False
     grupos_publicados = True
     publicaciones = True
-    repetir = True
+    repetir = 60 * 60
     plan = True
     ban = False
 
