@@ -149,20 +149,12 @@ def entrar_facebook(scrapper: scrapping, user, cargar_loguin = False):
         )).click()
 
 
-    elif scrapper.temp_dict[user]["res"].text in ["Usar otro perfil", "Use another profile"]:
+
+    if scrapper.temp_dict[user]["res"].text.strip() in ["Usar otro perfil", "Use another profile"]:
         if not scrapper.temp_dict[user].get("perfil_seleccionado"):
            scrapper.temp_dict[user]["res"].click() 
            scrapper.wait.until(ec.visibility_of_element_located((By.CSS_SELECTOR, 'input#m_login_email')))
 
-        pass
-    
-    if scrapper.find_element(By.CSS_SELECTOR, "input#m_login_email", True):
-
-        configurar_idioma()
-
-        scrapper.wait_s.until(ec.visibility_of_element_located((By.CSS_SELECTOR, "input#m_login_email")))
-
-        scrapper.find_elements(By.CSS_SELECTOR, "input")[0].click()
 
     return True
     
