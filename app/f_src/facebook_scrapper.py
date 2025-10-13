@@ -88,15 +88,12 @@ def entrar_facebook(scrapper: scrapping, user, cargar_loguin = False):
     Carga la página de Facebook y quita la presentacion
     """
     def configurar_idioma():
-
         try:
             scrapper.wait_s.until(ec.visibility_of_element_located((By.XPATH, '//*[contains(text(), "English")]')))
 
         except:
             #clickear en el elemento del idioma
-            scrapper.wait.until(ec.visibility_of_element_located((By.XPATH, '//*[contains(text(), "{}")]'.format(re.search(r"(\D+)", scrapper.find_element(By.CSS_SELECTOR, "body").text).group().split("\n")[0])))).click()
-
-            
+            scrapper.wait.until(ec.visibility_of_element_located((By.XPATH, '//*[contains(text(), "{}")]'.format(re.search(r"\w+ [(]\D+[)]", scrapper.find_element(By.CSS_SELECTOR, "body").text).group().split("\n")[0])))).click()
 
             scrapper.wait.until(ec.visibility_of_element_located((By.XPATH, '//*[contains(text(), "English (US)")]')))
             scrapper.find_element(By.XPATH, '//*[contains(text(), "English (US)")]/..').click()
@@ -515,7 +512,7 @@ def doble_auth(scrapper: scrapping , user, bot: telebot.TeleBot):
                     ))
 
                     if scrapper.temp_dict[user]["res"].text in ["Wrong", "incorrectas", "Incorrectas"]:
-                        
+
                         bot.send_photo(user, telebot.types.InputFile(make_screenshoot(scrapper.driver, user)) , m_texto("No has introducido tus datos correctamente, vuelve a intentarlo"))
 
                         del scrapper.temp_dict["user"]
@@ -666,8 +663,6 @@ def doble_auth(scrapper: scrapping , user, bot: telebot.TeleBot):
                     ec.visibility_of_element_located((By.XPATH, '//*[contains(text(), "Elige un método para confirmar tu identidad")]')),
                     
                 ))
-
-                
 
                 scrapper.temp_dict[user]["res"] = scrapper.wait_s.until(ec.any_of(
                     ec.visibility_of_element_located((By.XPATH, '//*[contains(text(), "WhatsApp")]')),
