@@ -969,7 +969,11 @@ def publicacion(scrapper: scrapping, bot:telebot.TeleBot, user, load_url=True, c
         scrapper.temp_dict = kwargs["diccionario"]
 
     if scrapper.entrada.obtener_usuario(user).plan.repetir and not scrapper.interrupcion and not scrapper.temp_dict[user]["c_r"] == 1:
-        bot.send_message(user, m_texto("A continuación, comenzaré a publicar en breve...\n\nEsta será la vez #<b>{}</b> que publicaré por todos los grupos disponibles". format(scrapper.temp_dict[user]["c_r"])))
+        try:
+            bot.edit_message_text(m_texto("A continuación, comenzaré a publicar en breve...\n\nEsta será la vez #<b>{}</b> que publicaré por todos los grupos disponibles". format(scrapper.temp_dict[user]["c_r"])), scrapper.temp_dict[user]["msg"].chat.id, scrapper.temp_dict[user]["msg"].message_id)
+
+        except:
+            bot.send_message(user, m_texto("A continuación, comenzaré a publicar en breve...\n\nEsta será la vez #<b>{}</b> que publicaré por todos los grupos disponibles". format(scrapper.temp_dict[user]["c_r"])))
 
 
     scrapper.temp_dict[user]["a"] = ActionChains(scrapper.driver, duration=0)
@@ -981,8 +985,8 @@ def publicacion(scrapper: scrapping, bot:telebot.TeleBot, user, load_url=True, c
         
     scrapper.temp_dict[user]["publicacion"]["lista_grupos"] = []
 
-
-    scrapper.load("https://m.facebook.com/groups/")
+    if scrapper.driver.current_url != "https://m.facebook.com/groups/":
+        scrapper.load("https://m.facebook.com/groups/")
 
     #------------------obtener información para el scrolling--------------------------
     get_time_debug(scrapper, user)
@@ -1076,13 +1080,13 @@ def publicacion(scrapper: scrapping, bot:telebot.TeleBot, user, load_url=True, c
                 
                 if isinstance(scrapper.entrada.obtener_usuario(user).plan.repetir, bool) or not scrapper.entrada.obtener_usuario(user).plan.repetir:
 
-                    bot.send_message(user, "Se ha publicado exitosamente en " + str(len(scrapper.temp_dict[user]["publicacion"]["publicados"]) + len(scrapper.temp_dict[user]["publicacion"]["incompletas"])) + " grupo(s)")
+                    scrapper.temp_dict[user]["msg"] = bot.send_message(user, "Se ha publicado exitosamente en " + str(len(scrapper.temp_dict[user]["publicacion"]["publicados"]) + len(scrapper.temp_dict[user]["publicacion"]["incompletas"])) + " grupo(s)")
 
                     return ("ok", "Se ha publicado exitosamente en " + str(len(scrapper.temp_dict[user]["publicacion"]["publicados"]) + len(scrapper.temp_dict[user]["publicacion"]["incompletas"])) + " grupo(s)")
                 
                 elif isinstance(scrapper.entrada.obtener_usuario(user).plan.repetir, (int, float)):
                     
-                    bot.send_message(user, m_texto("Publiqué en " + str(len(scrapper.temp_dict[user]["publicacion"]["publicados"]) + len(scrapper.temp_dict[user]["publicacion"]["incompletas"])) + " grupos satisfactoriamente\nAhora esperaré {} hora(s) y {} minuto(s) antes de volver a publicar masivamente\n\nCuando quieras cancelar envíame /cancelar".format(int(scrapper.entrada.obtener_usuario(user).plan.repetir / 60 / 60), int(scrapper.entrada.obtener_usuario(user).plan.repetir / 60 % 60))))
+                    scrapper.temp_dict[user]["msg"] = bot.send_message(user, m_texto("Publiqué en " + str(len(scrapper.temp_dict[user]["publicacion"]["publicados"]) + len(scrapper.temp_dict[user]["publicacion"]["incompletas"])) + " grupos satisfactoriamente\nAhora esperaré {} hora(s) y {} minuto(s) antes de volver a publicar masivamente\n\nCuando quieras cancelar envíame /cancelar".format(int(scrapper.entrada.obtener_usuario(user).plan.repetir / 60 / 60), int(scrapper.entrada.obtener_usuario(user).plan.repetir / 60 % 60))))
                     
                     return ("repetir", scrapper.temp_dict[user]["c_r"])
 
@@ -1987,6 +1991,8 @@ Empezaré a procesar tu petición...
         scrapper.temp_dict[user]["c_r"] += 1
 
         scrapper.interrupcion = False
+
+        scrapper.load("https://m.facebook.com/groups/")
 
         scrapper.temp_dict[user]["publicacion_res"] = publicacion(scrapper, bot , user)
 

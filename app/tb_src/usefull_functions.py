@@ -81,7 +81,9 @@ def mostrar_info_usuario(chat_destino, usuario_evaluar, bot: telebot.TeleBot):
 
     return
 
-def debug_txt(scrapper=False):
+def debug_txt(scrapper = False):
+
+
     if scrapper:
         if scrapper.temp_dict.get(scrapper.admin):
 
@@ -574,6 +576,9 @@ def obtener_tiempo(tiempo: float):
     elif tiempo > 3600:
         return "{} Hora(s) y {} Minuto(s)".format(int(tiempo / 60 / 60), int(tiempo / 60 % 60))
 
+    elif tiempo == 3600:
+        return "1 Hora(s)"
+    
     #cuando hay más de 1 minuto
     elif tiempo > 60:
         return "{} Minuto(s)".format(int(tiempo / 60 ))
