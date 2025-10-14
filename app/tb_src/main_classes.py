@@ -50,7 +50,7 @@ class uc_class(uc.Chrome):
             }
         )
 
-        if os.getlogin() != "Reima":
+        if os.name != "nt":
             o = anadir_opciones(o, container=True , mobile=True)
 
             super().__init__(
@@ -124,7 +124,7 @@ class scrapping():
             self.driver = uc_class()
             self.driver.bot = bot
 
-            if os.getlogin() == "Reima":
+            if os.name == "nt":
                 self.wait = WebDriverWait(self.driver, 80)
                 self.wait_s = WebDriverWait(self.driver, 13)
 
@@ -137,7 +137,7 @@ class scrapping():
         
         # os.environ["MONGO_URL"] = os.environ.get("MONGO_HOST")
         # self._iniciar_BD(os.environ["MONGO_URL"])
-        if not "MONGO_URL" in os.environ and os.getlogin() == "Reima": #
+        if not "MONGO_URL" in os.environ and os.name == "nt": #
             self._iniciar_BD("mongodb://localhost:27017") #
 
         else:
@@ -533,7 +533,7 @@ class scrapping():
     def load(scrapper, url):
 
         
-        if os.getlogin() == "Reima":
+        if os.name == "nt":
             try:
                 scrapper.driver.get(url)
             except:
@@ -1020,8 +1020,8 @@ class scrapping():
 
             except Exception as err:
                 
-                #para hacer debug
-                if os.getlogin() == "Reima":
+                #para hacer debi
+                if os.name == "nt":
                     breakpoint()
 
                 self.temp_dict[user]["res"] = str(format_exc())
