@@ -640,6 +640,7 @@ def borrar_db(m, scrapper: scrapping, bot_id=False):
         return
     
     if m.text.startswith("✅ Si"):  
+        breakpoint()
         if bot_id:
             #quiere eliminar la BD de un bot específico
             scrapper.creador_dict = {"del_db": scrapper.collection.find_one({"tipo": "usuarios"})["creador_dict"]["del_db"] + [bot_id]}

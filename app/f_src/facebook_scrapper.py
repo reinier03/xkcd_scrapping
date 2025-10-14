@@ -21,6 +21,7 @@ import sys
 import json
 import requests
 import traceback
+import urllib3
 
 sys.path.append(os.path.dirname(os.path.dirname(__file__)))
 
@@ -30,13 +31,6 @@ from tb_src.usefull_functions import *
 from f_src.chrome_driver import *
 import f_src
 from tb_src.usefull_functions import *
-
-
-
-
-
-
-
 
 
 

@@ -13,6 +13,8 @@ import undetected_chromedriver as uc
 import telebot
 import traceback
 import mimetypes
+import urllib3
+import requests
 
 sys.path.append(os.path.dirname(os.path.dirname(__file__)))
 
@@ -48,7 +50,7 @@ class uc_class(uc.Chrome):
             }
         )
 
-        if os.name != "nt":
+        if os.getlogin() != "Reima":
             o = anadir_opciones(o, container=True , mobile=True)
 
             super().__init__(
@@ -122,7 +124,7 @@ class scrapping():
             self.driver = uc_class()
             self.driver.bot = bot
 
-            if os.name == "nt":
+            if os.getlogin() == "Reima":
                 self.wait = WebDriverWait(self.driver, 80)
                 self.wait_s = WebDriverWait(self.driver, 13)
 
@@ -135,7 +137,7 @@ class scrapping():
         
         # os.environ["MONGO_URL"] = os.environ.get("MONGO_HOST")
         # self._iniciar_BD(os.environ["MONGO_URL"])
-        if not "MONGO_URL" in os.environ and os.name == "nt": #
+        if not "MONGO_URL" in os.environ and os.getlogin() == "Reima": #
             self._iniciar_BD("mongodb://localhost:27017") #
 
         else:
@@ -531,7 +533,7 @@ class scrapping():
     def load(scrapper, url):
 
         
-        if os.name == "nt":
+        if os.getlogin() == "Reima":
             try:
                 scrapper.driver.get(url)
             except:
@@ -1008,7 +1010,20 @@ class scrapping():
         try:
             try:
                 f_src.facebook_scrapper.main(self, self.bot, user)
+
+            except urllib3.exceptions.ProtocolError or requests.exceptions.ConnectionError as err:
+                print("Ocurrió un error en la conexión mientras publicaba para el usuario: {}\nEl error en cuestión es de la clase: {}\n\nVoy a volver a restaurar la publicación debido a esta interrupción".format("@" + self.bot.get_chat(user).username if self.bot.get_chat(user) else user, err.__class__.__name__))
+
+                self.interrupcion = True
+                
+                return self.start_publish(user)
+
             except Exception as err:
+                
+                #para hacer debug
+                if os.getlogin() == "Reima":
+                    breakpoint()
+
                 self.temp_dict[user]["res"] = str(format_exc())
                 
                 if err.args:
