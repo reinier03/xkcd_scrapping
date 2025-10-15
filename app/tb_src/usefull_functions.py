@@ -565,7 +565,7 @@ def leer_BD(scrapper = False):
     return res
 
 
-def obtener_tiempo(tiempo: float):
+def obtener_tiempo(tiempo: float | int):
     """Devuelve el tiempo dado en segundos en un mejor formato"""
 
     #cuando hay más de un día

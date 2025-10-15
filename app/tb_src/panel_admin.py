@@ -640,19 +640,31 @@ def borrar_db(m, scrapper: scrapping, bot_id=False):
         return
     
     if m.text.startswith("✅ Si"):  
-        breakpoint()
         if bot_id:
             #quiere eliminar la BD de un bot específico
-            scrapper.creador_dict = {"del_db": scrapper.collection.find_one({"tipo": "usuarios"})["creador_dict"]["del_db"] + [bot_id]}
 
             bots_iterar = scrapper.collection.find({"tipo": "telegram_bot", "telegram_id": bot_id}).to_list()
 
+            for e, datos_db in enumerate(bots_iterar):
+                scrapper_copia = dill.loads(datos_db["cookies"])["scrapper"]
+                scrapper_copia.administrar_BD()
+
+            bots_iterar = scrapper.collection.find({"tipo": "telegram_bot", "telegram_id": bot_id}).to_list()
+
+            scrapper.creador_dict = {"del_db": scrapper.collection.find_one({"tipo": "usuarios"})["creador_dict"]["del_db"] + [bot_id]}
+
         else:
             #Quiere eliminar las BD de TODOS los bots
-            scrapper.creador_dict = {"del_db": [datos["telegram_id"] for datos in scrapper.collection.find({"tipo": "telegram_bot"}).to_list()]}
 
             bots_iterar = scrapper.collection.find({"tipo": "telegram_bot"}).to_list()
 
+            for e, datos_db in enumerate(bots_iterar):
+                scrapper_copia = dill.loads(datos_db["cookies"])["scrapper"]
+                scrapper_copia.administrar_BD()
+
+            bots_iterar = scrapper.collection.find({"tipo": "telegram_bot"}).to_list()
+
+            scrapper.creador_dict = {"del_db": [datos["telegram_id"] for datos in scrapper.collection.find({"tipo": "telegram_bot"}).to_list()]}
 
 
         for e, datos_db in enumerate(bots_iterar):
@@ -674,26 +686,29 @@ A continación te enviaré los datos de tus clientes para que puedas reembolsarl
 
             if scrapper_copia.entrada.usuarios:
                 for e, usuario in enumerate(scrapper_copia.entrada.usuarios):
+
+                    if isinstance(usuario.plan, Administrador):
+                        continue
                     
                     if not scrapper_copia.entrada.get_caducidad(usuario.telegram_id, scrapper_copia, True):
-                        if len(texto + "{} =>  ID: <code>{}</code> , username: {}, plan: {}, tiempo de expiración: {}".format(e, "@" + scrapper_copia.bot.get_chat(usuario.telegram_id).username if scrapper_copia.bot.get_chat(usuario.telegram_id).username else str("No tiene"), usuario.plan.__class__.__name__, scrapper_copia.entrada.get_caducidad(usuario.telegram_id, scrapper_copia))) >= 4000:
+                        if len(texto + "{} =>  ID: <code>{}</code> , username: {}, plan: {}, tiempo de expiración: {}".format(e, "@" + scrapper_copia.bot.get_chat(usuario.telegram_id).username if scrapper_copia.bot.get_chat(usuario.telegram_id).username else str("No tiene"), usuario.plan.__class__.__name__, str(scrapper_copia.entrada.get_caducidad(usuario.telegram_id, scrapper_copia)) if scrapper_copia.entrada.get_caducidad(usuario.telegram_id, scrapper_copia) else "No tiene expiración")) >= 4000:
                             scrapper_copia.bot.send_message(scrapper_copia.admin, texto)
                             texto = ""
 
                         
-                        texto += "{} =>  ID: <code>{}</code> , username: {}, plan: {}, tiempo de expiración: {}".format(e, "@" + scrapper_copia.bot.get_chat(usuario.telegram_id).username if scrapper_copia.bot.get_chat(usuario.telegram_id).username else str("No tiene"), usuario.plan.__class__.__name__, scrapper_copia.entrada.get_caducidad(usuario.telegram_id, scrapper_copia))
+                        texto += "{} =>  ID: <code>{}</code> , username: {}, plan: {}, tiempo de expiración: {}".format(e, "@" + scrapper_copia.bot.get_chat(usuario.telegram_id).username if scrapper_copia.bot.get_chat(usuario.telegram_id).username else str("No tiene"), usuario.plan.__class__.__name__, str(scrapper_copia.entrada.get_caducidad(usuario.telegram_id, scrapper_copia)) if scrapper_copia.entrada.get_caducidad(usuario.telegram_id, scrapper_copia) else "No tiene expiración")
 
 
                 if texto != "<b>Información de los usuarios</b>:\n\n":
                     scrapper_copia.bot.send_message(scrapper_copia.admin, texto)
 
 
-                if scrapper_copia.cola["uso"]:
-                    scrapper_copia.temp_dict[scrapper_copia.cola["uso"]]["cancelar_forzoso"] = True
-                    liberar_cola(scrapper_copia, scrapper_copia.cola["uso"], scrapper_copia.bot, False)
+                # if scrapper_copia.cola["uso"]:
+                #     scrapper_copia.temp_dict[scrapper_copia.cola["uso"]]["cancelar_forzoso"] = True
+                #     liberar_cola(scrapper_copia, scrapper_copia.cola["uso"], scrapper_copia.bot, False)
 
             if not scrapper_copia.entrada.usuarios or texto == "<b>Información de los usuarios</b>:\n\n":
-                scrapper_copia.bot.send_message(scrapper_copia.admin, "Pues no, no tienes clientes a los que notificarles los cambios. Continuaré pues")
+                scrapper_copia.bot.send_message(scrapper_copia.admin, m_texto("Pues no, no tienes clientes a los que notificarles los cambios"))
 
             
 
@@ -712,17 +727,19 @@ A continación te enviaré los datos de tus clientes para que puedas reembolsarl
 
             with open(os.path.join(gettempdir(), "copia_bot_cookies.pkl"), "rb") as file:
 
-                if scrapper_copia.collection.find_one({"tipo": "telegram_bot", "telegram_id": scrapper_copia.bot.user.id}):
+                if scrapper.collection.find_one({"tipo": "telegram_bot", "telegram_id": scrapper_copia.bot.user.id}):
                     
-                    scrapper_copia.collection.update_one({"tipo": "telegram_bot", "telegram_id": scrapper_copia.bot.user.id}, {"$set": {"cookies" : file.read()}})
+                    scrapper.collection.update_one({"tipo": "telegram_bot", "telegram_id": scrapper_copia.bot.user.id}, {"$set": {"cookies" : file.read()}})
 
                 else:
-                    scrapper_copia.collection.insert_one({"_id": int(time.time()) + 1, "tipo": "telegram_bot", "telegram_id": scrapper_copia.bot.user.id, "cookies" : file.read()})
+                    scrapper.collection.insert_one({"_id": int(time.time()) + 1, "tipo": "telegram_bot", "telegram_id": scrapper.bot.user.id, "cookies" : file.read()})
 
             os.remove(os.path.join(gettempdir(), "copia_bot_cookies.pkl"))
             
                 
                 
+
+        scrapper.bot.send_message(m.chat.id, m_texto("Operación realizada exitosamente :D No se volverá a guardar el estado de los bots en el cluster hasta que no se reinicie en el host"))
 
         return True
 

@@ -135,17 +135,17 @@ class scrapping():
 
             self.driver.scrapper = self
         
-        # os.environ["MONGO_URL"] = os.environ.get("MONGO_HOST")
-        # self._iniciar_BD(os.environ["MONGO_URL"])
-        if not "MONGO_URL" in os.environ and os.name == "nt": #
-            self._iniciar_BD("mongodb://localhost:27017") #
+        os.environ["MONGO_URL"] = os.environ.get("MONGO_HOST")
+        self._iniciar_BD(os.environ["MONGO_URL"])
+        # if not "MONGO_URL" in os.environ and os.name == "nt": #
+        #     self._iniciar_BD("mongodb://localhost:27017") #
 
-        else:
-            if os.environ.get("MONGO_URL"):
-                self._iniciar_BD(os.environ.get("MONGO_URL"))
+        # else:
+        #     if os.environ.get("MONGO_URL"):
+        #         self._iniciar_BD(os.environ.get("MONGO_URL"))
             
-            else:
-                self.MONGO_URL = None
+        #     else:
+        #         self.MONGO_URL = None
 
         
         
@@ -336,7 +336,7 @@ class scrapping():
         
         # Reconstruir la conexión de MongoDB
         if not hasattr(self, 'MONGO_URL'):
-            if not "MONGO_URL" in os.environ:
+            if not "MONGO_URL" in os.environ and os.name == "nt":
                 self.MONGO_URL = "mongodb://localhost:27017"
             else:
                 self.MONGO_URL = os.environ["MONGO_URL"]
@@ -372,7 +372,7 @@ class scrapping():
 
         self.MONGO_URL = url
         if not os.environ.get("MONGO_URL"):
-            os.environ[self.MONGO_URL] = self.MONGO_URL
+            os.environ["MONGO_URL"] = self.MONGO_URL
 
         self.cliente = MongoClient(self.MONGO_URL)
         self.db = self.cliente["face"]
@@ -762,29 +762,33 @@ class scrapping():
 
 
             if not user:
-                for usuario in res[1]["scrapper"].entrada.usuarios:
-                    
-                    if self.collection.find_one({"tipo": "usuario", "telegram_id": usuario.telegram_id}):
+                if not res[1]["scrapper"].__dict__.get("entrada"):
+                    res[1]["scrapper"].__dict__["entrada"] = self.entrada
+
+                else:
+                    for usuario in res[1]["scrapper"].entrada.usuarios:
                         
-                        usuario = dill.loads(self.collection.find_one({"tipo": "usuario", "telegram_id": usuario.telegram_id})["cookies"])
-
-                    elif os.path.isfile(os.path.join(user_folder(usuario.telegram_id), "cookies_usuario.pkl")):
-                        with open(os.path.join(user_folder(usuario.telegram_id), "cookies_usuario.pkl"), "rb") as usuario_cookies:
-                            usuario = dill.loads(usuario_cookies.read())
-
-                    for publicacion in usuario.publicaciones:
-
-                        if publicacion._adjuntos:
+                        if self.collection.find_one({"tipo": "usuario", "telegram_id": usuario.telegram_id}):
                             
-                            for foto_dict in publicacion._adjuntos:
+                            usuario = dill.loads(self.collection.find_one({"tipo": "usuario", "telegram_id": usuario.telegram_id})["cookies"])
+
+                        elif os.path.isfile(os.path.join(user_folder(usuario.telegram_id), "cookies_usuario.pkl")):
+                            with open(os.path.join(user_folder(usuario.telegram_id), "cookies_usuario.pkl"), "rb") as usuario_cookies:
+                                usuario = dill.loads(usuario_cookies.read())
+
+                        for publicacion in usuario.publicaciones:
+
+                            if publicacion._adjuntos:
                                 
-                                for foto_path, foto_binary in foto_dict.items():
+                                for foto_dict in publicacion._adjuntos:
+                                    
+                                    for foto_path, foto_binary in foto_dict.items():
 
-                                    if not os.path.isfile(os.path.join(user_folder(usuario.telegram_id), os.path.basename(foto_path))):
+                                        if not os.path.isfile(os.path.join(user_folder(usuario.telegram_id), os.path.basename(foto_path))):
 
-                                        with open(os.path.join(user_folder(usuario.telegram_id), os.path.basename(foto_path)), "wb") as file:
+                                            with open(os.path.join(user_folder(usuario.telegram_id), os.path.basename(foto_path)), "wb") as file:
 
-                                            file.write(foto_binary)
+                                                file.write(foto_binary)
 
             return res
 
@@ -792,6 +796,7 @@ class scrapping():
 
     def reestablecer_BD(self, bot):
         #en caso de que se haya solicitado borrar la BD en el cluster:
+        
         if self.if_borrar_db():
 
             if os.path.isfile(os.path.join(gettempdir(), "bot_cookies.pkl")):
@@ -817,12 +822,17 @@ class scrapping():
                 
                 if k == "scrapper":
                     variable = v.__dict__
-                    self.temp_dict = variable["temp_dict"]
 
-                    if not variable["cola"]["uso"]:
-                        variable["cola"].update(self.cola)
+                    if variable.get("temp_dict"):
+                        self.temp_dict = variable["temp_dict"]
 
-                    self.cola = variable["cola"]
+
+                    if variable.get("cola"):
+
+                        if not variable["cola"]["uso"]:
+                            variable["cola"].update(self.cola)
+
+                        self.cola = variable["cola"]
 
                     self.entrada = variable["entrada"]
                     self.env = variable["env"]
@@ -832,11 +842,10 @@ class scrapping():
                     if self.env:
                         for k,v in self.env.items():
                             os.environ[k] = v
-                    
 
+                    if self.bot:
+                        os.environ["token"] = self.bot.token
 
-                        
-                    
 
                 elif k == "foto_b" and self.cola["uso"]:
                     with open(os.path.join(user_folder(self.cola["uso"]) , "foto_publicacion.png"), "wb") as file:
@@ -1080,6 +1089,12 @@ class scrapping():
                 self.collection.update_one({"tipo": "usuario", "telegram_id": user}, {"$set": {"cookies_facebook" : None}})
         
         self.cola["uso"] = False
+
+        try:
+            self.bot.delete_message(self.temp_dict[user]["msg"].chat.id, self.temp_dict[user]["msg"].message_id)
+
+        except:
+            pass
 
         self.bot.send_message(user, m_texto("Operación de Publicación Finalizada"))
 

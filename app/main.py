@@ -53,7 +53,7 @@ bot.set_my_short_description("Comparto una publicación automáticamente por tod
 
 
 #------------------declaring main class--------------------------
-scrapper = scrapping(bot)
+scrapper = scrapping(bot, False)
 #--------------------------END------------------------------
 
 
@@ -303,9 +303,9 @@ def cmd_cancelar(m):
 
         scrapper.temp_dict[m.from_user.id]["cancelar"] = True
 
-        # if not scrapper.temp_dict[scrapper.cola["uso"]].get("texto_r"):
-        #     liberar_cola(scrapper, scrapper.cola["uso"], bot)
         if scrapper.temp_dict.get(m.from_user.id):
+            scrapper.temp_dict[m.from_user.id]["msg"] = bot.send_message(m.chat.id, m_texto("Voy a cancelar el proceso de publicación\n\nPor favor, espera un momento..."))
+            
             liberar_cola(scrapper, m.from_user.id, bot, False)
         
         else:
