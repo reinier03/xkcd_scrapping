@@ -151,7 +151,7 @@ def crear_publicacion_SetText(m, scrapper, bot, diccionario_publicacion):
     
     diccionario_publicacion["texto"] = m.text.strip()
 
-    msg = bot.send_message(m.chat.id, m_texto("A continuación, envíame UNA FOTO para la Publicación (por ahora, solo soportamos 1, a futuro incluiré más)\n\nSi no quieres que la Publicación solamente tenga el texto que enviaste oprime en el botón de '<b>Omitir Foto</b>'", True), reply_markup=ReplyKeyboardMarkup(True, True).add("Omitir Foto", "Cancelar Operacion", row_width=1))
+    msg = bot.send_message(m.chat.id, m_texto("A continuación, envíame UNA FOTO para la Publicación (por ahora, solo soportamos 1, a futuro incluiré más)\n\nSi quieres que la Publicación SOLAMENTE tenga el texto que enviaste oprime en el botón de '<b>Omitir Foto</b>'", True), reply_markup=ReplyKeyboardMarkup(True, True).add("Omitir Foto", "Cancelar Operacion", row_width=1))
 
     bot.register_next_step_handler(msg, crear_publicacion_SetTFoto, scrapper, bot, diccionario_publicacion)
 

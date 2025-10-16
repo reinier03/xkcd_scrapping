@@ -15,6 +15,7 @@ import traceback
 import mimetypes
 import urllib3
 import requests
+import shutil
 
 sys.path.append(os.path.dirname(os.path.dirname(__file__)))
 
@@ -608,13 +609,13 @@ class scrapping():
     
 
 
-    def administrar_BD(self, cargar_cookies=False, user=False, cargar_local=True ,**kwargs):
+    def administrar_BD(self, cargar_cookies=False, user=False, local=True ,**kwargs):
         """
         El parametro 'cargar_cookies' si es True, cargará el estado actual del bot, Si es False lo guardará
+        El parametro 'local' es para operar tambien local, si es False no cargara ni guardará localmente
         """
 
         #para cuando necesito reiniciar el estado de los bots luego de una actualización importante en el código
-
         dict_guardar = {"scrapper": self}
 
         for k, v in kwargs.items():
@@ -632,15 +633,16 @@ class scrapping():
             #si va a guardarse el estado...
 
             if user:
-                with open(os.path.join(user_folder(user), "cookies_usuario.pkl"), "wb") as cookies_usuario:
-                    dill.dump(self.entrada.obtener_usuario(user), cookies_usuario)
+                if local:
+                    with open(os.path.join(user_folder(user), "cookies_usuario.pkl"), "wb") as cookies_usuario:
+                        dill.dump(self.entrada.obtener_usuario(user), cookies_usuario)
 
-                with open(os.path.join(user_folder(user), "cookies_usuario.pkl"), "rb") as cookies_usuario:
-                    if self.collection.find_one({"tipo": "usuario", "telegram_id": user}):
-                        self.collection.update_one({"tipo": "usuario", "telegram_id": user}, {"$set": {"cookies": cookies_usuario.read()}})
+                
+                if self.collection.find_one({"tipo": "usuario", "telegram_id": user}):
+                    self.collection.update_one({"tipo": "usuario", "telegram_id": user}, {"$set": {"cookies": dill.dumps(self.entrada.obtener_usuario(user))}})
                     
-                    else:  
-                        self.collection.insert_one({"_id": int(time.time()), "tipo": "usuario", "telegram_id": user, "cookies": cookies_usuario.read(), "cookies_facebook": None})
+                else:  
+                    self.collection.insert_one({"_id": int(time.time()), "tipo": "usuario", "telegram_id": user, "cookies": dill.dumps(self.entrada.obtener_usuario(user)), "cookies_facebook": None})
             
             # else:
             #     for user in self.entrada.usuarios:
@@ -656,22 +658,21 @@ class scrapping():
             #                 self.collection.insert_one({"tipo": "usuario", "telegram_id": user.telegram_id, "cookies": cookies_usuario.read()})
 
 
+            if local:
+                with open(os.path.join(gettempdir(), "bot_cookies.pkl"), "wb") as file:
 
-            with open(os.path.join(gettempdir(), "bot_cookies.pkl"), "wb") as file:
-
-                dill.dump(dict_guardar, file)
-
-            with open(os.path.join(gettempdir(), "bot_cookies.pkl"), "rb") as file:
-
-                if self.collection.find_one({"tipo": "telegram_bot", "telegram_id": self.bot.user.id}):
-                    
-                    self.collection.update_one({"tipo": "telegram_bot", "telegram_id": self.bot.user.id}, {"$set": {"cookies" : file.read()}})
-
-                else:
-                    self.collection.insert_one({"_id": int(time.time()) + 1, "tipo": "telegram_bot", "telegram_id": self.bot.user.id, "cookies" : file.read()})
+                    dill.dump(dict_guardar, file)
 
 
-            return "ok"
+            if self.collection.find_one({"tipo": "telegram_bot", "telegram_id": self.bot.user.id}):
+                
+                self.collection.update_one({"tipo": "telegram_bot", "telegram_id": self.bot.user.id}, {"$set": {"cookies" : dill.dumps(dict_guardar)}})
+
+            else:
+                self.collection.insert_one({"_id": int(time.time()) + 1, "tipo": "telegram_bot", "telegram_id": self.bot.user.id, "cookies" : dill.dumps(dict_guardar)})
+
+
+            return ("ok", self.collection.find_one({"tipo": "telegram_bot", "telegram_id": self.bot.user.id}))
 
         #CARGAR
         elif cargar_cookies == True:
@@ -685,11 +686,13 @@ class scrapping():
                         if usuario_iter.telegram_id == user:
                             usuario = dill.loads(self.collection.find_one({"tipo": "usuario", "telegram_id": user})["cookies"])
 
-                            #guardar el estado en local
-                            with open(os.path.join(user_folder(user), "cookies_usuario.pkl"), "wb") as cookies_usuario:
-                                dill.dump(self.entrada.obtener_usuario(user), cookies_usuario)
+                            
+                            if local:
+                                #guardar el estado en local
+                                with open(os.path.join(user_folder(user), "cookies_usuario.pkl"), "wb") as cookies_usuario:
+                                    dill.dump(self.entrada.obtener_usuario(user), cookies_usuario)
 
-                elif os.path.isfile(os.path.join(user_folder(user), "cookies_usuario.pkl")) and cargar_local:
+                elif os.path.isfile(os.path.join(user_folder(user), "cookies_usuario.pkl")) and local:
                     with open(os.path.join(user_folder(user), "cookies_usuario.pkl"), "rb") as usuario_cookies:
                         for usuario in self.entrada.usuarios:
                             if usuario.telegram_id == user:
@@ -732,7 +735,7 @@ class scrapping():
 
             else:
                 #si no hay ningun archivo del bot en la base de datos primero compruebo si hay una copia local para insertarla en la BD
-                if os.path.isfile(os.path.join(gettempdir(), "bot_cookies.pkl")) and cargar_local:
+                if os.path.isfile(os.path.join(gettempdir(), "bot_cookies.pkl")) and local:
 
                     with open(os.path.join(gettempdir(), "bot_cookies.pkl"), "rb") as file:
                         self.collection.insert_one({"_id": int(time.time()) + 1, "tipo": "telegram_bot", "telegram_id": self.bot.user.id, "cookies": file.read()})
@@ -743,13 +746,15 @@ class scrapping():
                         
                 #si no hay copia ni en local ni en online pues la creo
                 else:
-                    with open(os.path.join(gettempdir(), "bot_cookies.pkl"), "wb") as file:
+                    if local:
+                        with open(os.path.join(gettempdir(), "bot_cookies.pkl"), "wb") as file:
 
-                        dill.dump(dict_guardar, file)
+                            dill.dump(dict_guardar, file)
 
                     with open(os.path.join(gettempdir(), "bot_cookies.pkl"), "rb") as file:
 
-                        self.collection.insert_one({"_id": int(time.time()) + 1, "tipo": "telegram_bot", "telegram_id": self.bot.user.id, "cookies" : file.read()})
+                        self.collection.insert_one({"_id": int(time.time()) + 1, "tipo": "telegram_bot", "telegram_id": self.bot.user.id, "cookies" : dill.dumps(dict_guardar)})
+
                         return ("fail", "se ha guardado una nueva copia, al parecer no habia ninguna")
 
             # if self.reinicio:
@@ -772,7 +777,7 @@ class scrapping():
                             
                             usuario = dill.loads(self.collection.find_one({"tipo": "usuario", "telegram_id": usuario.telegram_id})["cookies"])
 
-                        elif os.path.isfile(os.path.join(user_folder(usuario.telegram_id), "cookies_usuario.pkl")):
+                        elif os.path.isfile(os.path.join(user_folder(usuario.telegram_id), "cookies_usuario.pkl")) and local:
                             with open(os.path.join(user_folder(usuario.telegram_id), "cookies_usuario.pkl"), "rb") as usuario_cookies:
                                 usuario = dill.loads(usuario_cookies.read())
 
@@ -797,19 +802,33 @@ class scrapping():
     def reestablecer_BD(self, bot):
         #en caso de que se haya solicitado borrar la BD en el cluster:
         
-        if self.if_borrar_db():
+        if self.if_borrar_db():            
 
             if os.path.isfile(os.path.join(gettempdir(), "bot_cookies.pkl")):
                 os.remove(os.path.join(gettempdir(), "bot_cookies.pkl"))
 
+            if os.path.isdir(os.path.join(gettempdir(), "user_archive")):
+                shutil.rmtree(os.path.join(gettempdir(), "user_archive"))
+
+            if dill.loads(self.collection.find_one({"tipo": "telegram_bot", "telegram_id": self.bot.user.id})["cookies"])["scrapper"].local_creador_dict.get("reinicio_interrupcion"):
+
+                self.bot.send_message(dill.loads(self.collection.find_one({"tipo": "telegram_bot", "telegram_id": self.bot.user.id})["cookies"])["scrapper"].local_creador_dict["reinicio_interrupcion"], m_texto("IMPORTANTE:\nEl Proceso de publicación ha sido detenido ya que mi creador me reinició\n\nLamentamos las molestias ocacionadas, este bot <b>aún está en desarrollo</b>"), reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("Contactar con mi creador 👨‍💻", "https://t.me/{}".format(bot.get_chat(self.creador).username))]]))
+
+
+            #Eliminar el bot actual de la lista de los que se deben de reiniciar para que pueda volver a operar normal
+            #-----------------------------------------------------------------
             res = self.collection.find_one({"tipo": "datos"})["creador_dict"]["del_db"]
             res.remove(self.bot.user.id)
             actualizacion = self.collection.find_one({"tipo": "datos"})["creador_dict"]
             actualizacion.update({"del_db": res})
             self.collection.update_one({"tipo": "datos"}, {"$set": {"creador_dict": actualizacion}})
+            #------------------------------------------------------------------
 
             res = self.administrar_BD(True)
 
+            if res[0] == "ok":
+                if res[1]["scrapper"].local_creador_dict.get("reinicio_interrupcion"):
+                    del res[1]["scrapper"].local_creador_dict["reinicio_interrupcion"]
 
         #sino, carga normal
         else:
@@ -855,7 +874,7 @@ class scrapping():
                 else:
                     globals()[k] = v
 
-            self.entrada.actualizar_baneados(self)      
+            self.entrada.actualizar_baneados(self)
 
             return "ok"
         
@@ -1030,8 +1049,8 @@ class scrapping():
             except Exception as err:
                 
                 #para hacer debi
-                if os.name == "nt":
-                    breakpoint()
+                # if os.name == "nt":
+                #     breakpoint()
 
                 self.temp_dict[user]["res"] = str(format_exc())
                 

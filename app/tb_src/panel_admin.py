@@ -509,27 +509,32 @@ Operación Cancelada :(
             bot.send_message(m.chat.id, "Debes de introducir tambien un id de usuario")
 
     elif re.search("/mensaje", m.text):
-        
-        if m.from_user.id == scrapper.creador and re.search("admins", m.text.split()[1]):
-
-            for administrador in list(set([dill.loads(datos["cookies"])["scrapper"].admin for datos in scrapper.collection.find({"tipo": "telegram_bot"}).to_list()])):
-                bot.send_message(administrador, m.text.split()[2:], reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("Contactar con mi creador 👨‍💻", "https://t.me/{}".format(scrapper.bot.get_chat(scrapper.creador).username))]]))
-
-        elif len(m.text.split()) > 1:
-            
-            for i in list(filter(lambda i: dill.loads(i["cookies"])["scrapper"].admin == m.from_user.id or dill.loads(i["cookies"])["scrapper"].creador == m.from_user.id, scrapper.collection.find({"tipo": "telegram_bot"}).to_list())):
-                scrapper_copia = dill.loads(i["cookies"])["scrapper"]
-
-                for usuario in scrapper_copia.entrada.obtener_usuarios():
-                    if usuario != m.chat.id and i != scrapper.creador:
-                        if scrapper.creador == m.from_user.id:
-                            scrapper_copia.bot.send_message(usuario, "👨‍💻 <b>Mensaje del Creador</b>:\n\n{}".format(m.text.replace(re.search(r"/mensaje\s*", m.text).group(), "")), reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("Preguntar 👨‍💻", "https://t.me/{}?text=Háblame+más+acerca+de+'{}'".format(bot.get_chat(scrapper.creador).username, m.text.replace(re.search(r"/mensaje\s*", m.text).group(), "").replace(" ", "+")))]]))
-                        else:
-                            scrapper_copia.bot.send_message(usuario, "👮‍♂️ <b>Mensaje del Administrador</b>:\n\n{}".format(m.text.replace(re.search(r"/mensaje\s*", m.text).group(), "")), reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("Preguntar 👮‍♂️", "https://t.me/{}?text=Háblame+más+acerca+de+'{}'".format(bot.get_chat(m.from_user.id).username, m.text.replace(re.search(r"/mensaje\s*", m.text).group(), "").replace(" ", "+")))]]))
-
+        if len(m.text.split()) == 1:
+            bot.send_message(m.chat.id, m_texto("ERROR Debiste de ingresar un texto luego del comando\n\nEl formato correcto es:\n/mensaje <b>hola a todos los usuarios</b>\n\nTambién puede ser así:\n/mensaje admins Hola a todos los administradores"))
 
         else:
-            bot.send_message(m.chat.id, m_texto("ERROR Debiste de ingresar un texto luego del comando\n\nEl formato correcto es:\n/mensaje <b>hola a todos los usuarios</b>\n\nTambién puede ser así:\n/mensaje admins Hola a todos los administradores"))
+            if m.from_user.id == scrapper.creador and re.search("admins", m.text.split()[1]):
+
+                for administrador in list(set([dill.loads(datos["cookies"])["scrapper"].admin for datos in scrapper.collection.find({"tipo": "telegram_bot"}).to_list()])):
+                    bot.send_message(administrador, m.text.split()[2:], reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("Contactar con mi creador 👨‍💻", "https://t.me/{}".format(scrapper.bot.get_chat(scrapper.creador).username))]]))
+
+            elif len(m.text.split()) > 1:
+                
+                for i in list(filter(lambda i: dill.loads(i["cookies"])["scrapper"].admin == m.from_user.id or dill.loads(i["cookies"])["scrapper"].creador == m.from_user.id, scrapper.collection.find({"tipo": "telegram_bot"}).to_list())):
+                    scrapper_copia = dill.loads(i["cookies"])["scrapper"]
+
+                    for usuario in scrapper_copia.entrada.obtener_usuarios():
+                        if usuario != m.chat.id and i != scrapper.creador:
+                            if scrapper.creador == m.from_user.id:
+                                scrapper_copia.bot.send_message(usuario, "👨‍💻 <b>Mensaje del Creador</b>:\n\n{}".format(m.text.replace(re.search(r"/mensaje\s*", m.text).group(), "")), reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("Preguntar 👨‍💻", "https://t.me/{}?text=Háblame+más+acerca+de+'{}'".format(bot.get_chat(scrapper.creador).username, m.text.replace(re.search(r"/mensaje\s*", m.text).group(), "").replace(" ", "+")))]]))
+                            else:
+                                scrapper_copia.bot.send_message(usuario, "👮‍♂️ <b>Mensaje del Administrador</b>:\n\n{}".format(m.text.replace(re.search(r"/mensaje\s*", m.text).group(), "")), reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("Preguntar 👮‍♂️", "https://t.me/{}?text=Háblame+más+acerca+de+'{}'".format(bot.get_chat(m.from_user.id).username, m.text.replace(re.search(r"/mensaje\s*", m.text).group(), "").replace(" ", "+")))]]))
+
+            else:
+                bot.send_message(m.chat.id, m_texto("ERROR Debiste de ingresar un texto luego del comando\n\nEl formato correcto es:\n/mensaje <b>hola a todos los usuarios</b>\n\nTambién puede ser así:\n/mensaje admins Hola a todos los administradores"))
+
+
+                
 
     elif re.search("/captura", m.text):
         bot.send_document(m.chat.id, telebot.types.InputFile(make_screenshoot(scrapper.driver, m.chat.id)))
@@ -642,12 +647,15 @@ def borrar_db(m, scrapper: scrapping, bot_id=False):
     if m.text.startswith("✅ Si"):  
         if bot_id:
             #quiere eliminar la BD de un bot específico
-
             bots_iterar = scrapper.collection.find({"tipo": "telegram_bot", "telegram_id": bot_id}).to_list()
 
             for e, datos_db in enumerate(bots_iterar):
                 scrapper_copia = dill.loads(datos_db["cookies"])["scrapper"]
-                scrapper_copia.administrar_BD()
+
+                # if scrapper_copia.cola["uso"] and scrapper_copia.temp_dict:
+                #   scrapper_copia.interrupcion = True
+
+                scrapper_copia.administrar_BD(local=False)
 
             bots_iterar = scrapper.collection.find({"tipo": "telegram_bot", "telegram_id": bot_id}).to_list()
 
@@ -660,7 +668,11 @@ def borrar_db(m, scrapper: scrapping, bot_id=False):
 
             for e, datos_db in enumerate(bots_iterar):
                 scrapper_copia = dill.loads(datos_db["cookies"])["scrapper"]
-                scrapper_copia.administrar_BD()
+
+                # if scrapper_copia.cola["uso"] and scrapper_copia.temp_dict:
+                    # scrapper_copia.interrupcion = True
+
+                scrapper_copia.administrar_BD(local=False)
 
             bots_iterar = scrapper.collection.find({"tipo": "telegram_bot"}).to_list()
 
@@ -685,23 +697,36 @@ A continación te enviaré los datos de tus clientes para que puedas reembolsarl
             texto = "<b>Información de los usuarios</b>:\n\n"
 
             if scrapper_copia.entrada.usuarios:
-                for e, usuario in enumerate(scrapper_copia.entrada.usuarios):
+                for e, usuario in enumerate(scrapper_copia.entrada.usuarios, 1):
 
                     if isinstance(usuario.plan, Administrador):
                         continue
+
+                    if scrapper_copia.entrada.get_caducidad(usuario.telegram_id, scrapper_copia, True):
+                        continue
+
+                    texto_agregar = "{} => <u>ID</u>: <code>{}</code> , <u>username</u>: <b>{}</b> , <u>plan</u>: <b>{}</b> , <u>Tiempo de Expiración</u>: <b>{}</b>\n\n".format(e, usuario.telegram_id, "@" + scrapper_copia.bot.get_chat(usuario.telegram_id).username if scrapper_copia.bot.get_chat(usuario.telegram_id).username else str("No tiene"), usuario.plan.__class__.__name__, str(scrapper_copia.entrada.get_caducidad(usuario.telegram_id, scrapper_copia)) if scrapper_copia.entrada.get_caducidad(usuario.telegram_id, scrapper_copia) else "No tiene expiración")
                     
                     if not scrapper_copia.entrada.get_caducidad(usuario.telegram_id, scrapper_copia, True):
-                        if len(texto + "{} =>  ID: <code>{}</code> , username: {}, plan: {}, tiempo de expiración: {}".format(e, "@" + scrapper_copia.bot.get_chat(usuario.telegram_id).username if scrapper_copia.bot.get_chat(usuario.telegram_id).username else str("No tiene"), usuario.plan.__class__.__name__, str(scrapper_copia.entrada.get_caducidad(usuario.telegram_id, scrapper_copia)) if scrapper_copia.entrada.get_caducidad(usuario.telegram_id, scrapper_copia) else "No tiene expiración")) >= 4000:
+                        if len(texto + texto_agregar) >= 4000:
                             scrapper_copia.bot.send_message(scrapper_copia.admin, texto)
                             texto = ""
 
                         
-                        texto += "{} =>  ID: <code>{}</code> , username: {}, plan: {}, tiempo de expiración: {}".format(e, "@" + scrapper_copia.bot.get_chat(usuario.telegram_id).username if scrapper_copia.bot.get_chat(usuario.telegram_id).username else str("No tiene"), usuario.plan.__class__.__name__, str(scrapper_copia.entrada.get_caducidad(usuario.telegram_id, scrapper_copia)) if scrapper_copia.entrada.get_caducidad(usuario.telegram_id, scrapper_copia) else "No tiene expiración")
+                        texto += texto_agregar
 
 
                 if texto != "<b>Información de los usuarios</b>:\n\n":
                     scrapper_copia.bot.send_message(scrapper_copia.admin, texto)
 
+                # #recorrer los usuarios que no son administradores
+                # for usuario_info in list(filter(lambda usuario_info, scrapper=scrapper: not usuario_info["telegram_id"] in [scrapper.creador, scrapper.admin], scrapper.collection.find({"tipo": "usuario"}).to_list())):
+
+                
+                #recorrer TODOS los usuarios
+                for usuario_info in scrapper.collection.find({"tipo": "usuario"}).to_list():
+                    
+                    scrapper.collection.delete_many({"tipo": "usuario", "telegram_id": usuario_info["telegram_id"]})
 
                 # if scrapper_copia.cola["uso"]:
                 #     scrapper_copia.temp_dict[scrapper_copia.cola["uso"]]["cancelar_forzoso"] = True
@@ -711,30 +736,27 @@ A continación te enviaré los datos de tus clientes para que puedas reembolsarl
                 scrapper_copia.bot.send_message(scrapper_copia.admin, m_texto("Pues no, no tienes clientes a los que notificarles los cambios"))
 
             
+            if scrapper_copia.cola["uso"] and scrapper_copia.temp_dict:
+                scrapper_copia.local_creador_dict["reinicio_interrupcion"] = scrapper_copia.cola["uso"]
 
             res = {}
             for k,v in scrapper_copia.__getstate__().copy().items():
-                if k in ["env", "admin", "MONGO_URL", "bot", "webhook_url", "creador"]:
+                if k in ["env", "admin", "MONGO_URL", "bot", "webhook_url", "creador", "local_admin_dict", "local_creador_dict"]:
+                    
                     res.update({k: v})
+
 
             scrapper_copia.__dict__ = res.copy()
 
             dict_guardar = {"scrapper": scrapper_copia}
 
-            with open(os.path.join(gettempdir(), "copia_bot_cookies.pkl"), "wb") as file:
+            if scrapper.collection.find_one({"tipo": "telegram_bot", "telegram_id": scrapper_copia.bot.user.id}):
+                
+                scrapper.collection.update_one({"tipo": "telegram_bot", "telegram_id": scrapper_copia.bot.user.id}, {"$set": {"cookies" : dill.dumps(dict_guardar)}})
 
-                dill.dump(dict_guardar, file)
+            else:
+                scrapper.collection.insert_one({"_id": int(time.time()) + 1, "tipo": "telegram_bot", "telegram_id": scrapper.bot.user.id, "cookies" : dill.dumps(dict_guardar)})
 
-            with open(os.path.join(gettempdir(), "copia_bot_cookies.pkl"), "rb") as file:
-
-                if scrapper.collection.find_one({"tipo": "telegram_bot", "telegram_id": scrapper_copia.bot.user.id}):
-                    
-                    scrapper.collection.update_one({"tipo": "telegram_bot", "telegram_id": scrapper_copia.bot.user.id}, {"$set": {"cookies" : file.read()}})
-
-                else:
-                    scrapper.collection.insert_one({"_id": int(time.time()) + 1, "tipo": "telegram_bot", "telegram_id": scrapper.bot.user.id, "cookies" : file.read()})
-
-            os.remove(os.path.join(gettempdir(), "copia_bot_cookies.pkl"))
             
                 
                 

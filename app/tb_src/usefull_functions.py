@@ -757,6 +757,7 @@ def user_folder(user, comprobar=False):
 
         if comprobar:
             return False
+        
 
         os.mkdir(os.path.join(carpeta_destino, "user_archive"))
         os.mkdir(os.path.join(carpeta_destino, "user_archive", user))

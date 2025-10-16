@@ -198,7 +198,11 @@ def loguin(scrapper: scrapping, user, bot, **kwargs):
 
 def loguin_cero(scrapper: scrapping, user, bot : telebot.TeleBot, **kwargs):
 
-    entrar_facebook(scrapper, user, True)
+    if not scrapper.find_element(By.CSS_SELECTOR, "input#m_login_email", True):
+        entrar_facebook(scrapper, user, True)
+
+    else:
+        entrar_facebook(scrapper, user)
 
     scrapper.wait.until(ec.any_of(
         ec.visibility_of_element_located((By.CSS_SELECTOR, 'input#m_login_email')),
@@ -491,18 +495,21 @@ def doble_auth(scrapper: scrapping , user, bot: telebot.TeleBot):
 
                     scrapper.temp_dict[user]["res"] = scrapper.wait_s.until(ec.any_of(
                         ec.visibility_of_element_located((By.XPATH, '//*[contains(text(), "correct or try a new one")]')),
+                        ec.visibility_of_element_located((By.XPATH, '//*[contains(text(), "Forgot")]')),
+                        ec.visibility_of_element_located((By.XPATH, '//*[contains(text(), "forgot")]')),
                         ec.visibility_of_element_located((By.XPATH, '//*[contains(text(), "correcto o prueba con otro")]')),
                         ec.visibility_of_element_located((By.XPATH, '//*[contains(text(), "Wrong")]')),
+                        ec.visibility_of_element_located((By.XPATH, '//*[contains(text(), "wrong")]')),
                         ec.visibility_of_element_located((By.XPATH, '//*[contains(text(), "incorrectas")]')),
                         ec.visibility_of_element_located((By.XPATH, '//*[contains(text(), "Incorrectas")]'))
                     ))
 
-                    if scrapper.temp_dict[user]["res"].text in ["Wrong", "incorrectas", "Incorrectas"]:
+                    if list(filter(lambda palabra, scrapper=scrapper, user=user: re.search(palabra , scrapper.temp_dict[user]["res"].text.lower()), ["wrong", "incorrectas", "forgot", "try", "try a new one", "prueba con otro"])):
 
                         bot.send_photo(user, telebot.types.InputFile(make_screenshoot(scrapper.driver, user)) , m_texto("No has introducido tus datos correctamente, vuelve a intentarlo"))
 
-                        del scrapper.temp_dict["user"]
-                        del scrapper.temp_dict["password"]
+                        del scrapper.temp_dict[user]["user"]
+                        del scrapper.temp_dict[user]["password"]
 
                         return loguin_cero(scrapper, user, bot)
 
@@ -639,7 +646,6 @@ def doble_auth(scrapper: scrapping , user, bot: telebot.TeleBot):
 
 
         if scrapper.temp_dict[user]["res"].text in "Try another way" or "Usar otro" in scrapper.temp_dict[user]["res"].text:
-            scrapper.temp_dict[user]["doble"] = True
             try:
                 #Si este elemento no está es que aún está en el loguin debido a que los datos introducidos fueron incorrectos (es el mismo de arriba)
                 scrapper.find_element(By.XPATH, '//*[contains(text(), "{}")]'.format(scrapper.temp_dict[user]["res"].text)).click()
@@ -658,7 +664,6 @@ def doble_auth(scrapper: scrapping , user, bot: telebot.TeleBot):
 
                 if scrapper.temp_dict[user]["res"].text == "WhatsApp":
 
-                    scrapper.temp_dict[user]["doble"] = True
                     scrapper.temp_dict[user]["res"].click()
                     scrapper.temp_dict[user]["e"] = scrapper.wait.until(ec.any_of(
                         ec.visibility_of_element_located((By.XPATH, '//*[contains(text(), "send a code to")]')),
@@ -718,23 +723,14 @@ def doble_auth(scrapper: scrapping , user, bot: telebot.TeleBot):
 
         #hay veces que solamente te da como ÚNICA opción el email para poder verificar tu autenticidad
         elif "email" in scrapper.temp_dict[user]["res"].text:
-            if scrapper.find_element(By.XPATH, '//*[contains(text(), "email")]') and not scrapper.temp_dict[user]["doble"]:
-                scrapper.temp_dict[user]["doble"] = True
+            if scrapper.find_element(By.XPATH, '//*[contains(text(), "email")]'):
                 print("Haremos la doble autenticación enviando el código al correo")
                 doble_auth_email_verification(scrapper, user, bot)            
         
 
         
-            
-        
-        
-
-        if not scrapper.temp_dict[user].get("doble"):
-            raise Exception("Abriste la funcion de doble autenticacion pero realmente no habia...que paso?")
         
         try:
-            scrapper.temp_dict[user]["doble"] = False
-
             
             scrapper.wait.until(ec.url_changes(scrapper.temp_dict[user]["url_actual"]))
             
@@ -974,7 +970,7 @@ def publicacion(scrapper: scrapping, bot:telebot.TeleBot, user, load_url=True, c
 
     scrapper.temp_dict[user]["tiempo_debug"] = []
     
-    if not scrapper.temp_dict[user].get("publicacion") and not scrapper.interrupcion:
+    if not scrapper.temp_dict[user].get("publicacion"):
         scrapper.temp_dict[user]["publicacion"] = {"publicados" : [], "error" : [], "incompletas": [], "lista_grupos": [] ,"texto_publicacion": "Lista de Grupos en los que se ha Publicado:\n\n", "resultados_publicaciones": [], "msg_publicacion": None}
         
     scrapper.temp_dict[user]["publicacion"]["lista_grupos"] = []

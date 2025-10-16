@@ -53,7 +53,7 @@ bot.set_my_short_description("Comparto una publicación automáticamente por tod
 
 
 #------------------declaring main class--------------------------
-scrapper = scrapping(bot, False)
+scrapper = scrapping(bot)
 #--------------------------END------------------------------
 
 

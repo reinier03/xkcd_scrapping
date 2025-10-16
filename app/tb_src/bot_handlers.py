@@ -1,6 +1,8 @@
 import telebot
 from telebot.types import ForceReply
+import tb_src
 from tb_src.usefull_functions import *
+import tb_src.usefull_functions
 
 
 sys.path.append(os.path.dirname(os.path.dirname(__file__)))
@@ -31,7 +33,7 @@ def get_user(m: telebot.types.Message, bot: telebot.TeleBot , user , info, temp_
 
 def choose_perfil(m,bot,user, info,  temp_dict):
     if not m.text in temp_dict[user]["perfiles"]:
-        temp_dict[user]["msg"] = bot.send_message(user, m_texto("La información ingresada es incorrecta! Intentalo de nuevo!\n\nCual de los perfiles de esta cuenta quieres usar?"), reply_markup = temp_dict[user]["teclado"])
+        temp_dict[user]["msg"] = bot.send_message(user, tb_src.usefull_functions.m_texto("La información ingresada es incorrecta! Intentalo de nuevo!\n\nCual de los perfiles de esta cuenta quieres usar?", True), reply_markup = temp_dict[user]["teclado"])
         
         return bot.register_next_step_handler(temp_dict[user]["msg"], choose_perfil, bot , user , info, temp_dict)
     
@@ -42,7 +44,7 @@ def choose_perfil(m,bot,user, info,  temp_dict):
 
 def get_codigo(m,bot,user, info, temp_dict):
     if not m.text[0:2].isdigit():
-        temp_dict[user]["msg"] = bot.send_message(m.chat.id, m_texto("El código introducido es incorrecto\nInténtalo de nuevo\n\nIntroduce uno de los códigos de respaldo de Facebook a continuación\n\n(Estos códigos son de 8 dígitos numéricos y puedes obtenerlos en el centro de cuentas en los ajustes de tu cuenta de Facebook)"), reply_markup=ForceReply())
+        temp_dict[user]["msg"] = bot.send_message(m.chat.id, m_texto("El código introducido es incorrecto\nInténtalo de nuevo\n\nIntroduce uno de los códigos de respaldo de Facebook a continuación\n\n(Estos códigos son de 8 dígitos numéricos y puedes obtenerlos en el centro de cuentas en los ajustes de tu cuenta de Facebook)", True), reply_markup=ForceReply())
         
         bot.register_next_step_handler(temp_dict[user]["msg"], get_codigo, bot,user, info, temp_dict)
     
