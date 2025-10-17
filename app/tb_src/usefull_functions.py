@@ -24,8 +24,6 @@ import requests
 import json
 import dill
 import telebot.types
-import tb_src
-import tb_src.main_classes
 
 sys.path.append(os.path.dirname(os.path.dirname(__file__)))
 
@@ -198,12 +196,15 @@ def get_time(scrapper, user , tz_country = "America/Havana"):
 def liberar_cola(scrapper, user, bot, mensaje_notificar = True ,notificar_usuarios=True):
 
     if not user in list(scrapper.temp_dict):
-        return
+        if scrapper.cola["uso"] == True:
+            return True
+        
+        return False
 
     if scrapper.temp_dict[user].get("cancelar") and mensaje_notificar:
         bot.send_message(user, m_texto("Operación cancelada :("), reply_markup=ReplyKeyboardRemove())
 
-    elif scrapper.temp_dict[user].get("cancelar_forzoso"):
+    elif scrapper.temp_dict[user].get("cancelar_forzoso") and mensaje_notificar:
 
         bot.send_message(int(user), m_texto("ATENCIÓN‼\nEl administrador ha finalizado TU proceso\n\n👇Si tienes alguna queja comunícate con él👇\n{}".format(str("@" + bot.get_chat(scrapper.admin).username) if bot.get_chat(scrapper.admin).username else str(" "))), reply_markup=ReplyKeyboardRemove())
 
@@ -219,6 +220,8 @@ def liberar_cola(scrapper, user, bot, mensaje_notificar = True ,notificar_usuari
                 bot.send_message(i, m_texto("Ya estoy disponible para Publicar :D\n\nÚsame antes de que alguien más me ocupe"))
             except:
                 pass
+
+        scrapper.cola["cola_usuarios"].clear()
     
     if scrapper.interrupcion:
         scrapper.interrupcion = False
@@ -230,7 +233,7 @@ def liberar_cola(scrapper, user, bot, mensaje_notificar = True ,notificar_usuari
 
     scrapper.guardar_datos(user, False)
 
-    return
+    return True
 
 def obtener_grupos(scrapper, user, all: bool = False):
     
@@ -402,10 +405,8 @@ def if_cancelar(scrapper, user, bot):
 
 
     if scrapper.temp_dict[user].get("cancelar") or scrapper.temp_dict[user].get("cancelar_forzoso"):
-        
-        liberar_cola(scrapper, user, bot)
+        return liberar_cola(scrapper, user, bot, False, False)
 
-    return "ok"
 
 def obtener_diferencia_scroll(scrapper, user):
     if not scrapper.driver.current_url.endswith("groups/"):
@@ -681,7 +682,7 @@ def ver_publicacion(c: telebot.types.CallbackQuery, scrapper, bot: telebot.TeleB
 
     
 
-def ver_lista_publicaciones(m, scrapper, bot: telebot.TeleBot, indice = 0, usuario_info=False, cantidad_publicaciones_mostrar = 6, elegir=False):
+def ver_lista_publicaciones(m, scrapper , bot: telebot.TeleBot, indice = 0, usuario_info=False, cantidad_publicaciones_mostrar = 6, elegir=False):
 
     
     if not usuario_info:
@@ -690,7 +691,18 @@ def ver_lista_publicaciones(m, scrapper, bot: telebot.TeleBot, indice = 0, usuar
     if isinstance(m, telebot.types.CallbackQuery):
         m = m.message
 
-    
+    if scrapper.temp_dict[usuario_info].get("obj_publicacion"):
+        if len(scrapper.temp_dict[usuario_info].get("obj_publicacion")) >= scrapper.entrada.obtener_usuario(usuario_info).plan.publicaciones and not scrapper.entrada.obtener_usuario(usuario_info).plan.publicaciones == True:
+            bot.send_message(usuario_info, "Has seleccionado las publicaciones: {}\n\n¿Publicarás las seleccionadas, volverás a seleccionar o cancelarás el proceso de publicación?".format(", ".join(list(map(lambda obj_publicacion: "<b>" + obj_publicacion.titulo + "</b>", scrapper.temp_dict[usuario_info].get("obj_publicacion"))))), reply_markup=InlineKeyboardMarkup(
+                [
+                    [InlineKeyboardButton("✅ Publicar Seleccionadas", callback_data="publicar/elegir/publicar")],
+                    [InlineKeyboardButton("Volver a seleccionar publicaciones", callback_data="publicar/seleccionar/clear")],
+                    [InlineKeyboardButton("Cancelar Publicación", callback_data="cancel")],
+                ]
+            ))
+
+
+            return
     
     #para asegurarme de que el índice a la siguiente lista exista...
     if indice + cantidad_publicaciones_mostrar > len(scrapper.entrada.obtener_usuario(usuario_info).publicaciones):
@@ -698,10 +710,14 @@ def ver_lista_publicaciones(m, scrapper, bot: telebot.TeleBot, indice = 0, usuar
 
 
     if elegir:
-        TEXTO = "👇 Elige las publicaciones que serán compartidas en Facebook 👇\n\n"
+        if scrapper.temp_dict[usuario_info]["obj_publicacion"]:
+            TEXTO = "👇 Elige las publicaciones que serán compartidas en Facebook 👇\n\nHas seleccionado {} de las {} que permite tu plan ({})".format(len(scrapper.temp_dict[usuario_info]["obj_publicacion"]), scrapper.entrada.obtener_usuario(usuario_info).plan.publicaciones, scrapper.entrada.obtener_usuario(usuario_info).plan.__class__.__name__)
+
+        else:
+            TEXTO = "👇 Elige las publicaciones que serán compartidas en Facebook 👇\n\n"
     else:
         if scrapper.cola["uso"] == m.from_user.id:
-
+           
            TEXTO = "👇 Lista de Publicaciones Creadas 👇\n\nToca en alguna para ver más información de ella\n\n<b>Nota IMPORTANTE</b>:\nActualmente estoy PUBLICANDO, no puedes ni agregar ni ELIMINAR publicaciones hasta que no termine o hasta que canceles la operación (para cancelar envíame /cancelar)" 
 
         else:
@@ -726,7 +742,7 @@ def ver_lista_publicaciones(m, scrapper, bot: telebot.TeleBot, indice = 0, usuar
 
     if elegir:
         if scrapper.temp_dict[usuario_info]["obj_publicacion"]:
-            markup.row(InlineKeyboardButton("✅ Publicar Seleccionados", callback_data="publicar/elegir/publicar"))
+            markup.row(InlineKeyboardButton("✅ Publicar Seleccionadas", callback_data="publicar/elegir/publicar"))
         
         markup.row(InlineKeyboardButton("🔙 Volver atrás", callback_data="publicar/elegir/b"))
 
@@ -798,7 +814,7 @@ def make_captcha_screenshoot(captcha_element, user):
     return os.path.join(user_folder(user), str(user) + "_captcha.png")
 
 
-def handlers(bot, user , msg , info, scrapper : dict , **kwargs):    
+def handlers(bot, user , msg , info, scrapper , **kwargs):    
     temp_dict = scrapper.temp_dict.copy()
     msg = m_texto(msg, True)
 
@@ -906,7 +922,9 @@ def handlers(bot, user , msg , info, scrapper : dict , **kwargs):
                 break
 
             else:
-                scrapper.temp_dict[user]["if_cancelar"]()
+                if scrapper.temp_dict[user]["if_cancelar"]():
+                    raise Exception("no")
+                
                 time.sleep(2)
 
         

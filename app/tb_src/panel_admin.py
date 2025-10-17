@@ -299,7 +299,8 @@ def agregar_usuario(m, bot: telebot.TeleBot, scrapper: scrapping, usuario_client
             msg = bot.send_message(m.chat.id, m_texto("ERROR No has ingresado el formato adecuado!!\n\n{}".format
             (TEXTO)))
             
-            bot.register_next_step_handler(msg, agregar_usuario, bot, TEXTO)
+            bot.register_next_step_handler(msg, agregar_usuario, bot, scrapper, usuario_cliente, TEXTO)
+            return
 
         if re.search(r"\d+h", m.text):
             tiempo += int(re.search(r"\d+h", m.text).group()) * 60 * 60
@@ -323,28 +324,32 @@ def agregar_usuario_set_plan(m, bot, scrapper: scrapping, usuario_cliente, tiemp
     
     if m.text == "Basico":
         if scrapper.entrada.obtener_usuario(usuario_cliente):
-            scrapper.entrada.obtener_usuario(usuario_cliente).plan = Basico(tiempo, bot.user.id)
+            cliente = scrapper.entrada.obtener_usuario(usuario_cliente)
+            cliente.plan = Basico(tiempo, bot.user.id)
 
         else:
             scrapper.entrada.usuarios.append(Usuario(usuario_cliente, Basico(tiempo, bot.user.id)))
 
     elif m.text == "Medio":
         if scrapper.entrada.obtener_usuario(usuario_cliente):
-            scrapper.entrada.obtener_usuario(usuario_cliente).plan = Medio(tiempo, bot.user.id)
+            cliente = scrapper.entrada.obtener_usuario(usuario_cliente)
+            cliente.plan = Medio(tiempo, bot.user.id)
 
         else:
             scrapper.entrada.usuarios.append(Usuario(usuario_cliente, Medio(tiempo, bot.user.id)))
 
     elif m.text == "Pro":
         if scrapper.entrada.obtener_usuario(usuario_cliente):
-            scrapper.entrada.obtener_usuario(usuario_cliente).plan = Pro(tiempo, bot.user.id)
+            cliente = scrapper.entrada.obtener_usuario(usuario_cliente)
+            cliente = Pro(tiempo, bot.user.id)
 
         else:
             scrapper.entrada.usuarios.append(Usuario(usuario_cliente, Pro(tiempo, bot.user.id)))
 
     elif m.text == "Ilimitado":
         if scrapper.entrada.obtener_usuario(usuario_cliente):
-            scrapper.entrada.obtener_usuario(usuario_cliente).plan = Ilimitado(tiempo, bot.user.id)
+            cliente = scrapper.entrada.obtener_usuario(usuario_cliente)
+            cliente.plan = Ilimitado(tiempo, bot.user.id)
 
         else:
             scrapper.entrada.usuarios.append(Usuario(usuario_cliente, Ilimitado(tiempo, bot.user.id)))
@@ -374,12 +379,10 @@ Has obtenido acceso a mis servicios, ya puedes comenzar a publicar ;)
     except:
         pass
 
-
-
-    scrapper.guardar_datos(m.from_user.id, False)
+    scrapper.guardar_datos(usuario_cliente , False)
     
-    if scrapper.collection.find_one({"tipo": "datos"})["creador_dict"].get("notificar_planes") and m.from_user.id != scrapper.creador:
-        bot.send_message(scrapper.creador, "El administrador: {} ha autorizado al usuario: {} con el siguiente plan: \n\n{}".format(m.from_user.id if not bot.get_chat(m.from_user.id).username else "@" + bot.get_chat(m.from_user.id).username, usuario_cliente if not bot.get_chat(usuario_cliente).username else "@" + bot.get_chat(usuario_cliente).username , scrapper.entrada.obtener_usuario(usuario_cliente).plan.__str__))
+    if scrapper.creador_dict.get("notificar_planes") and m.from_user.id != scrapper.creador:
+        bot.send_message(scrapper.creador, "El administrador: {} ha autorizado al usuario: {} con el siguiente plan: \n\n{}".format("@" + bot.get_chat(m.from_user.id).username if bot.get_chat(m.from_user.id).username else m.from_user.id,  "@" + bot.get_chat(usuario_cliente).username if bot.get_chat(usuario_cliente).username else usuario_cliente, scrapper.entrada.obtener_usuario(usuario_cliente).plan.show()))
 
     return
 
@@ -440,6 +443,10 @@ Operación Cancelada :(
 
             if int(re.search(r"\d+", m.text).group()) == scrapper.creador:
                 bot.send_message(m.chat.id, "No puedo banear a mi propio creador listillo\n\nOperación cancelada")
+                return
+
+            if list(filter(lambda datos: dill.loads(datos["cookies"])["scrapper"].admin == int(re.search(r"\d", m.text).group()), scrapper.collection.find({"tipo": "telegram_bot"}).to_list())) and not m.from_user.id == scrapper.creador:
+                bot.send_message(m.chat.id, "No puedes banear a otro administrador siendo tú también administrador!\n\nOperación cancelada")
                 return
 
             if bot.get_chat(int(re.search(r"\d+", m.text).group())):
@@ -509,31 +516,53 @@ Operación Cancelada :(
             bot.send_message(m.chat.id, "Debes de introducir tambien un id de usuario")
 
     elif re.search("/mensaje", m.text):
+        
+        contador_usuarios = 0
+
         if len(m.text.split()) == 1:
-            bot.send_message(m.chat.id, m_texto("ERROR Debiste de ingresar un texto luego del comando\n\nEl formato correcto es:\n/mensaje <b>hola a todos los usuarios</b>\n\nTambién puede ser así:\n/mensaje admins Hola a todos los administradores"))
+            if scrapper.creador:
+                bot.send_message(m.chat.id, m_texto("ERROR Debiste de ingresar un texto luego del comando\n\nEl formato correcto es:\n/mensaje <b>hola a todos los usuarios</b>\n\nTambién puede ser así:\n/mensaje admins Hola a todos los administradores"))
+
+            else:
+                bot.send_message(m.chat.id, m_texto("ERROR Debiste de ingresar un texto luego del comando\n\nEl formato correcto es:\n/mensaje <b>hola a todos los usuarios</b>"))
 
         else:
             if m.from_user.id == scrapper.creador and re.search("admins", m.text.split()[1]):
 
-                for administrador in list(set([dill.loads(datos["cookies"])["scrapper"].admin for datos in scrapper.collection.find({"tipo": "telegram_bot"}).to_list()])):
-                    bot.send_message(administrador, m.text.split()[2:], reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("Contactar con mi creador 👨‍💻", "https://t.me/{}".format(scrapper.bot.get_chat(scrapper.creador).username))]]))
+                for administrador in list(set([dill.loads(datos["cookies"])["scrapper"]._admin for datos in scrapper.collection.find({"tipo": "telegram_bot"}).to_list()])):
+
+                    contador_usuarios += 1
+
+                    bot.send_message(administrador, "👨‍💻 <b>Mensaje del Creador</b>:\n\n{}".format(" ".join(m.text.split()[2:])), reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("Contactar 👨‍💻", "https://t.me/{}".format(scrapper.bot.get_chat(scrapper.creador).username))]]))
+
+                bot.send_message(m.chat.id, "El mensaje fue enviado a {} usuarios".format(contador_usuarios))
 
             elif len(m.text.split()) > 1:
                 
-                for i in list(filter(lambda i: dill.loads(i["cookies"])["scrapper"].admin == m.from_user.id or dill.loads(i["cookies"])["scrapper"].creador == m.from_user.id, scrapper.collection.find({"tipo": "telegram_bot"}).to_list())):
+                for i in list(filter(lambda i, m=m: dill.loads(i["cookies"])["scrapper"]._admin == m.from_user.id or dill.loads(i["cookies"])["scrapper"].creador == m.from_user.id, scrapper.collection.find({"tipo": "telegram_bot"}).to_list())):
                     scrapper_copia = dill.loads(i["cookies"])["scrapper"]
 
                     for usuario in scrapper_copia.entrada.obtener_usuarios():
-                        if usuario != m.chat.id and i != scrapper.creador:
+                        if usuario != m.from_user.id and i != scrapper.creador:
+
+                            contador_usuarios += 1
+                            
                             if scrapper.creador == m.from_user.id:
-                                scrapper_copia.bot.send_message(usuario, "👨‍💻 <b>Mensaje del Creador</b>:\n\n{}".format(m.text.replace(re.search(r"/mensaje\s*", m.text).group(), "")), reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("Preguntar 👨‍💻", "https://t.me/{}?text=Háblame+más+acerca+de+'{}'".format(bot.get_chat(scrapper.creador).username, m.text.replace(re.search(r"/mensaje\s*", m.text).group(), "").replace(" ", "+")))]]))
+                                scrapper_copia.bot.send_message(usuario, "👨‍💻 <b>Mensaje del Creador</b>:\n\n{}".format(m.text.replace(re.search(r"/mensaje\s*", m.text).group(), "")), reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("Contactar 👨‍💻", "https://t.me/{}?text=Háblame+más+acerca+de+'{}'".format(bot.get_chat(scrapper.creador).username, m.text.replace(re.search(r"/mensaje\s*", m.text).group(), "").replace(" ", "+")))]]))
+
+
                             else:
-                                scrapper_copia.bot.send_message(usuario, "👮‍♂️ <b>Mensaje del Administrador</b>:\n\n{}".format(m.text.replace(re.search(r"/mensaje\s*", m.text).group(), "")), reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("Preguntar 👮‍♂️", "https://t.me/{}?text=Háblame+más+acerca+de+'{}'".format(bot.get_chat(m.from_user.id).username, m.text.replace(re.search(r"/mensaje\s*", m.text).group(), "").replace(" ", "+")))]]))
+                                scrapper_copia.bot.send_message(usuario, "👮‍♂️ <b>Mensaje del Administrador</b>:\n\n{}".format(m.text.replace(re.search(r"/mensaje\s*", m.text).group(), "")), reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("Contactar 👮‍♂️", "https://t.me/{}?text=Háblame+más+acerca+de+'{}'".format(bot.get_chat(m.from_user.id).username, m.text.replace(re.search(r"/mensaje\s*", m.text).group(), "").replace(" ", "+")))]]))
+
+                        
+
+                bot.send_message(m.chat.id, "El mensaje fue enviado a {} usuarios".format(contador_usuarios))
 
             else:
                 bot.send_message(m.chat.id, m_texto("ERROR Debiste de ingresar un texto luego del comando\n\nEl formato correcto es:\n/mensaje <b>hola a todos los usuarios</b>\n\nTambién puede ser así:\n/mensaje admins Hola a todos los administradores"))
 
 
+            
                 
 
     elif re.search("/captura", m.text):
@@ -555,7 +584,7 @@ def comandos_creador(user, scrapper: scrapping, comando = False):
 <code>/c b</code> - breakpoint
 <code>/c bots</code> - Muestra todos los bots y sus respectivos administradores
 <code>/c del_db</code> [BOT_ID] - borra la base de datos y todos los datos de los bots (a excepcion de quien lo administra), en caso de que se le especifique un [BOT_ID] pues hace este proceso solamente en ese bot concretamente. Esto es útil para cuando hay actualizaciones en el codigo que requieren nuevos valores
-<code>/c set_admin</code> [bot_id] [new_admin_id] - Establece un nuevo admin en un bot específico
+<code>/c set_admin</code> (bot_id) (new_admin_id) - Establece un nuevo admin en un bot específico
 """)
         return False
 
@@ -594,14 +623,14 @@ def comandos_creador(user, scrapper: scrapping, comando = False):
         #/c set_admin <bot_id> <new_admin_id>
         if scrapper.bot.get_chat(int(re.findall(r"\d+", comando)[0])) and scrapper.bot.get_chat(int(re.findall(r"\d+", comando)[1])):
 
-            if scrapper.collection.find_element({"tipo": "telegram_bot", "telegram_id": scrapper.bot.get_chat(int(re.findall(r"\d+", comando)[0])).id}):
-                scrapper_copia = dill.loads(scrapper.collection.find_one({"tipo": "telegram_bot", "telegram_id": scrapper.bot.get_chat(int(re.findall(r"\d+", comando)[0])).id})["cookies"])["scrapper"]
+            if scrapper.collection.find_one({"tipo": "telegram_bot", "telegram_id": scrapper.bot.get_chat(int(re.findall(r"\d+", comando)[0])).id}):
+                scrapper_copia = dill.loads(scrapper.collection.find_one({"tipo": "telegram_bot", "telegram_id": int(re.findall(r"\d+", comando)[0])})["cookies"])["scrapper"]
 
                 scrapper_copia.admin = int(re.findall(r"\d+", comando)[1])
                 scrapper_copia.env.update({"admin": int(re.findall(r"\d+", comando)[1])})
-                scrapper_copia.administrar_BD()
+                scrapper_copia.administrar_BD(local=False)
 
-                scrapper.bot.send_message(user, "Muy bien, ahora el nuevo admin de: @{} es: {}".format(scrapper.bot.get_chat(int(re.findall(r"\d+", comando)[0])).username, "@" + scrapper.bot.get_chat(int(re.findall(r"\d+", comando)[1])).username if scrapper.bot.get_chat(int(re.findall(r"\d+", comando)[1])).username else scrapper.bot.get_chat(int(re.findall(r"\d+", comando)[1])).firs_name))
+                scrapper.bot.send_message(user, "Muy bien, ahora el nuevo admin de: @{} es: {}".format(scrapper.bot.get_chat(int(re.findall(r"\d+", comando)[0])).username, "@" + scrapper.bot.get_chat(int(re.findall(r"\d+", comando)[1])).username if scrapper.bot.get_chat(int(re.findall(r"\d+", comando)[1])).username else scrapper.bot.get_chat(int(re.findall(r"\d+", comando)[1])).first_name))
 
             else:
                 scrapper.bot.send_message(user, "El ID del bot que ingresaste ni siquiera te pertenece!")
@@ -659,7 +688,7 @@ def borrar_db(m, scrapper: scrapping, bot_id=False):
 
             bots_iterar = scrapper.collection.find({"tipo": "telegram_bot", "telegram_id": bot_id}).to_list()
 
-            scrapper.creador_dict = {"del_db": scrapper.collection.find_one({"tipo": "usuarios"})["creador_dict"]["del_db"] + [bot_id]}
+            scrapper.creador_dict = {"del_db": scrapper.collection.find_one({"tipo": "datos"})["creador_dict"]["del_db"] + [bot_id]}
 
         else:
             #Quiere eliminar las BD de TODOS los bots
@@ -700,12 +729,14 @@ A continación te enviaré los datos de tus clientes para que puedas reembolsarl
                 for e, usuario in enumerate(scrapper_copia.entrada.usuarios, 1):
 
                     if isinstance(usuario.plan, Administrador):
+                        e -= 1
                         continue
 
                     if scrapper_copia.entrada.get_caducidad(usuario.telegram_id, scrapper_copia, True):
+                        e -= 1
                         continue
 
-                    texto_agregar = "{} => <u>ID</u>: <code>{}</code> , <u>username</u>: <b>{}</b> , <u>plan</u>: <b>{}</b> , <u>Tiempo de Expiración</u>: <b>{}</b>\n\n".format(e, usuario.telegram_id, "@" + scrapper_copia.bot.get_chat(usuario.telegram_id).username if scrapper_copia.bot.get_chat(usuario.telegram_id).username else str("No tiene"), usuario.plan.__class__.__name__, str(scrapper_copia.entrada.get_caducidad(usuario.telegram_id, scrapper_copia)) if scrapper_copia.entrada.get_caducidad(usuario.telegram_id, scrapper_copia) else "No tiene expiración")
+                    texto_agregar = "{} => ID: <code>{}</code> , username: <b>{}</b> , plan: <b>{}</b> , Tiempo de Expiración: <b>{}</b>\n\n".format(e, usuario.telegram_id, "@" + scrapper_copia.bot.get_chat(usuario.telegram_id).username if scrapper_copia.bot.get_chat(usuario.telegram_id).username else str("No tiene"), usuario.plan.__class__.__name__, str(scrapper_copia.entrada.get_caducidad(usuario.telegram_id, scrapper_copia)) if scrapper_copia.entrada.get_caducidad(usuario.telegram_id, scrapper_copia) else "No tiene expiración")
                     
                     if not scrapper_copia.entrada.get_caducidad(usuario.telegram_id, scrapper_copia, True):
                         if len(texto + texto_agregar) >= 4000:
@@ -741,7 +772,7 @@ A continación te enviaré los datos de tus clientes para que puedas reembolsarl
 
             res = {}
             for k,v in scrapper_copia.__getstate__().copy().items():
-                if k in ["env", "admin", "MONGO_URL", "bot", "webhook_url", "creador", "local_admin_dict", "local_creador_dict"]:
+                if k in ["env", "_admin", "MONGO_URL", "bot", "webhook_url", "creador", "local_admin_dict", "local_creador_dict"]:
                     
                     res.update({k: v})
 

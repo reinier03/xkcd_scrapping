@@ -196,7 +196,7 @@ def mensaje_elegir_publicacion(user, scrapper: scrapping):
             )
                 
         else:
-            if len(scrapper.entrada.obtener_usuario(user).publicaciones) > len(scrapper.entrada.obtener_usuario(user).plan.publicaciones) and not user != scrapper.creador and user != scrapper.admin:
+            if len(scrapper.entrada.obtener_usuario(user).publicaciones) > scrapper.entrada.obtener_usuario(user).plan.publicaciones and not user != scrapper.creador and user != scrapper.admin:
 
                 markup = InlineKeyboardMarkup(
                     [ 
@@ -262,11 +262,17 @@ Esto solo será útil para referenciarlo más facilmente aquí, este título NO 
 
         if c.data.startswith("p/wl"):
             if re.search(r"\d+", c.data):
-                if re.search(r"[-]\d+", c.data):
-                    bot.answer_callback_query(c.id, "¡Ya estás en la primera publicación de la lista!")
+                if int(re.search(r"\d+", c.data).group()) <= 0:
+                    try:
+                        bot.answer_callback_query(c.id, "¡Ya estás en la primera publicación de la lista!")
+                    except:
+                        pass
 
                 elif int(re.search(r"\d+", c.data).group()) >= len(scrapper.entrada.obtener_usuario(c.from_user.id).publicaciones):
-                    bot.answer_callback_query(c.id, "¡Ya estás en la última publicación de la lista!")
+                    try:
+                        bot.answer_callback_query(c.id, "¡Ya estás en la última publicación de la lista!")
+                    except:
+                        pass
 
                 else:
                     ver_lista_publicaciones(c, scrapper, bot, indice=int(re.search(r"\d+", c.data).group()))

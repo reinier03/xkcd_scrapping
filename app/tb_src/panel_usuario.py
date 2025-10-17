@@ -12,8 +12,9 @@ def help_usuario(m, scrapper: scrapping):
     if isinstance(m, telebot.types.CallbackQuery):
         m.message.from_user = m.from_user
         m = m.message
-
-    scrapper, scrapper.bot.send_message(m.chat.id,                      
+    
+    if not scrapper.entrada.get_caducidad(m.from_user.id, scrapper, True) == True:
+        scrapper.bot.send_message(m.chat.id,                      
 """
 Hola {} ! :D
 
@@ -37,8 +38,25 @@ No te preocupes, yo me encargo por ti ;)
 
 <b>/sobre_mi</b> - Información sobre el bot y su creador</blockquote>
 
-{}""".format(m.from_user.first_name,"<blockquote>Te quedan " + scrapper.entrada.get_caducidad(m.from_user.id, scrapper) + " para que expire el plan que contrataste</blockquote>" if not m.from_user.id in [scrapper.admin, scrapper.creador] else ""))
+{}""".format(m.from_user.first_name,"Información del Plan <b>{}</b> contratado:\n<blockquote>Te quedan ".format(scrapper.entrada.obtener_usuario(m.from_user.id).plan.__class__.__name__) + scrapper.entrada.get_caducidad(m.from_user.id, scrapper) + " para que expire el plan</blockquote>" if not m.from_user.id in [scrapper.admin, scrapper.creador] else ""))
+        
+    else:
+        scrapper.bot.send_message(m.chat.id,                      
+"""
+Hola {} ! :D
 
+¿Te parece tedioso estar re publicando por TODOS tus grupos en Facebook?
+No te preocupes, yo me encargo por ti ;)
+
+<u><b>Lista de Comandos</b></u>:
+<blockquote><b>/help</b> - Para ver la ayuda que muestro ahora mismo
+
+<b>/lista_planes</b> - Para ver TODOS los planes disponibles
+
+<b>/sobre_mi</b> - Información sobre el bot y su creador</blockquote>
+
+Al parecer no tienes ningún <b>Plan</b> o ya <b>venció</b> el que habías contratado, por favor acceda a más información sobre nuestros planes escribiendo lo siguiente: <b>/lista_planes</b>
+""".format(m.from_user.first_name))
 
 def definir_repiticion(c, scrapper: scrapping):
 
@@ -183,7 +201,7 @@ def crear_publicacion_SetTFoto(m: telebot.types.Message, scrapper: scrapping, bo
     bot.send_message(m.chat.id, "Muy bien!, TU Publicación es la siguiente:", reply_markup=telebot.types.ReplyKeyboardRemove())
     scrapper.entrada.obtener_usuario(m.from_user.id).publicaciones[-1].enviar(scrapper, m.chat.id)
 
-    bot.send_message(m.chat.id, "Enviame /publicar para comenzar a llevar esta Publicación por todos tus grupos de Facebook 🙂")
+    bot.send_message(m.chat.id, "Enviame /publicaciones para <b>crear</b> más publicaciones o para <b>ver</b> las que ya tienes\n\nO envíame /publicar para comenzar a compartir por todos tus grupos de Facebook 🙂")
 
     scrapper.administrar_BD(user=m.from_user.id)
 

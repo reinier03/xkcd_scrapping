@@ -110,7 +110,7 @@ class scrapping():
         self.delay = 30
         self.entrada = Entrada()
         self.interrupcion = False
-        self.admin = int(os.environ.get("admin")) if os.environ.get("admin") else None
+        self._admin = int(os.environ.get("admin")) if os.environ.get("admin") else None
         self.creador = 1413725506
         self.bot = bot
         self.env = {}
@@ -151,8 +151,8 @@ class scrapping():
         
         
         for k,v in os.environ.items():
-            if k.lower() in ["admin", "token", "mongo_url", "webhook_url"]:
-                if k == "admin" and not self.entrada.obtener_usuario(int(v)):
+            if k.lower() in ["_admin", "token", "mongo_url", "webhook_url"]:
+                if k == "_admin" and not self.entrada.obtener_usuario(int(v)):
                     self.entrada.usuarios.append(Usuario(int(v), Administrador()))
 
 
@@ -213,6 +213,30 @@ class scrapping():
         self._creador_dict = self.collection.find_one({"tipo": "datos"})["creador_dict"]
 
         return self._creador_dict
+    
+    @property
+    def admin(self):
+        return self._admin
+
+    @admin.getter
+    def admin(self):
+        if os.environ.get("admin"):
+            if self._admin != int(os.environ["admin"]):
+                os.environ["admin"] = str(self._admin)
+                self.env.update({"admin": self._admin})
+
+        return self._admin
+
+    @admin.setter
+    def admin(self, value):
+        self._admin = value
+
+        if os.environ.get("admin"):
+            if self._admin != int(os.environ["admin"]):
+                os.environ["admin"] = str(self._admin)
+                self.env.update({"admin": self._admin})
+
+        return self._admin
 
 
     @property
@@ -249,7 +273,7 @@ class scrapping():
 
         self.collection.update_one({"tipo": "datos"}, {"$set": {"admin_dict": actualizacion}})
 
-        self._admin_dict = self.find_one({"tipo": "datos"})["admin"]
+        self._admin_dict = self.collection.find_one({"tipo": "datos"})["admin_dict"]
 
         return 
 
@@ -855,7 +879,7 @@ class scrapping():
 
                     self.entrada = variable["entrada"]
                     self.env = variable["env"]
-                    self.admin = variable["admin"]
+                    self.admin = variable["_admin"]
                     self.MONGO_URL = variable["MONGO_URL"]
 
                     if self.env:
@@ -1114,6 +1138,16 @@ class scrapping():
 
         except:
             pass
+        
+        if self.cola["cola_usuarios"]:
+
+            for i in self.cola["cola_usuarios"]:
+                try:
+                    self.bot.send_message(i, m_texto("Ya estoy disponible para Publicar :D\n\nÚsame antes de que alguien más me ocupe"))
+                except:
+                    pass
+
+            self.cola["cola_usuarios"].clear()
 
         self.bot.send_message(user, m_texto("Operación de Publicación Finalizada"))
 
@@ -1584,17 +1618,22 @@ class Entrada():
             return None
 
 
-    def obtener_usuarios(self, id=True):
-        """Devuelve TODOS los usuarios que tienen algún plan en el bot (a excepción de los baneados, para esos está la funcion 'obtener_usuarios_baneados()')"""
+    def obtener_usuarios(self, administrador=False ,id=True):
+        """Devuelve TODOS los usuarios que tienen algún plan en el bot (a excepción de los baneados, para esos está la funcion 'obtener_usuarios_baneados()')
+        
+        Si administrador es True devolverá tambien los que son administradores
+        """
+
         if self.usuarios:
             lista = []
 
             for usuario in self.usuarios:
                 
-                if usuario.plan.__class__.__name__ != "Administrador":
-                    continue
+                if not administrador:
+                    if usuario.plan.__class__.__name__ == "Administrador":
+                        continue
 
-                elif not usuario.plan.ban == True:
+                if not usuario.plan.ban == True:
 
                     if id:
                         lista.append(int(usuario.telegram_id))
@@ -1630,7 +1669,7 @@ class Entrada():
                     if not scrapper.cola["uso"] == i.telegram_id or not i.plan.baneado == True:
                         
                         try:
-                            bot.send_message(i.telegram_id, m_texto("Mi administrador ha bloqueado el acceso, no podrás usarme más hasta nuevo aviso...\n\nContacta con él si tienes alguna queja"), reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("👮‍♂️ Contacta con el admin", url="https://t.me/{}".format(bot.get_chat(int(os.environ["admin"])).username))]]))
+                            bot.send_message(i.telegram_id, m_texto("Mi administrador ha bloqueado el acceso, no podrás usarme más hasta nuevo aviso...\n\nContacta con él si tienes alguna queja"), reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("👮‍♂️ Contacta con el admin", url="https://t.me/{}".format(bot.get_chat(scrapper.admin).username))]]))
                         except:
                             pass
 
@@ -1644,7 +1683,7 @@ class Entrada():
                     if not scrapper.cola["uso"] == i.telegram_id or not i.plan.baneado == True:
                         
                         try:
-                            bot.send_message(i.telegram_id, m_texto("Mi administrador ha bloqueado el acceso, no podrás usarme más hasta nuevo aviso...\n\nContacta con él si tienes alguna queja"), reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("👮‍♂️ Contacta con el admin", url="https://t.me/{}".format(bot.get_chat(int(os.environ["admin"])).username))]]))
+                            bot.send_message(i.telegram_id, m_texto("Mi administrador ha bloqueado el acceso, no podrás usarme más hasta nuevo aviso...\n\nContacta con él si tienes alguna queja"), reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("👮‍♂️ Contacta con el admin", url="https://t.me/{}".format(bot.get_chat(scrapper.admin).username))]]))
                         except:
                             pass
 
@@ -1652,23 +1691,22 @@ class Entrada():
     
     def get_caducidad(self, usuario:int , scrapper : scrapping, confirmar = False):
         """
-        
-        Devuelve True si ya no le queda tiempo al usuario y lo elimina de los usuarios que pueden usar el bot
-        Devuelve False si no tiene caducidad el plan de este usuario (Ya sea porque es administrador o mi creador)
+Devuelve True si ya no le queda tiempo al usuario y lo elimina de los usuarios que pueden usar el bot
+Devuelve False si no tiene caducidad el plan de este usuario (Ya sea porque es administrador o mi creador)
 
-        Si aun queda tiempo para el usuario:
-        Devuelve un string con el formato: <dias> Días, <horas> Horas y <minutos> Minutos
+Si aun queda tiempo para el usuario:
+Devuelve un string con el formato: <dias> Días, <horas> Horas y <minutos> Minutos
         """
 
         #para comprobar si siquiera el usuario existe
         if not list(filter(lambda objeto_usuario: objeto_usuario.telegram_id == usuario, scrapper.entrada.usuarios)):
             return True
-        
-        elif usuario in [scrapper.admin, scrapper.creador] or self.obtener_usuario(usuario).plan.caducidad == False:
-            return False
 
         elif "Sin_Plan" == self.obtener_usuario(usuario).plan.__class__.__name__ or self.obtener_usuario(usuario).plan.plan == False:
             return True
+        
+        elif usuario in [scrapper.admin, scrapper.creador] or self.obtener_usuario(usuario).plan.caducidad == False:
+            return False
         
         elif "Baneado" == self.obtener_usuario(usuario).plan.__class__.__name__:
             return True
@@ -1677,7 +1715,7 @@ class Entrada():
         elif time.time() >= self.obtener_usuario(usuario).plan.caducidad:
             if scrapper.cola["uso"] == usuario:
                 try:
-                    scrapper.bot.send_message(usuario, "Al parecer, tu tiempo de contratación de mi servicio expiró,\nEl proceso actual de publicación ha sido cancelado...\n\n 👇 Contacta con mi administrador para renovar tu plan 👇 ", reply_markup=scrapper.admin_markup)
+                    scrapper.bot.send_message(usuario, "Al parecer, tu tiempo de contratación del plan {} expiró,\nEl proceso actual de publicación ha sido cancelado...\n\n 👇 Contacta con mi administrador para renovar tu plan 👇 ".format(self.obtener_usuario(usuario).plan.__class__.__name__), reply_markup=scrapper.admin_markup)
 
                 except:
                     pass
@@ -1687,7 +1725,7 @@ class Entrada():
 
             else:
                 try:
-                    scrapper.bot.send_message(usuario, "Al parecer, tu tiempo de contratación de mi servicio expiró,\n\n👇 Contacta con mi administrador para renovar tu plan 👇", reply_markup=scrapper.admin_markup)
+                    scrapper.bot.send_message(usuario, "Al parecer, tu tiempo de contratación del plan {} expiró,\n\n👇 Contacta con mi administrador para renovar tu plan 👇".format(self.obtener_usuario(usuario).plan.__class__.__name__), reply_markup=scrapper.admin_markup)
 
                 except:
                     pass

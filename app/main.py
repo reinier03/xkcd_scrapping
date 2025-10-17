@@ -78,7 +78,7 @@ if scrapper.admin:
     admin = int(os.environ["admin"])
     scrapper.admin_markup = InlineKeyboardMarkup([
         [
-            InlineKeyboardButton("Contacta con el Administrador 👮‍♂️", "https://t.me/{}?text=Hola+quisiera+poder+publicar+en+Facebook+con+un+bot".format(scrapper.bot.get_chat(scrapper.admin).username, scrapper.bot.user.username))
+            InlineKeyboardButton("Contacta con el Administrador 👮‍♂️", "https://t.me/{}".format(scrapper.bot.get_chat(scrapper.admin).username, scrapper.bot.user.username))
         ]])
     
     bot.set_my_commands([
@@ -122,7 +122,7 @@ def cmd_middleware(bot: telebot.TeleBot, update: telebot.types.Update):
 def not_private(m):
     return
 
-@bot.message_handler(func=lambda m: scrapper.entrada.pasar and m.from_user.id != scrapper.creador)
+@bot.message_handler(func=lambda m: not scrapper.entrada.pasar and m.from_user.id != scrapper.creador)
 def cmd_denegar_paso(m):
     bot.send_message(m.chat.id, m_texto("Actualmente el bot no está accesible por NADIE, sentimos las molestas ocacionadas\n\nContacta a mi creador para cualquier pregunta"), reply_markup=InlineKeyboardMarkup(
         [
@@ -176,30 +176,10 @@ def start(m):
         bot.register_callback_query_handler(panel_admin.help_admin, lambda c: c.data == "help/admin", True)
         bot.register_callback_query_handler(help_usuario_show, lambda c: c.data == "help/users")
 
-    elif not scrapper.entrada.get_caducidad(m.from_user.id, scrapper) == True:
+    else:
         panel_usuario.help_usuario(m, scrapper)
         
         
-    else:
-         bot.send_message(m.chat.id,                      
-"""
-Hola {} ! :D
-
-¿Te parece tedioso estar re publicando por TODOS tus grupos en Facebook?
-No te preocupes, yo me encargo por ti ;)
-
-<u><b>Lista de Comandos</b></u>:
-<b>/help</b> - Para ver la ayuda que muestro ahora mismo
-
-<b>/lista_planes</b> - Para ver TODOS los planes disponibles
-
-<b>/sobre_mi</b> - Información sobre el bot y su creador
-
-Al parecer no tienes ningún <b>Plan</b> o ya <b>venció</b> el que habías contratado, por favor acceda a más información sobre nuestros planes escribiendo lo siguiente: <b>/lista_planes</b>
-""".format(m.from_user.first_name))
-
-    return
-
 def help_usuario_show(c):
     panel_usuario.help_usuario(c, scrapper)
 
@@ -287,7 +267,7 @@ def cmd_cancelar(m):
 
                 scrapper.temp_dict[int(m.text.split()[1])]["cancelar_forzoso"] = True
 
-                liberar_cola(scrapper, scrapper.cola["uso"], bot)
+                liberar_cola(scrapper, scrapper.cola["uso"], bot, notificar_usuarios = False)
 
                 # if not scrapper.temp_dict[scrapper.cola["uso"]].get("texto_r"):
                 #     liberar_cola(scrapper, scrapper.cola["uso"], bot)
@@ -300,13 +280,18 @@ def cmd_cancelar(m):
             bot.send_message(m.chat.id, m_texto("Este usuario no está usando las publicaciones"), reply_markup=telebot.types.ReplyKeyboardRemove())
 
     elif scrapper.cola["uso"] == m.from_user.id:
+        
+        if not scrapper.temp_dict.get(m.from_user.id):
+            bot.send_message(m.chat.id, "Se está intentando llevar el proceso de cancelación a cabo, espera un momento...")
 
+            return
+        
         scrapper.temp_dict[m.from_user.id]["cancelar"] = True
 
         if scrapper.temp_dict.get(m.from_user.id):
             scrapper.temp_dict[m.from_user.id]["msg"] = bot.send_message(m.chat.id, m_texto("Voy a cancelar el proceso de publicación\n\nPor favor, espera un momento..."))
             
-            liberar_cola(scrapper, m.from_user.id, bot, False)
+            liberar_cola(scrapper, m.from_user.id, bot, False, False)
         
         else:
             scrapper.cola["uso"] = False
@@ -691,6 +676,9 @@ def cual_publicar(c):
             pass
 
     if c.data == "publicar/seleccionar":
+        if "clear" in c.data:
+            scrapper.temp_dict[c.from_user.id]["obj_publicacion"].clear()
+
         ver_lista_publicaciones(c, scrapper, bot, elegir=True)
 
     elif c.data == "publicar/all":

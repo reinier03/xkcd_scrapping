@@ -278,7 +278,6 @@ def loguin_cero(scrapper: scrapping, user, bot : telebot.TeleBot, **kwargs):
                     ActionChains(scrapper.driver).send_keys_to_element(scrapper.find_element(By.CSS_SELECTOR, "input#m_login_password"), scrapper.temp_dict[user]["password"]).perform()
 
 
-
         bot.send_message(user, m_texto("Muy bien, a continuación comprobaré si los datos son correctos\n\n<b>Por favor, espera un momento...</b>"))
 
 
