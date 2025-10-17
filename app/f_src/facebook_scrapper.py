@@ -75,40 +75,40 @@ def esperar(scrapper: scrapping, etiqueta, elementos, selector="css", intentos=2
                 contador += 1
                 time.sleep(5)
 
+def configurar_idioma():
+    try:
+        scrapper.wait_s.until(ec.visibility_of_element_located((By.XPATH, '//*[contains(text(), "English")]')))
 
+    except:
+        #clickear en el elemento del idioma
+        scrapper.wait.until(ec.visibility_of_element_located((By.XPATH, '//*[contains(text(), "{}")]'.format(re.search(r"\w+ [(]\D+[)]", scrapper.find_element(By.CSS_SELECTOR, "body").text).group().split("\n")[0])))).click()
+
+        scrapper.wait.until(ec.visibility_of_element_located((By.XPATH, '//*[contains(text(), "English (US)")]')))
+        scrapper.find_element(By.XPATH, '//*[contains(text(), "English (US)")]/..').click()
+
+        scrapper.wait.until(ec.visibility_of_element_located((By.CSS_SELECTOR, 'body')))
+
+        try:
+            scrapper.temp_dict[user]["res"] = scrapper.wait.until(ec.any_of(
+                ec.visibility_of_element_located((By.XPATH, '//*[contains(text(), "Usar otro perfil")]')),
+                ec.visibility_of_element_located((By.XPATH, '//*[contains(text(), "Use another profile")]')),
+                ec.visibility_of_element_located((By.XPATH, '//*[contains(text(), "I already have an account")]')),
+                ec.visibility_of_element_located((By.CSS_SELECTOR, "input#m_login_email"))
+            ))
+
+            if scrapper.temp_dict[user]["res"].text in ["I already have an account"]:
+                scrapper.temp_dict[user]["res"].click()
+
+        except:
+            pass
+
+    return True
 
 def entrar_facebook(scrapper: scrapping, user, cargar_loguin = False):
     """
     Carga la página de Facebook y quita la presentacion
     """
-    def configurar_idioma():
-        try:
-            scrapper.wait_s.until(ec.visibility_of_element_located((By.XPATH, '//*[contains(text(), "English")]')))
-
-        except:
-            #clickear en el elemento del idioma
-            scrapper.wait.until(ec.visibility_of_element_located((By.XPATH, '//*[contains(text(), "{}")]'.format(re.search(r"\w+ [(]\D+[)]", scrapper.find_element(By.CSS_SELECTOR, "body").text).group().split("\n")[0])))).click()
-
-            scrapper.wait.until(ec.visibility_of_element_located((By.XPATH, '//*[contains(text(), "English (US)")]')))
-            scrapper.find_element(By.XPATH, '//*[contains(text(), "English (US)")]/..').click()
-
-            scrapper.wait.until(ec.visibility_of_element_located((By.CSS_SELECTOR, 'body')))
-
-            try:
-                scrapper.temp_dict[user]["res"] = scrapper.wait.until(ec.any_of(
-                    ec.visibility_of_element_located((By.XPATH, '//*[contains(text(), "Usar otro perfil")]')),
-                    ec.visibility_of_element_located((By.XPATH, '//*[contains(text(), "Use another profile")]')),
-                    ec.visibility_of_element_located((By.XPATH, '//*[contains(text(), "I already have an account")]')),
-                    ec.visibility_of_element_located((By.CSS_SELECTOR, "input#m_login_email"))
-                ))
-
-                if scrapper.temp_dict[user]["res"].text in ["I already have an account"]:
-                    scrapper.temp_dict[user]["res"].click()
-
-            except:
-                pass
-
-        return True
+    
 
 
     if not "login" in scrapper.driver.current_url or cargar_loguin:
@@ -203,6 +203,8 @@ def loguin_cero(scrapper: scrapping, user, bot : telebot.TeleBot, **kwargs):
 
     else:
         entrar_facebook(scrapper, user)
+
+    configurar_idioma()
 
     scrapper.wait.until(ec.any_of(
         ec.visibility_of_element_located((By.CSS_SELECTOR, 'input#m_login_email')),
