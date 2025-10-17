@@ -204,7 +204,6 @@ def loguin_cero(scrapper: scrapping, user, bot : telebot.TeleBot, **kwargs):
     else:
         entrar_facebook(scrapper, user)
 
-    configurar_idioma()
 
     scrapper.wait.until(ec.any_of(
         ec.visibility_of_element_located((By.CSS_SELECTOR, 'input#m_login_email')),
