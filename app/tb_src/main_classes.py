@@ -136,17 +136,17 @@ class scrapping():
 
             self.driver.scrapper = self
         
-        os.environ["MONGO_URL"] = os.environ.get("MONGO_HOST")
-        self._iniciar_BD(os.environ["MONGO_URL"])
-        # if not "MONGO_URL" in os.environ and os.name == "nt": #
-        #     self._iniciar_BD("mongodb://localhost:27017") #
+        # os.environ["MONGO_URL"] = os.environ.get("MONGO_HOST")
+        # self._iniciar_BD(os.environ["MONGO_URL"])
+        if not "MONGO_URL" in os.environ and os.name == "nt": #
+            self._iniciar_BD("mongodb://localhost:27017") #
 
-        # else:
-        #     if os.environ.get("MONGO_URL"):
-        #         self._iniciar_BD(os.environ.get("MONGO_URL"))
+        else:
+            if os.environ.get("MONGO_URL"):
+                self._iniciar_BD(os.environ.get("MONGO_URL"))
             
-        #     else:
-        #         self.MONGO_URL = None
+            else:
+                self.MONGO_URL = None
 
         
         
