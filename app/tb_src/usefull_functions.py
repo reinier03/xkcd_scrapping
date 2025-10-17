@@ -691,18 +691,19 @@ def ver_lista_publicaciones(m, scrapper , bot: telebot.TeleBot, indice = 0, usua
     if isinstance(m, telebot.types.CallbackQuery):
         m = m.message
 
-    if scrapper.temp_dict[usuario_info].get("obj_publicacion"):
-        if len(scrapper.temp_dict[usuario_info].get("obj_publicacion")) >= scrapper.entrada.obtener_usuario(usuario_info).plan.publicaciones and not scrapper.entrada.obtener_usuario(usuario_info).plan.publicaciones == True:
-            bot.send_message(usuario_info, "Has seleccionado las publicaciones: {}\n\n¿Publicarás las seleccionadas, volverás a seleccionar o cancelarás el proceso de publicación?".format(", ".join(list(map(lambda obj_publicacion: "<b>" + obj_publicacion.titulo + "</b>", scrapper.temp_dict[usuario_info].get("obj_publicacion"))))), reply_markup=InlineKeyboardMarkup(
-                [
-                    [InlineKeyboardButton("✅ Publicar Seleccionadas", callback_data="publicar/elegir/publicar")],
-                    [InlineKeyboardButton("Volver a seleccionar publicaciones", callback_data="publicar/seleccionar/clear")],
-                    [InlineKeyboardButton("Cancelar Publicación", callback_data="cancel")],
-                ]
-            ))
+    if scrapper.temp_dict.get(usuario_info):
+        if scrapper.temp_dict[usuario_info].get("obj_publicacion") and not scrapper.temp_dict[usuario_info].get("if_cancelar"):
+            if len(scrapper.temp_dict[usuario_info].get("obj_publicacion")) >= scrapper.entrada.obtener_usuario(usuario_info).plan.publicaciones and not scrapper.entrada.obtener_usuario(usuario_info).plan.publicaciones == True:
+                bot.send_message(usuario_info, "Has seleccionado las publicaciones: {}\n\n¿Publicarás las seleccionadas, volverás a seleccionar o cancelarás el proceso de publicación?".format(", ".join(list(map(lambda obj_publicacion: "<b>" + obj_publicacion.titulo + "</b>", scrapper.temp_dict[usuario_info].get("obj_publicacion"))))), reply_markup=InlineKeyboardMarkup(
+                    [
+                        [InlineKeyboardButton("✅ Publicar Seleccionadas", callback_data="publicar/elegir/publicar")],
+                        [InlineKeyboardButton("Volver a seleccionar publicaciones", callback_data="publicar/seleccionar/clear")],
+                        [InlineKeyboardButton("Cancelar Publicación", callback_data="cancel")],
+                    ]
+                ))
 
 
-            return
+                return
     
     #para asegurarme de que el índice a la siguiente lista exista...
     if indice + cantidad_publicaciones_mostrar > len(scrapper.entrada.obtener_usuario(usuario_info).publicaciones):
