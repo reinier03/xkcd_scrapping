@@ -101,20 +101,20 @@ if scrapper.admin:
 
 
 #para evitar repeticion
-@bot.middleware_handler()
-def cmd_middleware(bot: telebot.TeleBot, update: telebot.types.Update):
-    global scrapper
+# @bot.middleware_handler()
+# def cmd_middleware(bot: telebot.TeleBot, update: telebot.types.Update):
+#     # global scrapper
 
-    # if update.message:
-    #     scrapper.entrada.get_caducidad(update.message.from_user.id, scrapper)
+#     # if update.message:
+#     #     scrapper.entrada.get_caducidad(update.message.from_user.id, scrapper)
 
-    # elif update.callback_query.message:
-    #     scrapper.entrada.get_caducidad(update.callback_query.message.from_user.id, scrapper
+#     # elif update.callback_query.message:
+#     #     scrapper.entrada.get_caducidad(update.callback_query.message.from_user.id, scrapper
 
     
 
 
-    return
+#     return
 
 
 

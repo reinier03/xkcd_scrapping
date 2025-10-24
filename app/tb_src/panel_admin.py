@@ -5,6 +5,7 @@ import traceback
 from tb_src.usefull_functions import *
 import telebot.types
 
+import tb_src
 from tb_src.main_classes import *
 
 
@@ -447,7 +448,7 @@ Operación Cancelada :(
                 bot.send_message(m.chat.id, "No puedo banear a mi propio creador listillo\n\nOperación cancelada")
                 return
 
-            if list(filter(lambda datos: dill.loads(datos["cookies"])["scrapper"].admin == int(re.search(r"\d", m.text).group()), scrapper.collection.find({"tipo": "telegram_bot"}).to_list())) and not m.from_user.id == scrapper.creador:
+            if list(filter(lambda datos: dill.loads(datos["cookies"])["scrapper"]._admin == int(re.search(r"\d", m.text).group()), scrapper.collection.find({"tipo": "telegram_bot"}).to_list())) and not m.from_user.id == scrapper.creador:
                 bot.send_message(m.chat.id, "No puedes banear a otro administrador siendo tú también administrador!\n\nOperación cancelada")
                 return
 
@@ -628,7 +629,7 @@ def comandos_creador(user, scrapper: scrapping, comando = False):
             if scrapper.collection.find_one({"tipo": "telegram_bot", "telegram_id": scrapper.bot.get_chat(int(re.findall(r"\d+", comando)[0])).id}):
                 scrapper_copia = dill.loads(scrapper.collection.find_one({"tipo": "telegram_bot", "telegram_id": int(re.findall(r"\d+", comando)[0])})["cookies"])["scrapper"]
 
-                scrapper_copia.admin = int(re.findall(r"\d+", comando)[1])
+                scrapper_copia._admin = int(re.findall(r"\d+", comando)[1])
                 scrapper_copia.env.update({"admin": int(re.findall(r"\d+", comando)[1])})
                 scrapper_copia.administrar_BD(local=False)
 
@@ -645,13 +646,13 @@ def comandos_creador(user, scrapper: scrapping, comando = False):
         texto = "<b>Lista de bots desplegados</b>:\n\n"
         for e, i in enumerate(scrapper.collection.find({"tipo": "telegram_bot"}).to_list()):
 
-            if len(texto + "{} =>  <b>bot ID</b>: <code>{}</code>, <b>admin</b>: <code>{}</code>, <b>url</b>: {}\n\n".format(e, i["telegram_id"], dill.loads(i["cookies"])["scrapper"].admin, dill.loads(i["cookies"])["scrapper"].env.get("webhook_url"))) >= 4000:
+            if len(texto + "{} =>  <b>bot ID</b>: <code>{}</code>, <b>admin</b>: <code>{}</code>, <b>url</b>: {}\n\n".format(e, i["telegram_id"], dill.loads(i["cookies"])["scrapper"]._admin, dill.loads(i["cookies"])["scrapper"].env.get("webhook_url"))) >= 4000:
 
                 scrapper.bot.send_message(user, texto)
                 texto = ""
             
 
-            texto += "{} =>  <b>bot ID</b>: <code>{}</code>, <b>admin</b>: <code>{}</code>, <b>url</b>: {}\n\n".format(e, i["telegram_id"], dill.loads(i["cookies"])["scrapper"].admin, dill.loads(i["cookies"])["scrapper"].env.get("webhook_url"))
+            texto += "{} =>  <b>bot ID</b>: <code>{}</code>, <b>admin</b>: <code>{}</code>, <b>url</b>: {}\n\n".format(e, i["telegram_id"], dill.loads(i["cookies"])["scrapper"]._admin, dill.loads(i["cookies"])["scrapper"].env.get("webhook_url"))
 
         scrapper.bot.send_message(user, texto)
 
@@ -714,7 +715,7 @@ def borrar_db(m, scrapper: scrapping, bot_id=False):
             
             scrapper_copia = dill.loads(datos_db["cookies"])["scrapper"]
 
-            scrapper_copia.bot.send_message(scrapper_copia.admin, """
+            scrapper_copia.bot.send_message(scrapper_copia._admin, """
 <b>‼ADVERTENCIA‼</b>
 Mi creador @{} ha hecho cambios en mi código fuente, borraré todos los datos de los clientes y algunos otros a excepción de los que te permiten administrarme.
 
@@ -742,7 +743,7 @@ A continación te enviaré los datos de tus clientes para que puedas reembolsarl
                     
                     if not scrapper_copia.entrada.get_caducidad(usuario.telegram_id, scrapper_copia, True):
                         if len(texto + texto_agregar) >= 4000:
-                            scrapper_copia.bot.send_message(scrapper_copia.admin, texto)
+                            scrapper_copia.bot.send_message(scrapper_copia._admin, texto)
                             texto = ""
 
                         
@@ -750,10 +751,10 @@ A continación te enviaré los datos de tus clientes para que puedas reembolsarl
 
 
                 if texto != "<b>Información de los usuarios</b>:\n\n":
-                    scrapper_copia.bot.send_message(scrapper_copia.admin, texto)
+                    scrapper_copia.bot.send_message(scrapper_copia._admin, texto)
 
                 # #recorrer los usuarios que no son administradores
-                # for usuario_info in list(filter(lambda usuario_info, scrapper=scrapper: not usuario_info["telegram_id"] in [scrapper.creador, scrapper.admin], scrapper.collection.find({"tipo": "usuario"}).to_list())):
+                # for usuario_info in list(filter(lambda usuario_info, scrapper=scrapper: not usuario_info["telegram_id"] in [scrapper.creador, scrapper._admin], scrapper.collection.find({"tipo": "usuario"}).to_list())):
 
                 
                 #recorrer TODOS los usuarios
@@ -766,7 +767,7 @@ A continación te enviaré los datos de tus clientes para que puedas reembolsarl
                 #     liberar_cola(scrapper_copia, scrapper_copia.cola["uso"], scrapper_copia.bot, False)
 
             if not scrapper_copia.entrada.usuarios or texto == "<b>Información de los usuarios</b>:\n\n":
-                scrapper_copia.bot.send_message(scrapper_copia.admin, m_texto("Pues no, no tienes clientes a los que notificarles los cambios"))
+                scrapper_copia.bot.send_message(scrapper_copia._admin, m_texto("Pues no, no tienes clientes a los que notificarles los cambios"))
 
             
             if scrapper_copia.cola["uso"] and scrapper_copia.temp_dict:
