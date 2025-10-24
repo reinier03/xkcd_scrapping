@@ -309,7 +309,7 @@ def agregar_usuario(m, bot: telebot.TeleBot, scrapper: scrapping, usuario_client
             tiempo += int(re.search(r"\d+d", m.text).group()) * 24 * 60 * 60
 
         if re.search(r"\d+m", m.text):
-            tiempo += int(re.search(r"\d+h", m.text).group()) * 60 
+            tiempo += int(re.search(r"\d+m", m.text).group()) * 60 
 
 
         tiempo += time.time()
@@ -319,6 +319,8 @@ def agregar_usuario(m, bot: telebot.TeleBot, scrapper: scrapping, usuario_client
     msg = bot.send_message(m.chat.id, "{}".format(Planes_para_comprar().show()), reply_markup=telebot.types.ReplyKeyboardMarkup(True, True).add(*[KeyboardButton(i.__class__.__name__) for i in Planes_para_comprar().lista_planes], row_width=2).row("Cancelar Operación"))
 
     bot.register_next_step_handler(msg, agregar_usuario_set_plan, bot, scrapper, usuario_cliente, tiempo)
+
+    return
 
 def agregar_usuario_set_plan(m, bot, scrapper: scrapping, usuario_cliente, tiempo):
     

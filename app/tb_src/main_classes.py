@@ -546,6 +546,7 @@ class scrapping():
                     ec.visibility_of_element_located((By.CSS_SELECTOR, "body"))
                 ))
 
+
             self.guardar_datos()
 
             return True
@@ -555,20 +556,20 @@ class scrapping():
             self.driver.refresh()
             return False
 
-    def load(scrapper, url):
+    def load(self, url):
 
         
         if os.name == "nt":
             try:
-                scrapper.driver.get(url)
+                self.driver.get(url)
             except:
                 pass
             
 
-            WebDriverWait(scrapper.driver, 500).until(ec.visibility_of_element_located((By.CSS_SELECTOR, "body")))
+            WebDriverWait(self.driver, 500).until(ec.visibility_of_element_located((By.CSS_SELECTOR, "body")))
 
         else:
-            scrapper.driver.get(url)
+            self.driver.get(url)
                 
         
         

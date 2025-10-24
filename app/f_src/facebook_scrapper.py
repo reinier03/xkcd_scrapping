@@ -75,13 +75,19 @@ def esperar(scrapper: scrapping, etiqueta, elementos, selector="css", intentos=2
                 contador += 1
                 time.sleep(5)
 
-def configurar_idioma():
+def configurar_idioma(scrapper: scrapping, user: int):
+    scrapper.wait.until(ec.visibility_of_element_located((By.CSS_SELECTOR, 'body')))
+
     try:
         scrapper.wait_s.until(ec.visibility_of_element_located((By.XPATH, '//*[contains(text(), "English")]')))
 
     except:
         #clickear en el elemento del idioma
-        scrapper.wait.until(ec.visibility_of_element_located((By.XPATH, '//*[contains(text(), "{}")]'.format(re.search(r"\w+ [(]\D+[)]", scrapper.find_element(By.CSS_SELECTOR, "body").text).group().split("\n")[0])))).click()
+        try:
+            scrapper.wait_s.until(ec.visibility_of_element_located((By.XPATH, '//*[contains(text(), "{}")]'.format(re.search(r"\w+ [(]\D+[)]", scrapper.find_element(By.CSS_SELECTOR, "body").text).group().split("\n")[0])))).click()
+
+        except:
+            return False
 
         scrapper.wait.until(ec.visibility_of_element_located((By.XPATH, '//*[contains(text(), "English (US)")]')))
         scrapper.find_element(By.XPATH, '//*[contains(text(), "English (US)")]/..').click()
@@ -134,17 +140,24 @@ def entrar_facebook(scrapper: scrapping, user, cargar_loguin = False):
     if scrapper.temp_dict[user]["res"].text in ["I already have an account", "Ya tengo una cuenta"]:
     
         #A veces aparecerá una presentacion de unirse a facebook, le daré a que ya tengo una cuenta...
-        configurar_idioma()
+        configurar_idioma(scrapper, user)
 
-        scrapper.wait_s.until(ec.any_of(
+        scrapper.temp_dict[user]["res"] = scrapper.wait_s.until(ec.any_of(
             ec.visibility_of_element_located((By.CSS_SELECTOR, "input#m_login_email")),
             ec.visibility_of_element_located((By.XPATH, '//*[contains(text(), "I already have an account")]')),
             ec.visibility_of_element_located((By.XPATH, '//*[contains(text(), "Ya tengo una cuenta")]'))
-        )).click()
+        ))
+
+        if scrapper.temp_dict[user]["res"].get_attribute("id"):
+            if scrapper.temp_dict[user]["res"].get_attribute("id") == "m_login_email":
+                return True
+
+        scrapper.temp_dict[user]["res"].click()
+        return entrar_facebook(scrapper, user, cargar_loguin)
 
 
 
-    if scrapper.temp_dict[user]["res"].text.strip() in ["Usar otro perfil", "Use another profile"]:
+    elif scrapper.temp_dict[user]["res"].text.strip() in ["Usar otro perfil", "Use another profile"]:
         if not scrapper.temp_dict[user].get("perfil_seleccionado"):
            scrapper.temp_dict[user]["res"].click() 
            scrapper.wait.until(ec.visibility_of_element_located((By.CSS_SELECTOR, 'input#m_login_email')))
@@ -162,13 +175,20 @@ def loguin(scrapper: scrapping, user, bot, **kwargs):
 
     
     #en caso de que hayan cookies y haya un perfil seleccionado para publicar pero no estemos en la ventana de login
-    if scrapper.driver.get_cookies() and scrapper.temp_dict[user].get("perfil_seleccionado"):    
+    if scrapper.temp_dict[user].get("perfil_seleccionado"):    
 
         
         scrapper.temp_dict[user]["res"] = seleccionar_perfil(scrapper, user)
 
-        if not scrapper.temp_dict[user]["res"][0]:
-            del scrapper.temp_dict[user]["perfil_seleccionado"]
+        if not scrapper.temp_dict[user]["res"][0] and scrapper.temp_dict[user]["res"][1] == "contrasena incorrecta":
+
+            return loguin_cero(scrapper, user, bot)
+        
+
+        elif not scrapper.temp_dict[user]["res"][0] and isinstance(scrapper.temp_dict[user]["res"][1], WebElement):
+            
+            scrapper.temp_dict[user]["user"] = scrapper.entrada.obtener_usuario(user).obtener_cuenta(scrapper.temp_dict[user].get("perfil_seleccionado")).usuario
+            scrapper.temp_dict[user]["password"] = scrapper.entrada.obtener_usuario(user).obtener_cuenta(scrapper.temp_dict[user].get("perfil_seleccionado")).contrasena
             
             return loguin_cero(scrapper, user, bot)
 
@@ -204,6 +224,7 @@ def loguin_cero(scrapper: scrapping, user, bot : telebot.TeleBot, **kwargs):
     else:
         entrar_facebook(scrapper, user)
 
+    configurar_idioma(scrapper, user)
 
     scrapper.wait.until(ec.any_of(
         ec.visibility_of_element_located((By.CSS_SELECTOR, 'input#m_login_email')),
@@ -320,10 +341,18 @@ def loguin_cero(scrapper: scrapping, user, bot : telebot.TeleBot, **kwargs):
             ec.visibility_of_element_located((By.XPATH, '//*[contains(text(), "incorrect")]'))
         )):
             
-            bot.send_photo(user, telebot.types.InputFile(make_screenshoot(scrapper.driver, user)), "Al parecer los datos que me has enviado son incorrectos\nTe he enviado una captura de lo que me muestra Facebook\n\nPor favor ingrese <b>correctamente</b> sus datos otra vez...")
-            del scrapper.temp_dict[user]["password"]
-            del scrapper.temp_dict[user]["user"]
-            return loguin_cero(scrapper, user, bot)
+            if scrapper.temp_dict[user].get("perfil_seleccionado"):
+                scrapper.bot.send_message(user, m_texto("ERROR Los datos que tenía de esta cuenta no funcionan...,cambiaste algo?\nLos datos son los siguiente:\n\nUsuario: <code>{}</code>\nContraseña <code>{}</code>\n\nA continuación haré un loguin desde cero, introduce nuevos datos o los datos de dicha cuenta actualizados").format(scrapper.entrada.obtener_usuario(user).obtener_cuenta(scrapper.temp_dict[user].get("perfil_seleccionado")).usuario ,scrapper.entrada.obtener_usuario(user).obtener_cuenta(scrapper.temp_dict[user].get("perfil_seleccionado")).contrasena))
+
+                del scrapper.temp_dict[user]["password"]
+                del scrapper.temp_dict[user]["user"]
+                return loguin_cero(scrapper, user, bot)
+
+            else:
+                bot.send_photo(user, telebot.types.InputFile(make_screenshoot(scrapper.driver, user)), "Al parecer los datos que me has enviado son incorrectos\nTe he enviado una captura de lo que me muestra Facebook\n\nPor favor ingrese <b>correctamente</b> sus datos otra vez...")
+                del scrapper.temp_dict[user]["password"]
+                del scrapper.temp_dict[user]["user"]
+                return loguin_cero(scrapper, user, bot)
             
     except:
         pass
@@ -428,11 +457,10 @@ def seleccionar_perfil(scrapper : scrapping, user):
                         ec.visibility_of_element_located((By.XPATH, '//*[contains(text(), "Wrong password")]'))
                     ))
 
-                    scrapper.bot.send_message(user, m_texto("ERROR La contraseña que tengo de esta cuenta al parecer ya no funciona, la cambiaste?\nLa contraseña que tengo es esta:\n\n{}").format(scrapper.entrada.obtener_usuario(user).obtener_cuenta(scrapper.temp_dict[user].get("perfil_seleccionado")).contrasena))
-
-                    liberar_cola()
-
-                    raise Exception("no")
+                    scrapper.bot.send_message(user, m_texto("ERROR La contraseña que tengo de esta cuenta al parecer ya no funciona, la cambiaste?\nLa contraseña que tengo es esta: <code>{}</code>\n\nA continuación haré un loguin desde cero, introduce nuevos datos o los datos de dicha cuenta actualizados").format(scrapper.entrada.obtener_usuario(user).obtener_cuenta(scrapper.temp_dict[user].get("perfil_seleccionado")).contrasena))
+                    
+                    del scrapper.temp_dict[user]["perfil_seleccionado"]
+                    return (False, "contrasena incorrecta")
 
                 except:
                     pass
@@ -1799,6 +1827,15 @@ def elegir_cuenta(scrapper: scrapping, user, bot: telebot.TeleBot , ver_actual=F
 
             scrapper.administrar_BD(user=user)
 
+        if scrapper.entrada.obtener_usuario(user).obtener_cuenta(scrapper.temp_dict[user]["perfil_seleccionado"]).contrasena != scrapper.temp_dict[user]["password"] or scrapper.entrada.obtener_usuario(user).obtener_cuenta(scrapper.temp_dict[user]["perfil_seleccionado"]).usuario != scrapper.temp_dict[user]["user"]:
+
+            instancia_cuenta = scrapper.entrada.obtener_usuario(user).obtener_cuenta(scrapper.temp_dict[user]["perfil_seleccionado"])
+
+            instancia_cuenta.contrasena = scrapper.temp_dict[user]["password"]
+            instancia_cuenta.usuario = scrapper.temp_dict[user]["user"]
+
+            scrapper.administrar_BD(user=user)
+
         return ("ok", scrapper.temp_dict[user]["perfil_seleccionado"])
         
     else:
@@ -1814,6 +1851,15 @@ def elegir_cuenta(scrapper: scrapping, user, bot: telebot.TeleBot , ver_actual=F
                 usuario = scrapper.entrada.obtener_usuario(user)
 
             usuario.cuentas.append(Cuenta(scrapper.temp_dict[user]["cuentas"][0].text.split("\n")[0], scrapper.temp_dict[user]["user"], scrapper.temp_dict[user]["password"], scrapper.temp_dict[user]["perfiles"])) 
+
+            scrapper.administrar_BD(user=user)
+
+        if scrapper.entrada.obtener_usuario(user).obtener_cuenta(scrapper.temp_dict[user]["cuentas"][0].text.split("\n")[0]).contrasena != scrapper.temp_dict[user]["password"] or scrapper.entrada.obtener_usuario(user).obtener_cuenta(scrapper.temp_dict[user]["cuentas"][0].text.split("\n")[0]).usuario != scrapper.temp_dict[user]["user"]:
+
+            instancia_cuenta = scrapper.entrada.obtener_usuario(user).obtener_cuenta(scrapper.temp_dict[user]["perfil_seleccionado"])
+
+            instancia_cuenta.contrasena = scrapper.temp_dict[user]["password"]
+            instancia_cuenta.usuario = scrapper.temp_dict[user]["user"]
 
             scrapper.administrar_BD(user=user)
 
