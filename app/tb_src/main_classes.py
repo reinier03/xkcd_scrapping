@@ -284,10 +284,14 @@ class scrapping():
         texto = "Clase |scrapping| variables:\n\n"
         for k, v in self.__dict__.items():
             if k == "temp_dict":
-                for usuario, diccionario in v[self.bot.user.id].items():
+                if not v:
+                    texto += "scrapping.temp_dict  => VACÍO\n\n"
+                    continue
+
+                for usuario, diccionario in v.items():
                     texto += "scrapping.temp_dict.{}:\n".format(usuario)
                     for diccionario_key, diccionario_value in diccionario.items():
-                        texto +="scrapping.temp_dict.{}.{}.{}  =>  {}\n\n".format(self.bot.user.id, usuario, diccionario_key, diccionario_value)
+                        texto +="scrapping.temp_dict.{}.{}  =>  {}\n\n".format(usuario, diccionario_key, diccionario_value)
 
                     
                 texto += "\n"
@@ -468,20 +472,10 @@ class scrapping():
         #     return True
             
         if "Facebook is better on the app" in res.text:
-
-            res = self.driver.find_element(By.XPATH, '//*[contains(text(), "Not now")]/../../..')
-
-            for i in range(5):
-                try:
-                    res.click()
-                    self.wait.until(ec.visibility_of_element_located((By.CSS_SELECTOR, "body")))
-                    break
-                except:
-                    if i >= 4:
-                        raise Exception("No pude sacar el popup de Facebook")
-
-            return True
-
+            
+            self.wait.until(ec.visibility_of_element_located((By.CSS_SELECTOR, "body")))
+            res = self.driver.find_element(By.XPATH, '//*[contains(text(), "Not now")]')
+            click_padre(res, 7)
 
         elif "Facebook es mejor en la app" in res.text:
 
@@ -490,16 +484,7 @@ class scrapping():
                 ec.visibility_of_element_located((By.XPATH, '//*[contains(text(), "Ahora no")]/../../..')),
                 ))    
 
-            for i in range(5):
-                try:
-                    res.click()
-                    
-                    self.wait.until(ec.visibility_of_element_located((By.CSS_SELECTOR, "body")))
-
-                    break
-                except:
-                    if i >= 4:
-                        raise Exception("No pude sacar el popup de Facebook")
+            click_padre(res, 7)
 
             return True
 
@@ -529,7 +514,8 @@ class scrapping():
             
             if not res.text in ["Usar otro perfil", "Use another profile"]:
 
-                res.find_element(By.XPATH, "../../..").click()
+                click_padre(res)
+
 
                 res = WebDriverWait(self.driver, self.wait._timeout).until(ec.any_of(
                     ec.visibility_of_element_located((By.XPATH, '//*[contains(text(), "Yes")]')),
@@ -538,7 +524,7 @@ class scrapping():
 
                 url_actual = self.driver.current_url
 
-                res.find_element(By.XPATH, '../../../../..').click()
+                click_padre(res, 7)
 
                     
                 WebDriverWait(self.driver, self.wait._timeout).until(ec.all_of(
@@ -1086,13 +1072,13 @@ class scrapping():
                 
                 
 
-                self.bot.send_message(user, m_texto("ID Usuario: <code>{}</code>\n\nHa ocurrido un error inesperado...Le notificaré al administrador.\n\n<blockquote><b>Tu operación ha sido cancelada</b> debido a esto, lamentamos las molestias</blockquote>\n\n👇Igualmente si tienes alguna duda, contacta con él👇\n\n".format(user)), reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("Hablar con el Administrador ", "https://t.me/{}".format(self.bot.get_chat(self.admin).username))]]))
+                self.bot.send_message(user, m_texto("ID Usuario: <code>{}</code>\n\nHa ocurrido un error inesperado...Le notificaré a mi creador.\n\n<blockquote><b>Tu operación ha sido cancelada</b> debido a esto, lamentamos las molestias</blockquote>\n\n👇Igualmente si tienes alguna duda, contacta con él👇\n\n".format(user)), reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("Hablar con el Creador ", "https://t.me/{}".format(self.bot.get_chat(self.creador).username))]]))
 
                 print("Ha ocurrido un error! Revisa el bot, te dará más detalles")
 
-                self.bot.send_photo(self.admin, telebot.types.InputFile(make_screenshoot(self.driver, user)), caption="Captura de error del usuario: <code>{}</code>".format(user))
+                self.bot.send_photo(self.creador, telebot.types.InputFile(make_screenshoot(self.driver, user)), caption="Captura de error del usuario: <code>{}</code>".format(user))
 
-                self.bot.send_message(self.admin, "Ha ocurrido un error inesperado! ID usuario: {}\n\n<blockquote expandable>{}</blockquote>".format(user,str(self.temp_dict[user]["res"])))
+                self.bot.send_message(self.creador, "Ha ocurrido un error inesperado! ID usuario: {}\n\n<blockquote expandable>{}</blockquote>".format(user,str(self.temp_dict[user]["res"])))
 
                 
         except:

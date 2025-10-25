@@ -79,29 +79,40 @@ def mostrar_info_usuario(chat_destino, usuario_evaluar, bot: telebot.TeleBot):
 
     return
 
-def debug_txt(scrapper = False):
+def debug_txt(scrapper, user):
 
+    if scrapper.temp_dict[user].get("tiempo_debug") and scrapper.creador_dict.get("debug_mode"):
+        
+        scrapper.temp_dict[user]["res"] = "\n".join(scrapper.temp_dict[user]["tiempo_debug"])
 
-    if scrapper:
-        if scrapper.temp_dict.get(scrapper.admin):
-
-            if scrapper.temp_dict[scrapper.admin].get("mostrar_tiempo_debug") and scrapper.temp_dict[scrapper.admin].get("tiempo_debug"):
-                
-                scrapper.temp_dict[scrapper.admin]["res"] = "\n".join(scrapper.temp_dict[scrapper.admin]["tiempo_debug"])
-
-                with open(os.path.join(user_folder(scrapper.admin), "tiempo_publicacion_" + str(scrapper.admin) + ".txt"), "w", encoding="utf-8") as file:
-                    file.write("Log de publicación\nID del usuario: {}\n\n{}".format(scrapper.admin, scrapper.temp_dict[scrapper.admin]["res"]))
-                    
-                with open(os.path.join(user_folder(scrapper.admin), "tiempo_publicacion_" + str(scrapper.admin) + ".txt"), "r", encoding="utf-8") as file:
-                    scrapper.bot.send_document(scrapper.admin, telebot.types.InputFile(file, file_name="tiempo_publicacion_" + str(scrapper.admin) + ".txt"), caption = "Ha ocurrido un error inesperado! ID usuario: {}".format(scrapper.admin))
+        with open(os.path.join(user_folder(user), "tiempo_publicacion_" + str(user) + ".txt"), "w", encoding="utf-8") as file:
+            file.write("Log de publicación\nID del usuario: {}\n\n{}".format(user, scrapper.temp_dict[user]["res"]))
             
-                os.remove(os.path.join(user_folder(scrapper.admin), "tiempo_publicacion_" + str(scrapper.admin) + ".txt"))
-                del scrapper.temp_dict[scrapper.admin]["mostrar_tiempo_debug"]
-                del scrapper.temp_dict[scrapper.admin]["tiempo_debug"]
+        with open(os.path.join(user_folder(user), "tiempo_publicacion_" + str(user) + ".txt"), "r", encoding="utf-8") as file:
+            scrapper.bot.send_document(user, telebot.types.InputFile(file, file_name="tiempo_publicacion_" + str(user) + ".txt"), caption = "Ha ocurrido un error inesperado! ID usuario: {}".format(user))
+    
+        os.remove(os.path.join(user_folder(scrapper.admin), "tiempo_publicacion_" + str(scrapper.admin) + ".txt"))
+        del scrapper.temp_dict[user]["mostrar_tiempo_debug"]
+        del scrapper.temp_dict[user]["tiempo_debug"]
 
 
     return
 
+
+def click_padre(elemento: WebElement, intentos = 7):
+    contador = 0
+    dar_click = elemento
+    while True:
+        try:
+            dar_click.click()
+            break
+        except:
+            if contador >= intentos:
+                raise Exception("No he podido clickear en el padre de: {}".format(elemento.tag_name))
+            
+            else:
+                contador += 1
+                dar_click = dar_click.find_element(By.XPATH, "..")
 
 def borrar_elemento(scrapper , elemento):
 
@@ -691,6 +702,7 @@ def ver_lista_publicaciones(m, scrapper , bot: telebot.TeleBot, indice = 0, usua
     if isinstance(m, telebot.types.CallbackQuery):
         m = m.message
 
+    #para controlar si el usuario ha seleccionado todos los que admite su plan
     if scrapper.temp_dict.get(usuario_info):
         if scrapper.temp_dict[usuario_info].get("obj_publicacion") and not scrapper.temp_dict[usuario_info].get("if_cancelar"):
             if len(scrapper.temp_dict[usuario_info].get("obj_publicacion")) >= scrapper.entrada.obtener_usuario(usuario_info).plan.publicaciones and not scrapper.entrada.obtener_usuario(usuario_info).plan.publicaciones == True:

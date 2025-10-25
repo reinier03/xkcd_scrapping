@@ -647,6 +647,7 @@ def cmd_panel(m: telebot.types.Message):
                 # [InlineKeyboardButton("⛔ Administrar Entrada", callback_data="c/a/pass")],
                 [InlineKeyboardButton("🔁 Cambiar tiempo repetición", callback_data="c/d")],
                 [InlineKeyboardButton("👀 Ver información", callback_data="c/a/w")],
+                [InlineKeyboardButton("Habilitar el modo debug", callback_data="c/a/debug")]
                 # [InlineKeyboardButton("♻ Reiniciar Bot", callback_data="c/a/reload")]
                 # [InlineKeyboardButton("👥 Administrar Usuarios", callback_data="c/u")]
             ]))
@@ -695,7 +696,6 @@ def cual_publicar(c):
             callbacks.mensaje_elegir_publicacion(c.from_user.id, scrapper)
 
         else:
-
             if not scrapper.temp_dict[c.from_user.id].get("obj_publicacion"):
                 scrapper.temp_dict[c.from_user.id]["obj_publicacion"] = [scrapper.entrada.obtener_usuario(c.from_user.id).publicaciones[int(re.search(r"\d+", c.data).group())]]
 
@@ -731,6 +731,15 @@ def cmd_panel_usuario(c):
 
     elif c.data == "c/a/pass":
         panel_admin.entrada(c, scrapper)
+
+    elif c.data.startswith("c/a/debug"):
+        if scrapper.creador_dict.get("debug_mode"):
+            scrapper.creador_dict = {"debug_mode": False}
+            bot.send_message(c.message.chat.id, "Modo debug desactivado")
+
+        else:
+            scrapper.creador_dict = {"debug_mode": True}
+            bot.send_message(c.message.chat.id, "Modo debug activado")
 
     elif c.data == "c/a/d":
         panel_admin.cambiar_delay(c, scrapper)
@@ -941,7 +950,12 @@ if scrapper.cola["uso"] and scrapper.temp_dict.get(scrapper.cola["uso"]):
     
     scrapper.interrupcion = True #Esta variable la defino como flag para omitir todos los mensajes del bot hasta el punto donde estaba y que no sea repetitivo para el usuario
 
-    print("Al parecer, habia un proceso de publicación activo, a continuación lo reanudaré")
+    if os.name == "nt":
+        print("Al parecer, habia un proceso de publicación activo, a continuación lo reanudaré")
+
+    else:
+        bot.send_message(scrapper.creador, "Al parecer, habia un proceso de publicación activo, a continuación lo reanudaré")
+
     threading.Thread(name="Hilo usuario: {}".format(scrapper.cola["uso"]), target=scrapper.start_publish, args=(scrapper.cola["uso"],)).start()
 
 else:

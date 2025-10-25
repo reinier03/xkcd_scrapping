@@ -67,7 +67,6 @@ def watch(c, scrapper: scrapping):
 
 
     if c.data == "c/a/w/user":
-            
 
         if scrapper.entrada.pasar == False:
             if scrapper.cola["uso"]:
@@ -79,13 +78,15 @@ def watch(c, scrapper: scrapping):
         elif scrapper.entrada.pasar:
             usuarios = "<u>Lista de usuarios que tienen permiso de usarme</u>:\n\n"
 
-            for usuario in scrapper.entrada.obtener_usuarios():
-                if len(usuarios + "{}<b>ID</b>: <code>{}</code>, <b>username</b>: {}, <b>plan<b>: {}\n\n".format("▶ " if i == scrapper.cola["uso"] else "", usuario.telegram_id, "@" + str(bot.get_chat(usuario.telegram_id).username) if bot.get_chat(usuario.telegram_id).username else "None", usuario.plan.__class__.__name__ )) > 4000:
+            for usuario in scrapper.entrada.obtener_usuarios(True, False):
+                texto = "{}<b>ID</b>: <code>{}</code>, <b>username</b>: {}, <b>plan</b>: {}\n\n".format("▶ " if usuario.telegram_id == scrapper.cola["uso"] else "", usuario.telegram_id, "@" + str(bot.get_chat(usuario.telegram_id).username) if bot.get_chat(usuario.telegram_id).username else "No tiene", usuario.plan.__class__.__name__ )
+
+                if len(usuarios + texto) > 4000:
 
                     bot.send_message(c.from_user.id, usuarios)
                     usuarios = ""
 
-                usuarios += "{}<b>ID</b>: <code>{}</code>, <b>username</b>: {}, <b>plan<b>: {}\n\n".format("▶ " if i == scrapper.cola["uso"] else "", usuario.telegram_id, "@" + str(bot.get_chat(usuario.telegram_id).username) if bot.get_chat(usuario.telegram_id).username else "None", usuario.plan.__class__.__name__ )
+                usuarios += texto
 
             if usuarios != "<u>Lista de usuarios que tienen permiso de usarme</u>:\n\n":
                 bot.send_message(c.from_user.id, usuarios)

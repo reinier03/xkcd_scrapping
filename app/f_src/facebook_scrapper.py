@@ -1198,7 +1198,11 @@ def publicacion(scrapper: scrapping, bot:telebot.TeleBot, user, load_url=True, c
                     scrapper.temp_dict[user]["publicacion"]["lista_grupos"] = obtener_grupos(scrapper, user)
 
                     click_grupo()
-                    
+
+                    continue
+                
+                if not scrapper.driver.current_url.endswith("groups/"):
+                    scrapper.load("https://m.facebook.com/groups/")
             
         enviar_grupos(scrapper, user, bot, contador, scrapper.temp_dict[user]["publicacion"]["resultados_publicaciones"])
         
@@ -1211,6 +1215,8 @@ def publicacion(scrapper: scrapping, bot:telebot.TeleBot, user, load_url=True, c
         try:
             scrapper.wait.until(ec.visibility_of_element_located((By.CSS_SELECTOR, 'div[role="button"]')))
             ActionChains(scrapper.driver).click(scrapper.find_element(By.CSS_SELECTOR, 'div[role="button"]')).perform()
+
+                    
 
         except:
             scrapper.load("https://m.facebook.com/groups/")
@@ -1675,7 +1681,7 @@ def elegir_cuenta(scrapper: scrapping, user, bot: telebot.TeleBot , ver_actual=F
             scrapper.wait_s.until(ec.url_changes(scrapper.temp_dict[user]["url_actual"]))
 
             if not scrapper.driver.current_url.endswith("bookmarks/"):
-                scrapper.load(scrapper, "https://m.facebook.com/bookmarks/")
+                scrapper.load("https://m.facebook.com/bookmarks/")
 
             # #Elemento de Configuracion de cuenta
             scrapper.wait.until(ec.visibility_of_element_located((By.CSS_SELECTOR, 'div[role="list"]')))
@@ -1932,7 +1938,7 @@ Empezaré a procesar tu petición...
 {}
 </blockquote>
 """.format(
-    "<b>Publicacion(es) a compartir</b>: " + ", ".join(["<b>" + publicacion.titulo + "</b>" for publicacion in scrapper.entrada.obtener_usuario(user).publicaciones]),
+    "<b>Publicacion(es) a compartir</b>: " + ", ".join(["<b>" + publicacion.titulo + "</b>" for publicacion in scrapper.temp_dict[user]["obj_publicacion"]]),
 
     "<b>Perfil(es) en los que compartir</b>: " + scrapper.temp_dict[user].get("perfil_seleccionado") if scrapper.temp_dict[user].get("perfil_seleccionado") else "<b>Perfil(es) en los que compartir</b>: (Se entrará con un perfil nuevo)",
 

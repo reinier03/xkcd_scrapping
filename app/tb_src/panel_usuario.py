@@ -160,7 +160,7 @@ def crear_publicacion_SetTitulo(m, scrapper, bot):
     msg = bot.send_message(m.chat.id, m_texto("Muy Bien, ahora introduce el texto de la publicación\n\nEste texto SI se verá en Facebook, es el texto que estará adjunto a la propia Publicación", True))
 
 
-    bot.register_next_step_handler(msg, crear_publicacion_SetText, scrapper, bot, {"titulo": " ".join(m.text.strip().split()[:1]).replace(" ", "_")})
+    bot.register_next_step_handler(msg, crear_publicacion_SetText, scrapper, bot, {"titulo": " ".join(m.text.strip().split()[:2])[:90]})
 
 def crear_publicacion_SetText(m, scrapper, bot, diccionario_publicacion):
     if m.text == "Cancelar Operacion":
