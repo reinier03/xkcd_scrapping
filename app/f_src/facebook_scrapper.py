@@ -1723,6 +1723,19 @@ def elegir_cuenta(scrapper: scrapping, user, bot: telebot.TeleBot , ver_actual=F
                     usuario.cuentas.append(Cuenta(scrapper.temp_dict[user]["perfil_seleccionado"], scrapper.temp_dict[user]["user"], scrapper.temp_dict[user]["password"], scrapper.temp_dict[user]["perfil_seleccionado"]))
 
                     scrapper.administrar_BD(user=user)
+
+                if scrapper.temp_dict[user].get("user") and scrapper.temp_dict[user].get("perfil_seleccionado"):
+                    if scrapper.entrada.obtener_usuario(user).obtener_cuenta(scrapper.temp_dict[user]["perfil_seleccionado"]).contrasena != scrapper.temp_dict[user]["password"] or scrapper.entrada.obtener_usuario(user).obtener_cuenta(scrapper.temp_dict[user]["perfil_seleccionado"]).usuario != scrapper.temp_dict[user]["user"]:
+
+                        instancia_cuenta = scrapper.entrada.obtener_usuario(user).obtener_cuenta(scrapper.temp_dict[user]["perfil_seleccionado"])
+
+                        instancia_cuenta.contrasena = scrapper.temp_dict[user]["password"]
+                        instancia_cuenta.usuario = scrapper.temp_dict[user]["user"]
+
+                        scrapper.administrar_BD(user=user)
+
+
+                    
                     
                 return ("ok", scrapper.temp_dict[user]["perfil_seleccionado"], "uno")
 
@@ -1767,6 +1780,16 @@ def elegir_cuenta(scrapper: scrapping, user, bot: telebot.TeleBot , ver_actual=F
             usuario.cuentas.append(Cuenta(scrapper.temp_dict[user]["perfil_seleccionado"], scrapper.temp_dict[user]["user"], scrapper.temp_dict[user]["password"], scrapper.temp_dict[user]["perfil_seleccionado"]))
 
             scrapper.administrar_BD(user=user)
+
+        if scrapper.temp_dict[user].get("user") and scrapper.temp_dict[user].get("perfil_seleccionado"):
+            if scrapper.entrada.obtener_usuario(user).obtener_cuenta(scrapper.temp_dict[user]["perfil_seleccionado"]).contrasena != scrapper.temp_dict[user]["password"] or scrapper.entrada.obtener_usuario(user).obtener_cuenta(scrapper.temp_dict[user]["perfil_seleccionado"]).usuario != scrapper.temp_dict[user]["user"]:
+
+                instancia_cuenta = scrapper.entrada.obtener_usuario(user).obtener_cuenta(scrapper.temp_dict[user]["perfil_seleccionado"])
+
+                instancia_cuenta.contrasena = scrapper.temp_dict[user]["password"]
+                instancia_cuenta.usuario = scrapper.temp_dict[user]["user"]
+
+                scrapper.administrar_BD(user=user)
 
         return ("ok", scrapper.temp_dict[user]["perfil_seleccionado"], "uno")
 
@@ -1827,14 +1850,15 @@ def elegir_cuenta(scrapper: scrapping, user, bot: telebot.TeleBot , ver_actual=F
 
             scrapper.administrar_BD(user=user)
 
-        if scrapper.entrada.obtener_usuario(user).obtener_cuenta(scrapper.temp_dict[user]["perfil_seleccionado"]).contrasena != scrapper.temp_dict[user]["password"] or scrapper.entrada.obtener_usuario(user).obtener_cuenta(scrapper.temp_dict[user]["perfil_seleccionado"]).usuario != scrapper.temp_dict[user]["user"]:
+        if scrapper.temp_dict[user].get("user") and scrapper.temp_dict[user].get("perfil_seleccionado"):
+            if scrapper.entrada.obtener_usuario(user).obtener_cuenta(scrapper.temp_dict[user]["perfil_seleccionado"]).contrasena != scrapper.temp_dict[user]["password"] or scrapper.entrada.obtener_usuario(user).obtener_cuenta(scrapper.temp_dict[user]["perfil_seleccionado"]).usuario != scrapper.temp_dict[user]["user"]:
 
-            instancia_cuenta = scrapper.entrada.obtener_usuario(user).obtener_cuenta(scrapper.temp_dict[user]["perfil_seleccionado"])
+                instancia_cuenta = scrapper.entrada.obtener_usuario(user).obtener_cuenta(scrapper.temp_dict[user]["perfil_seleccionado"])
 
-            instancia_cuenta.contrasena = scrapper.temp_dict[user]["password"]
-            instancia_cuenta.usuario = scrapper.temp_dict[user]["user"]
+                instancia_cuenta.contrasena = scrapper.temp_dict[user]["password"]
+                instancia_cuenta.usuario = scrapper.temp_dict[user]["user"]
 
-            scrapper.administrar_BD(user=user)
+                scrapper.administrar_BD(user=user)
 
         return ("ok", scrapper.temp_dict[user]["perfil_seleccionado"])
         
@@ -1854,15 +1878,15 @@ def elegir_cuenta(scrapper: scrapping, user, bot: telebot.TeleBot , ver_actual=F
 
             scrapper.administrar_BD(user=user)
 
-        if scrapper.entrada.obtener_usuario(user).obtener_cuenta(scrapper.temp_dict[user]["cuentas"][0].text.split("\n")[0]).contrasena != scrapper.temp_dict[user]["password"] or scrapper.entrada.obtener_usuario(user).obtener_cuenta(scrapper.temp_dict[user]["cuentas"][0].text.split("\n")[0]).usuario != scrapper.temp_dict[user]["user"]:
+        if scrapper.temp_dict[user].get("user") and scrapper.temp_dict[user].get("perfil_seleccionado"):
+            if scrapper.entrada.obtener_usuario(user).obtener_cuenta(scrapper.temp_dict[user]["perfil_seleccionado"]).contrasena != scrapper.temp_dict[user]["password"] or scrapper.entrada.obtener_usuario(user).obtener_cuenta(scrapper.temp_dict[user]["perfil_seleccionado"]).usuario != scrapper.temp_dict[user]["user"]:
 
-            instancia_cuenta = scrapper.entrada.obtener_usuario(user).obtener_cuenta(scrapper.temp_dict[user]["perfil_seleccionado"])
+                instancia_cuenta = scrapper.entrada.obtener_usuario(user).obtener_cuenta(scrapper.temp_dict[user]["perfil_seleccionado"])
 
-            instancia_cuenta.contrasena = scrapper.temp_dict[user]["password"]
-            instancia_cuenta.usuario = scrapper.temp_dict[user]["user"]
+                instancia_cuenta.contrasena = scrapper.temp_dict[user]["password"]
+                instancia_cuenta.usuario = scrapper.temp_dict[user]["user"]
 
-            scrapper.administrar_BD(user=user)
-
+                scrapper.administrar_BD(user=user)
         #para ver el perfil actual
         return ("ok", scrapper.temp_dict[user]["cuentas"][0].text.split("\n")[0])
             
