@@ -1067,7 +1067,7 @@ class scrapping():
                 
                 if err.args:
                     if err.args[0] == "no" or not self.temp_dict.get(user):
-                        debug_txt(self)
+                        debug_txt(self, user)
                         return
                 
                 
@@ -1107,7 +1107,7 @@ class scrapping():
         
         self.facebook_logout()
 
-        debug_txt(self)
+        debug_txt(self, user)
 
         if self.temp_dict.get(user):
             liberar_cola(self, user, self.bot)
