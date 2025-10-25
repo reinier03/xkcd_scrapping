@@ -852,6 +852,15 @@ def reboot(c):
         os.execv(os.execv(sys.executable, [sys.executable, '"' + __file__ + '"']))
     return
 
+@bot.message_handler(commands="s")
+def cmd_screenshot(m):
+    scrapper.driver.save_screenshot("captura.png")
+
+    bot.send_photo(m.chat.id, telebot.types.InputFile("captura.png", "captura.png"), caption="Captura de la sesión actual")
+
+    os.remove("captura.png")
+
+
 @bot.message_handler(commands=["c"], func=lambda message: message.from_user.id in [scrapper.creador, admin])
 def cmd_command(message):
     try:
