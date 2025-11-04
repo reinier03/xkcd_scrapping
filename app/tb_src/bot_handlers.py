@@ -26,6 +26,7 @@ def get_user(m: telebot.types.Message, bot: telebot.TeleBot , user , info, temp_
     else:
         bot.edit_message_text(kwargs["mensaje_editar"].text + "\n\n<b><u>Contraseña Introducida</u></b>:\n<blockquote>" + texto_reemplazado + "</blockquote>", m.chat.id, kwargs["mensaje_editar"].message_id)
 
+
     bot.delete_message(m.chat.id, m.message_id)
             
     return

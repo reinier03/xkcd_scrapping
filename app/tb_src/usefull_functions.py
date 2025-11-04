@@ -146,25 +146,6 @@ def borrar_elemento(scrapper , elemento):
 
     return 
 
-
-def elemento_click(scrapper, elemento : tuple, intentos = 3):
-
-    for i in range(intentos):
-        
-        try:
-            scrapper.wait_s.until(ec.element_to_be_clickable(elemento))
-            scrapper.find_element(elemento[0], elemento[1]).click()
-
-        except:
-            if i >= intentos -1:
-                raise Exception("No he podido darle click al elemento: {}".format(elemento))
-
-            time.sleep(2)
-                
-
-
-
-
     
 
 def get_time_debug(scrapper, user, info="descripción de operación"):
@@ -364,12 +345,8 @@ def envia_fotos_input(scrapper, user, photo_path):
         ec.visibility_of_element_located((By.XPATH, '//*[@id="screen-root"]/div/div[2]/div[7]')),
     ))
 
+    scrapper.click(scrapper.temp_dict[user]["res"])
 
-    try:
-        scrapper.temp_dict[user]["res"].click()
-    
-    except:
-        ActionChains(scrapper.driver).click(scrapper.temp_dict[user]["res"]).perform()
         
 
     scrapper.find_element(By.XPATH, '//input').send_keys(photo_path)
@@ -399,7 +376,7 @@ def envia_fotos_input(scrapper, user, photo_path):
 
     scrapper.find_element(By.XPATH, '//input').text
 
-    scrapper.find_element(By.CSS_SELECTOR, 'h2').click()
+    scrapper.click(scrapper.find_element(By.CSS_SELECTOR, 'h2'))
 
     time.sleep(1)
 

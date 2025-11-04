@@ -13,7 +13,6 @@ import os
 import telebot
 from telebot.types import *
 from telebot.handler_backends import ContinueHandling
-import urllib3
 import sys
 import dill
 import re
@@ -22,6 +21,13 @@ import threading
 from flask import Flask, request
 import subprocess
 import json
+# import logging
+
+# logging.basicConfig(
+#     filename="bot_logs.txt",
+#     filemode="a",
+#     format="%(asctime)s, funcion: %(funcName)s mensaje: %(message)s ",
+# )
 
 
 
@@ -159,7 +165,7 @@ def cmd_usuario_baneado(m):
         bot.send_message(m.chat.id, m_texto("Actualmente estás <b>baneado</b> (osea, bloqueado de mis servicios)\n\nSi quieres usar mis servicios y crees que esto es injusto, habla con mi creador 👇"), reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("Contactar con mi creador 👨‍💻", "https://t.me/{}".format(bot.get_chat(scrapper.creador).username))]]))
 
 
-@bot.message_handler(commands=["start", "help"])
+@bot.message_handler(commands=["start", "help", "ayuda"])
 @bot.message_handler(func=lambda m: m.from_user.id in [admin, scrapper.creador] and m.text.strip() == "/admin")
 def start(m):
     global scrapper
@@ -183,7 +189,7 @@ def start(m):
 def help_usuario_show(c):
     panel_usuario.help_usuario(c, scrapper)
 
-@bot.message_handler(["planes", "lista_planes"])
+@bot.message_handler(commands=["planes", "lista_planes"])
 def cmd_lista_planes(m):
     for i in Planes_para_comprar().show(True):
         bot.send_message(m.chat.id, i)
@@ -195,7 +201,7 @@ def cmd_lista_planes(m):
     return
 
 
-@bot.message_handler(commannd=["sobre_mi"])
+@bot.message_handler(commands=["sobre_mi"])
 def cmd_sobre_mi(m):
     bot.send_message(m.chat.id, """Este bot lo administra: 
 {}
@@ -304,7 +310,7 @@ def cmd_cancelar(m):
 
     return
 
-@bot.message_handler(["publicaciones"])
+@bot.message_handler(commands=["publicaciones"])
 def cmd_administrar_publicaciones(m):
     bot.delete_message(m.chat.id, m.message_id)
     panel_usuario.opciones_publicaciones(m.from_user.id, scrapper)
@@ -579,6 +585,7 @@ def get_work(m: telebot.types.Message):
 
         #si el texto es "/publicar 3" 
         if len(m.text.split()) > 1:
+
             if re.search(r"\d+", m.text):
                 scrapper.temp_dict[m.from_user.id]["contador"] = int(re.search(r"\d+", m.text).group()) -1 if not int(re.search(r"\d+", m.text).group()) < 0 else 0
 
@@ -852,7 +859,7 @@ def reboot(c):
         os.execv(os.execv(sys.executable, [sys.executable, '"' + __file__ + '"']))
     return
 
-@bot.message_handler(commands="s")
+@bot.message_handler(commands=["s"])
 def cmd_screenshot(m):
     scrapper.driver.save_screenshot("captura.png")
 
@@ -1022,6 +1029,7 @@ def flask():
         time.sleep(2)
         if os.environ.get("admin"):
             if int(os.environ.get("admin")) == scrapper.creador and not scrapper.interrupcion:
+                # logging.info("Inicialización del bot @{}, uso del método webhook".format(bot.user.username))
                 bot.send_message(int(os.environ.get("admin")), "El bot de publicaciones de Facebook está listo :)\n\nEstoy usando el método webhook")
                 
         bot.set_webhook(url=os.environ["webhook_url"])
@@ -1043,4 +1051,5 @@ if not os.getenv("webhook_url"):
         if int(os.environ.get("admin")) == scrapper.creador and not scrapper.interrupcion:
             bot.send_message(int(os.environ.get("admin")), "El bot de publicaciones de Facebook está listo :)\n\nEstoy usando el método polling")
 
+    # logging.info("Inicialización del bot @{}, uso del método polling".format(bot.user.username))
     bot.infinity_polling(timeout=80,)

@@ -78,7 +78,7 @@ def watch(c, scrapper: scrapping):
         elif scrapper.entrada.pasar:
             usuarios = "<u>Lista de usuarios que tienen permiso de usarme</u>:\n\n"
 
-            for usuario in scrapper.entrada.obtener_usuarios(True, False):
+            for usuario in scrapper.entrada.obtener_usuarios(False, True):
                 texto = "{}<b>ID</b>: <code>{}</code>, <b>username</b>: {}, <b>plan</b>: {}\n\n".format("▶ " if usuario.telegram_id == scrapper.cola["uso"] else "", usuario.telegram_id, "@" + str(bot.get_chat(usuario.telegram_id).username) if bot.get_chat(usuario.telegram_id).username else "No tiene", usuario.plan.__class__.__name__ )
 
                 if len(usuarios + texto) > 4000:

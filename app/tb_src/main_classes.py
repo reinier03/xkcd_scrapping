@@ -1,6 +1,7 @@
 import selenium
 from selenium.webdriver.remote.webelement import WebElement
 from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.common.action_chains import ActionChains
 import time
 import os
 import threading
@@ -36,6 +37,14 @@ class TelegramBot(telebot.TeleBot):
             return None
 
 
+    def delete_message(self, chat_id, message_id, timeout = None):
+        try:
+            return super().delete_message(chat_id, message_id, timeout)
+
+        except:
+            return False
+
+
 class uc_class(uc.Chrome):
 
     def __init__(self):
@@ -43,7 +52,6 @@ class uc_class(uc.Chrome):
         self.bot = False #<telebot.TeleBot> instancia
 
         o = uc.ChromeOptions()
-        
         o.add_experimental_option(
             "prefs", {
                 "credentials_enable_service": False,
@@ -77,13 +85,6 @@ class uc_class(uc.Chrome):
     
     def find_elements(self, by, value, **kwargs) -> list[WebElement]:
         return super().find_elements(by, value)
-        # try:
-        #     return super().find_elements(by, value)
-        
-        # except Exception as err:
-
-        #     self.facebook_popup(err)
-        #     return super().find_elements(by, value)
 
 
     def find_element(self, by, value, **kwargs) -> WebElement:
@@ -135,18 +136,13 @@ class scrapping():
 
 
             self.driver.scrapper = self
-        
-        # os.environ["MONGO_URL"] = os.environ.get("MONGO_HOST")
-        # self._iniciar_BD(os.environ["MONGO_URL"])
-        if not "MONGO_URL" in os.environ and os.name == "nt": #
-            self._iniciar_BD("mongodb://localhost:27017") #
 
+        
+        if os.environ.get("MONGO_URL"):
+            self._iniciar_BD(os.environ.get("MONGO_URL"))
+        
         else:
-            if os.environ.get("MONGO_URL"):
-                self._iniciar_BD(os.environ.get("MONGO_URL"))
-            
-            else:
-                self.MONGO_URL = None
+            self.MONGO_URL = None
 
         
         
@@ -437,6 +433,28 @@ class scrapping():
 
         return "ok"
 
+    def click(self, elemento: WebElement ,intentos = 5):
+        contador_intentos = 1
+
+        for i in range(intentos):
+            try:
+                elemento.click()
+                break
+            except:
+                if contador_intentos >= intentos :
+                    raise Exception("No se ha podido dar click en el elemento: {}".format(elemento._id))
+
+                try:
+                    ActionChains(self.driver, 0).click(elemento).perform()
+                    break
+                except:
+                    contador_intentos += 1
+                    time.sleep(0.5)
+        
+        WebDriverWait(self.driver, 10).until(ec.visibility_of_element_located((By.CSS_SELECTOR, 'body')))
+
+        return None
+
     def facebook_popup(self, timeout = 3):
         """
         Muchas veces aparece un popup sobre que facebook es mejor en la aplicacion y nos recomienda instalarla, pero esto perturba el scrapping, en esta funcion compruebo si existe y me deshago de él
@@ -597,8 +615,8 @@ class scrapping():
 
         if comprobar:
             try:
+                
                 return self.driver.find_elements(by, value)
-
             except:
                 return False
             
@@ -1059,9 +1077,6 @@ class scrapping():
 
             except Exception as err:
                 
-                #para hacer debi
-                # if os.name == "nt":
-                #     breakpoint()
 
                 self.temp_dict[user]["res"] = str(format_exc())
                 
@@ -1605,7 +1620,7 @@ class Entrada():
             return None
 
 
-    def obtener_usuarios(self, administrador=False ,id=True):
+    def obtener_usuarios(self, id=True, administrador=True):
         """Devuelve TODOS los usuarios que tienen algún plan en el bot (a excepción de los baneados, para esos está la funcion 'obtener_usuarios_baneados()')
         
         Si administrador es True devolverá tambien los que son administradores
