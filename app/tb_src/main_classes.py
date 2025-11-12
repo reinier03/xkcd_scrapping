@@ -37,6 +37,25 @@ class TelegramBot(telebot.TeleBot):
             return None
 
 
+    def send_message(self, chat_id, text, parse_mode = None, entities = None, disable_web_page_preview = None, disable_notification = None, protect_content = None, reply_to_message_id = None, allow_sending_without_reply = None, reply_markup = None, timeout = None, message_thread_id = None, reply_parameters = None, link_preview_options = None, business_connection_id = None, message_effect_id = None):
+
+        if len(text) >= 4000:
+
+            for i in range(len(text) // 4000 + 1):
+
+                if i == (len(text) // 4000 + 1) - 1:
+                    return super().send_message(chat_id, text[i * 4000 : (i + 1) * 4000], parse_mode, entities, disable_web_page_preview, disable_notification, protect_content, reply_to_message_id, allow_sending_without_reply, reply_markup, timeout, message_thread_id, reply_parameters, link_preview_options, business_connection_id, message_effect_id)
+
+
+                super().send_message(chat_id, text[i * 4000 : (i + 1) * 4000], parse_mode, entities, disable_web_page_preview, disable_notification, protect_content, reply_to_message_id, allow_sending_without_reply, reply_markup, timeout, message_thread_id, reply_parameters, link_preview_options, business_connection_id, message_effect_id)
+
+            
+
+        else:
+            
+            return super().send_message(chat_id, text, parse_mode, entities, disable_web_page_preview, disable_notification, protect_content, reply_to_message_id, allow_sending_without_reply, reply_markup, timeout, message_thread_id, reply_parameters, link_preview_options, business_connection_id, message_effect_id)
+
+
     def delete_message(self, chat_id, message_id, timeout = None):
         try:
             return super().delete_message(chat_id, message_id, timeout)
@@ -1496,6 +1515,7 @@ class Publicacion:
 
     def enviar(self, scrapper: scrapping, chat_destino, **kwargs):
         
+
         TEXTO = """
 <b><u>Título Publicación</u></b> (NO se mostrará en <b>Facebook</b>): 
 <blockquote>{}</blockquote> 

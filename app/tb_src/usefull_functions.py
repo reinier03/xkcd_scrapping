@@ -81,8 +81,6 @@ def mostrar_info_usuario(chat_destino, usuario_evaluar, bot: telebot.TeleBot):
 
 def debug_txt(scrapper, user):
 
-    return
-
     if scrapper.temp_dict[user].get("tiempo_debug") and scrapper.creador_dict.get("debug_mode"):
         
         scrapper.temp_dict[user]["res"] = "\n".join(scrapper.temp_dict[user]["tiempo_debug"])

@@ -450,7 +450,7 @@ def seleccionar_perfil(scrapper : scrapping, user):
 
                 scrapper.temp_dict[user]["res"].send_keys(scrapper.entrada.obtener_usuario(user).obtener_cuenta(scrapper.temp_dict[user].get("perfil_seleccionado")).contrasena)
 
-                WebDriverWait(scrapper.driver)
+
                 scrapper.temp_dict[user]["res"] = scrapper.wait.until(ec.any_of(
                     ec.visibility_of_element_located((By.XPATH, '//*[contains(text(), "Iniciar")]')),
                     ec.visibility_of_element_located((By.XPATH, '//*[contains(text(), "Log")]'))
