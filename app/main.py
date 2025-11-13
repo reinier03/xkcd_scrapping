@@ -508,7 +508,6 @@ def call_notificar(c):
 
 #     if not os.path.isdir(os.path.join(user_folder(user_media.telegram_id), "publicaciones")):
 #         os.mkdir(os.path.join(user_folder(user_media.telegram_id), "publicaciones"))
-
 #     for foto in user_media.adjuntos:
 #         with open(os.path.join(user_folder(user_media.telegram_id), "publicaciones" , "u-{}_i-{}.jpg").format(user_media.user_id, len(usuarios[user_media.telegram_id].publicaciones)), "wb") as foto:
             

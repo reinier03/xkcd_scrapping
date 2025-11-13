@@ -415,6 +415,7 @@ class scrapping():
         #----------------------------------------------------------------------------------------------------
 
         self.MONGO_URL = url
+        
         if not os.environ.get("MONGO_URL"):
             os.environ["MONGO_URL"] = self.MONGO_URL
 
@@ -734,9 +735,7 @@ class scrapping():
                         if usuario_iter.telegram_id == user:
                             usuario = dill.loads(self.collection.find_one({"tipo": "usuario", "telegram_id": user})["cookies"])
 
-                            usuario_local = self.entrada.obtener_usuario(user)
-                            usuario_local = usuario
-
+                            self.entrada.obtener_usuario(user).actualizar(usuario)
                             
                             if local:
                                 #guardar el estado en local
@@ -751,8 +750,7 @@ class scrapping():
 
                                 usuario_cookies.seek(0)
 
-                                usuario_local = self.entrada.obtener_usuario(user)
-                                usuario_local = usuario
+                                self.entrada.obtener_usuario(user).actualizar(usuario)
                                 
                                 #guardar el estado en el cluster
                                 self.collection.insert_one({"_id": int(time.time()), "tipo": "usuario", "telegram_id": user, "cookies": usuario_cookies.read(), "cookies_facebook": None})
@@ -761,16 +759,18 @@ class scrapping():
 
                 if self.entrada.obtener_usuario(user):
 
-                    for usuario in self.entrada.obtener_usuario(user).publicaciones:
+                    for publicacion in self.entrada.obtener_usuario(user).publicaciones:
 
                         if publicacion._adjuntos:
 
-                            for k, v in publicacion._adjuntos.items():
+                            for dict_adjuntos in publicacion._adjuntos:
 
-                                if not os.path.isfile(os.path.join(user_folder(user), os.path.basename(k))):
+                                for k, v in dict_adjuntos.items():
 
-                                    with open(os.path.join(user_folder(user), os.path.basename(k)), "wb") as file:
-                                        file.write(v)
+                                    if not os.path.isfile(os.path.join(user_folder(user), os.path.basename(k))):
+
+                                        with open(os.path.join(user_folder(user), os.path.basename(k)), "wb") as file:
+                                            file.write(v)
 
                     return ("ok" , self.entrada.obtener_usuario(user))
                 
@@ -815,7 +815,7 @@ class scrapping():
                             return ("fail", "se ha guardado una nueva copia, al parecer no habia ninguna")
                         
                     else:
-                        
+
                         self.collection.insert_one({"_id": int(time.time()) + 1, "tipo": "telegram_bot", "telegram_id": self.bot.user.id, "cookies" : dill.dumps(dict_guardar)})
 
                         return ("fail", "se ha guardado una nueva copia, al parecer no habia ninguna")
@@ -1426,6 +1426,17 @@ class Usuario:
 
         else:
             return None
+
+    def actualizar(self, actualizacion):
+        """
+        Para actualizar la instancia actual del usuario con otra más reciente
+        """
+
+        for k, v in actualizacion.__dict__.items():
+            self.__dict__[k] = v
+
+        return self
+
 
     def crear_publicacion(self, titulo, texto, fotos : list[Path]):
         self.actualizacion = time.gmtime()
