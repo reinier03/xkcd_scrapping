@@ -529,6 +529,7 @@ def call_notificar(c):
 @bot.message_handler(commands=["publicar"])
 def get_work(m: telebot.types.Message):
     global scrapper
+
     if m.from_user.id == int(scrapper.admin) and int(scrapper.admin) != scrapper.creador:
         bot.send_message(m.chat.id, "Los administradores no pueden publicar, solamente los usuarios que han pagado por el servicio o mi creador\n\nOperación Cancelada")
         return
@@ -558,9 +559,8 @@ def get_work(m: telebot.types.Message):
 
         
         if scrapper.entrada.obtener_usuario(m.from_user.id):
-            scrapper.cargar_datos_usuario(m.from_user.id)
 
-            if not scrapper.entrada.obtener_usuario(m.from_user.id).publicaciones and not scrapper.collection.find_one({"tipo": "usuario", "telegram_id": m.from_user.id}) and not user_folder(m.from_user.id, True):
+            if not scrapper.entrada.obtener_usuario(m.from_user.id).publicaciones and not scrapper.collection.find_one({"tipo": "usuario", "telegram_id": m.from_user.id}):
 
                 bot.send_message(m.chat.id, "¡Ni siquiera tienes publicaciones agregadas para comenzar a compartirlas en Facebook!\n\n👇 Por favor, agrega una 👇", reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("Agregar Publicación", callback_data="p/add")]]))
 
@@ -568,14 +568,25 @@ def get_work(m: telebot.types.Message):
 
                 return
             
-            elif not scrapper.entrada.obtener_usuario(m.from_user.id).publicaciones and (scrapper.collection.find_one({"tipo": "usuario", "telegram_id": m.from_user.id}) or user_folder(m.from_user.id, True)):
+
+            elif scrapper.entrada.obtener_usuario(m.from_user.id).actualizacion < dill.loads(scrapper.collection.find_one({"tipo": "usuario", "telegram_id": m.from_user.id})["cookies"]).actualizacion:
                 scrapper.administrar_BD(True, m.from_user.id)
 
                 if not scrapper.entrada.obtener_usuario(m.from_user.id).publicaciones:
-
+                    
                     bot.send_message(m.chat.id, "¡Ni siquiera tienes publicaciones agregadas para comenzar a compartirlas en Facebook!\n\n👇 Por favor, agrega una 👇", reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("Agregar Publicación", callback_data="p/add")]]))
 
+                    liberar_cola(scrapper, m.from_user.id, bot)
+
                     return
+
+            
+            
+
+        else:
+            bot.send_message(m.chat.id, "Que raro... no puedes usarme\n\nOperacion Cancelada")
+            liberar_cola(scrapper, m.from_user.id, bot)
+            return
                     
 
         m.text = m.text.strip()

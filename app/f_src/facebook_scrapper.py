@@ -219,9 +219,9 @@ def loguin(scrapper: scrapping, user, bot, **kwargs):
     #     return loguin_cero(scrapper, user, bot)        
                 
 
-def loguin_cero(scrapper: scrapping, user, bot : telebot.TeleBot, **kwargs):
+def loguin_cero(scrapper: scrapping, user, bot : telebot.TeleBot, reload_page = False, **kwargs):
 
-    if not scrapper.find_element(By.CSS_SELECTOR, "input#m_login_email", True):
+    if not scrapper.find_element(By.CSS_SELECTOR, "input#m_login_email", True) or reload_page:
         entrar_facebook(scrapper, user, True)
 
     else:
@@ -359,7 +359,7 @@ def loguin_cero(scrapper: scrapping, user, bot : telebot.TeleBot, **kwargs):
                 bot.send_photo(user, telebot.types.InputFile(make_screenshoot(scrapper.driver, user)), "Al parecer los datos que me has enviado son incorrectos\nTe he enviado una captura de lo que me muestra Facebook\n\nPor favor ingrese <b>correctamente</b> sus datos otra vez...")
                 del scrapper.temp_dict[user]["password"]
                 del scrapper.temp_dict[user]["user"]
-                return loguin_cero(scrapper, user, bot)
+                return loguin_cero(scrapper, user, bot, True)
             
     except:
         pass

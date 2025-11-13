@@ -186,24 +186,29 @@ def crear_publicacion_SetTFoto(m: telebot.types.Message, scrapper: scrapping, bo
     if m.text == "Omitir Foto":
         diccionario_publicacion["fotos"] = False
 
-
+    
     if m.photo:
 
         with open(os.path.join(user_folder(m.from_user.id), diccionario_publicacion["titulo"] + "_" + str(m.from_user.id) + "_0.jpg"), "wb") as file:
 
-            file.write(bot.download_file(bot.get_file(m.photo[-1].file_id).file_path))
             diccionario_publicacion["fotos"].append(file.name)
 
+            file.write(bot.download_file(bot.get_file(m.photo[-1].file_id).file_path))
+
+            usuario_local = scrapper.entrada.obtener_usuario(m.from_user.id)
+
+            usuario_local.crear_publicacion(diccionario_publicacion["titulo"], diccionario_publicacion["texto"], diccionario_publicacion["fotos"])
+
+            bot.send_message(m.chat.id, "Muy bien!, TU Publicación es la siguiente:", reply_markup=telebot.types.ReplyKeyboardRemove())
+            
+            scrapper.entrada.obtener_usuario(m.from_user.id).publicaciones[-1].enviar(scrapper, m.chat.id)
+
+            bot.send_message(m.chat.id, "Enviame /publicaciones para <b>crear</b> más publicaciones o para <b>ver</b> las que ya tienes\n\nO envíame /publicar para comenzar a compartir por todos tus grupos de Facebook 🙂")
+
+            scrapper.administrar_BD(user=m.from_user.id)
 
             
-    scrapper.entrada.obtener_usuario(m.from_user.id).publicaciones.append(Publicacion(diccionario_publicacion["titulo"], diccionario_publicacion["texto"], m.from_user.id, diccionario_publicacion["fotos"]))
-
-    bot.send_message(m.chat.id, "Muy bien!, TU Publicación es la siguiente:", reply_markup=telebot.types.ReplyKeyboardRemove())
-    scrapper.entrada.obtener_usuario(m.from_user.id).publicaciones[-1].enviar(scrapper, m.chat.id)
-
-    bot.send_message(m.chat.id, "Enviame /publicaciones para <b>crear</b> más publicaciones o para <b>ver</b> las que ya tienes\n\nO envíame /publicar para comenzar a compartir por todos tus grupos de Facebook 🙂")
-
-    scrapper.administrar_BD(user=m.from_user.id)
+    
 
     return
 

@@ -657,7 +657,7 @@ class scrapping():
     
 
 
-    def administrar_BD(self, cargar_cookies=False, user=False, local=True ,**kwargs):
+    def administrar_BD(self, cargar_cookies=False, user=False, local=False ,**kwargs):
         """
         El parametro 'cargar_cookies' si es True, cargará el estado actual del bot, Si es False lo guardará
         El parametro 'local' es para operar tambien local, si es False no cargara ni guardará localmente
@@ -734,6 +734,9 @@ class scrapping():
                         if usuario_iter.telegram_id == user:
                             usuario = dill.loads(self.collection.find_one({"tipo": "usuario", "telegram_id": user})["cookies"])
 
+                            usuario_local = self.entrada.obtener_usuario(user)
+                            usuario_local = usuario
+
                             
                             if local:
                                 #guardar el estado en local
@@ -747,9 +750,14 @@ class scrapping():
                                 usuario = dill.loads(usuario_cookies.read())
 
                                 usuario_cookies.seek(0)
+
+                                usuario_local = self.entrada.obtener_usuario(user)
+                                usuario_local = usuario
                                 
                                 #guardar el estado en el cluster
                                 self.collection.insert_one({"_id": int(time.time()), "tipo": "usuario", "telegram_id": user, "cookies": usuario_cookies.read(), "cookies_facebook": None})
+
+                
 
                 if self.entrada.obtener_usuario(user):
 
@@ -775,9 +783,10 @@ class scrapping():
             if self.collection.find_one({"tipo": "telegram_bot", "telegram_id": self.bot.user.id}):
                 
                 res = ("ok" , dill.loads(self.collection.find_one({"tipo": "telegram_bot", "telegram_id": self.bot.user.id})["cookies"]))
-
-                with open(os.path.join(gettempdir(), "bot_cookies.pkl"), "wb") as file:
-                    dill.dump(dill.loads(self.collection.find_one({"tipo": "telegram_bot", "telegram_id": self.bot.user.id})["cookies"]), file)
+                
+                if local:
+                    with open(os.path.join(gettempdir(), "bot_cookies.pkl"), "wb") as file:
+                        dill.dump(dill.loads(self.collection.find_one({"tipo": "telegram_bot", "telegram_id": self.bot.user.id})["cookies"]), file)
 
 
 
@@ -799,8 +808,14 @@ class scrapping():
 
                             dill.dump(dict_guardar, file)
 
-                    with open(os.path.join(gettempdir(), "bot_cookies.pkl"), "rb") as file:
+                        with open(os.path.join(gettempdir(), "bot_cookies.pkl"), "rb") as file:
 
+                            self.collection.insert_one({"_id": int(time.time()) + 1, "tipo": "telegram_bot", "telegram_id": self.bot.user.id, "cookies" : dill.dumps(dict_guardar)})
+
+                            return ("fail", "se ha guardado una nueva copia, al parecer no habia ninguna")
+                        
+                    else:
+                        
                         self.collection.insert_one({"_id": int(time.time()) + 1, "tipo": "telegram_bot", "telegram_id": self.bot.user.id, "cookies" : dill.dumps(dict_guardar)})
 
                         return ("fail", "se ha guardado una nueva copia, al parecer no habia ninguna")
@@ -969,13 +984,15 @@ class scrapping():
                         for publicacion in usuario.publicaciones:
 
                             if publicacion._adjuntos:
+                                
+                                for lista_adjuntos in publicacion._adjuntos:
 
-                                for k, v in publicacion._adjuntos.items():
+                                    for k, v in lista_adjuntos.items():
 
-                                    if not os.path.isfile(os.path.join(user_folder(user), os.path.basename(k))):
+                                        if not os.path.isfile(os.path.join(user_folder(user), os.path.basename(k))):
 
-                                        with open(os.path.join(user_folder(user), os.path.basename(k)), "wb") as file:
-                                            file.write(v)
+                                            with open(os.path.join(user_folder(user), os.path.basename(k)), "wb") as file:
+                                                file.write(v)
 
                     return True
 
@@ -1391,6 +1408,7 @@ class Usuario:
         self.cuentas = [] #instancias de la clase Cuenta
         self.publicaciones = [] #instancias de la clase Publicacion
         self.plan = plan #instancia de la clase Planes o sus hijos
+        self.actualizacion = time.gmtime() #deja un registro de la ultima actualizacion del usuario para saber cual esta mas actualizado, si el usuario local y el usuario en la base de datos. útil para saber cual tiene el registro de publicaciones actualizado
 
     def __str__(self):
         return int(self.telegram_id)
@@ -1409,9 +1427,16 @@ class Usuario:
         else:
             return None
 
+    def crear_publicacion(self, titulo, texto, fotos : list[Path]):
+        self.actualizacion = time.gmtime()
+        self.publicaciones.append(Publicacion(titulo, texto, self.telegram_id, fotos))
+
+        return
+
+        
 
     def eliminar_publicacion(self, publicacion_eliminar):
-
+        
         if isinstance(publicacion_eliminar, Publicacion):
 
             publicacion_eliminar = list(filter(lambda publicacion: publicacion == publicacion_eliminar, self.publicaciones))[0]
@@ -1438,6 +1463,7 @@ class Usuario:
             
             self.publicaciones.remove(publicacion_eliminar)
 
+        self.actualizacion = time.gmtime()
 
         return
 
