@@ -510,7 +510,6 @@ def call_notificar(c):
 #         os.mkdir(os.path.join(user_folder(user_media.telegram_id), "publicaciones"))
 #     for foto in user_media.adjuntos:
 #         with open(os.path.join(user_folder(user_media.telegram_id), "publicaciones" , "u-{}_i-{}.jpg").format(user_media.user_id, len(usuarios[user_media.telegram_id].publicaciones)), "wb") as foto:
-            
 #             foto.write(bot.download_file(foto))
 
 #             usuarios[user_media.telegram_id].publicaciones[-1].adjuntos.append(os.path.join(user_folder(user_media.td:elegram_id), "publicaciones" , "u-{}_i-{}.jpg").format(user_media.user_id, len(usuarios[user_media.telegram_id].publicaciones)))
@@ -529,6 +528,7 @@ def call_notificar(c):
 def get_work(m: telebot.types.Message):
     global scrapper
 
+    breakpoint()
     if m.from_user.id == int(scrapper.admin) and int(scrapper.admin) != scrapper.creador:
         bot.send_message(m.chat.id, "Los administradores no pueden publicar, solamente los usuarios que han pagado por el servicio o mi creador\n\nOperación Cancelada")
         return

@@ -102,7 +102,8 @@ def set_repeticion(m, scrapper: scrapping):
 def opciones_publicaciones(user, scrapper: scrapping):
     bot = scrapper.bot
 
-    scrapper.cargar_datos_usuario(user)
+    if scrapper.entrada.obtener_usuario(user).actualizacion < dill.loads(scrapper.collection.find_one({"tipo": "usuario", "telegram_id": user})["cookies"]).actualizacion:
+        scrapper.administrar_BD(True, user)
 
     if len(scrapper.entrada.obtener_usuario(user).publicaciones) == 0:
         scrapper.bot.send_message(user, "Lo siento pero ni siquiera tienes ninguna publicación creada :(\n\n👇 Agrega alguna 👇", reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("Agregar Publicación", callback_data="p/add")]]))
