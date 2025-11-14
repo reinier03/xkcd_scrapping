@@ -60,7 +60,7 @@ Al parecer no tienes ningún <b>Plan</b> o ya <b>venció</b> el que habías cont
 
 def definir_repiticion(c, scrapper: scrapping):
 
-    msg = scrapper.bot.send_message(c.message.chat.id, m_texto("A continuación, establece un tiempo de espera luego de finalizada la publicación masiva para reiniciar el proceso en bucle\nIngresa el tiempo de repetición en HORAS\n\nSi solo deseas que no se repita y se publique solamente una vez en todos tus grupos pulsa en '<b>No Repetir</b>'\n\n<u><b>Actualmente tu tiempo de repetición es de</b></u>:\n<blockquote>{}</blockquote>".format(obtener_tiempo(scrapper.entrada.obtener_usuario(c.from_user.id).plan.repetir) + " horas" if isinstance(scrapper.entrada.obtener_usuario(c.from_user.id).plan.repetir, int) and scrapper.entrada.obtener_usuario(c.from_user.id).plan.repetir != True else "Aún no has establecido un tiempo de repetición"), True), reply_markup=ReplyKeyboardMarkup(True, True).add("No Repetir"))
+    msg = scrapper.bot.send_message(c.message.chat.id, m_texto("A continuación, establece un tiempo de espera luego de finalizada la publicación masiva para reiniciar el proceso en bucle\nIngresa el tiempo de repetición en HORAS\n\nSi solo deseas que no se repita y se publique solamente una vez en todos tus grupos pulsa en '<b>No Repetir</b>'\n\n<u><b>Actualmente tu tiempo de repetición es de</b></u>:\n<blockquote>{}</blockquote>".format(obtener_tiempo(scrapper.entrada.obtener_usuario(c.from_user.id).plan.repetir) if isinstance(scrapper.entrada.obtener_usuario(c.from_user.id).plan.repetir, int) and scrapper.entrada.obtener_usuario(c.from_user.id).plan.repetir != True else "Aún no has establecido un tiempo de repetición"), True), reply_markup=ReplyKeyboardMarkup(True, True).add("No Repetir"))
 
 
     scrapper.bot.register_next_step_handler(msg, set_repeticion, scrapper)
@@ -184,6 +184,10 @@ def crear_publicacion_SetTFoto(m: telebot.types.Message, scrapper: scrapping, bo
     if m.text == "Omitir Foto":
         diccionario_publicacion["fotos"] = False
 
+        usuario_local = scrapper.entrada.obtener_usuario(m.from_user.id)
+
+        usuario_local.crear_publicacion(diccionario_publicacion["titulo"], diccionario_publicacion["texto"], diccionario_publicacion["fotos"])
+
     
     if m.photo:
 
@@ -197,13 +201,13 @@ def crear_publicacion_SetTFoto(m: telebot.types.Message, scrapper: scrapping, bo
 
             usuario_local.crear_publicacion(diccionario_publicacion["titulo"], diccionario_publicacion["texto"], diccionario_publicacion["fotos"])
 
-            bot.send_message(m.chat.id, "Muy bien!, TU Publicación es la siguiente:", reply_markup=telebot.types.ReplyKeyboardRemove())
-            
-            scrapper.entrada.obtener_usuario(m.from_user.id).publicaciones[-1].enviar(scrapper, m.chat.id)
+    bot.send_message(m.chat.id, "Muy bien!, TU Publicación es la siguiente:", reply_markup=telebot.types.ReplyKeyboardRemove())
+    
+    scrapper.entrada.obtener_usuario(m.from_user.id).publicaciones[-1].enviar(scrapper, m.chat.id)
 
-            bot.send_message(m.chat.id, "Enviame /publicaciones para <b>crear</b> más publicaciones o para <b>ver</b> las que ya tienes\n\nO envíame /publicar para comenzar a compartir por todos tus grupos de Facebook 🙂")
+    bot.send_message(m.chat.id, "Enviame /publicaciones para <b>crear</b> más publicaciones o para <b>ver</b> las que ya tienes\n\nO envíame /publicar para comenzar a compartir por todos tus grupos de Facebook 🙂")
 
-            scrapper.administrar_BD(user=m.from_user.id)
+    scrapper.administrar_BD(user=m.from_user.id)
 
             
     

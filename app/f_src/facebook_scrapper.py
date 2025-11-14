@@ -453,7 +453,7 @@ def seleccionar_perfil(scrapper : scrapping, user):
 
                 scrapper.temp_dict[user]["res"] = scrapper.wait.until(ec.any_of(
                     ec.visibility_of_element_located((By.XPATH, '//*[contains(text(), "Iniciar")]')),
-                    ec.visibility_of_element_located((By.XPATH, '//*[contains(text(), "Log")]'))
+                    ec.visibility_of_element_located((By.XPATH, '//*[contains(text(), "Log in")]'))
                 ))
 
                 scrapper.click(scrapper.temp_dict[user]["res"])
@@ -1200,7 +1200,6 @@ def publicacion(scrapper: scrapping, bot:telebot.TeleBot, user, load_url=True, c
 
         
         for e, publicacion in enumerate(scrapper.temp_dict[user]["obj_publicacion"][len(scrapper.temp_dict[user]["publicacion"]["resultados_publicaciones"]):], 1):
-            
             try:
                 scrapper.temp_dict[user]["publicacion"]["resultados_publicaciones"].append(hacer_publicacion(scrapper, bot, user, publicacion, contador))
             
@@ -1676,7 +1675,7 @@ def elegir_cuenta(scrapper: scrapping, user, bot: telebot.TeleBot , ver_actual=F
 
             scrapper.wait_s.until(ec.url_changes(scrapper.temp_dict[user]["url_actual"]))
 
-            if not scrapper.driver.current_url.endswith("bookmarks/"):
+            if not "bookmarks" in scrapper.driver.current_url:
                 scrapper.load("https://m.facebook.com/bookmarks/")
 
             # #Elemento de Configuracion de cuenta

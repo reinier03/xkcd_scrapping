@@ -1446,6 +1446,11 @@ class Usuario:
         """
 
         for k, v in actualizacion.__dict__.items():
+            if k == "publicaciones":
+                for lista_publicaciones in k:
+                    for directorio, binario in lista_publicaciones:
+                        directorio = os.path.join(user_folder(self.telegram_id), os.path.basename(directorio))
+
             self.__dict__[k] = v
 
         return self
