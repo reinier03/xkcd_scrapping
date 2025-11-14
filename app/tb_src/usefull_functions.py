@@ -103,7 +103,7 @@ def click_padre(elemento: WebElement, intentos = 7):
     contador = 0
     dar_click = elemento
     while True:
-        breakpoint()
+
         try:
             dar_click.click()
             break
@@ -113,7 +113,7 @@ def click_padre(elemento: WebElement, intentos = 7):
             
             else:
                 contador += 1
-                dar_click = dar_click.find_element(By.XPATH, "/..")
+                dar_click = dar_click.find_element(By.XPATH, "..")
 
 def borrar_elemento(scrapper , elemento):
 
