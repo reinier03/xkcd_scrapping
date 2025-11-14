@@ -6,8 +6,9 @@ import seleniumbase
 import os
 
 
-def anadir_opciones(o, container=False, mobile=False):
+def anadir_opciones(o: Options, container=False, mobile=False):
     
+    o.add_argument("--disable-translate")
     o.add_argument("--accept-lang=en-UK")
     o.add_argument("--lang=en-UK")
     o.add_argument("--disable-web-security")

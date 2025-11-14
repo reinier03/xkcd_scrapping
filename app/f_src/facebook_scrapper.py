@@ -1640,18 +1640,10 @@ def elegir_cuenta(scrapper: scrapping, user, bot: telebot.TeleBot , ver_actual=F
     scrapper.wait.until(ec.visibility_of_element_located((By.CSS_SELECTOR, 'body')))
     scrapper.wait.until(ec.visibility_of_element_located((By.CSS_SELECTOR, 'div#screen-root')))
 
-    if not "bookmarks" in scrapper.driver.current_url:
-        scrapper.click(scrapper.find_elements(By.CSS_SELECTOR, 'div[role="button"]')[2])
     
     try:
         #si ya el menú de cuentas está desplegado... hay que omitir cosas
-        try:
-            scrapper.temp_dict[user]["e"] = scrapper.wait_s.until(ec.visibility_of_element_located((By.CSS_SELECTOR, 'div[role="list"]')))
-        
-        except:
-            scrapper.load("https://m.facebook.com/bookmarks/")
-
-            scrapper.temp_dict[user]["e"] = scrapper.wait_s.until(ec.visibility_of_element_located((By.CSS_SELECTOR, 'div[role="list"]')))
+        scrapper.temp_dict[user]["e"] = scrapper.wait_s.until(ec.visibility_of_element_located((By.CSS_SELECTOR, 'div[role="list"]')))
 
         scrapper.temp_dict[user]["e"] = True
         
