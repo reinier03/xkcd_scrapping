@@ -313,7 +313,7 @@ def cmd_cancelar(m):
 
 @bot.message_handler(func=lambda x: True)
 def verificar_publicaciones_cluster(m):
-    breakpoint()
+
     if scrapper.entrada.obtener_usuario(m.from_user.id).actualizacion < dill.loads(scrapper.collection.find_one({"tipo": "usuario", "telegram_id": m.from_user.id})["cookies"]).actualizacion:
         scrapper.administrar_BD(True, m.from_user.id)
 
