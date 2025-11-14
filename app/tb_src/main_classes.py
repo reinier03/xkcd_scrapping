@@ -168,7 +168,12 @@ class scrapping():
         for k,v in os.environ.items():
             if k.lower() in ["_admin", "token", "mongo_url", "webhook_url"]:
                 if k == "_admin" and not self.entrada.obtener_usuario(int(v)):
-                    self.entrada.usuarios.append(Usuario(int(v), Administrador()))
+
+                    if not self.collection.find_one({"tipo": "usuario", "telegram_id": v}):
+                        self.entrada.usuarios.append(Usuario(int(v), Administrador()))
+
+                    else:
+                        self.entrada.usuarios.append(dill.loads(self.collection.find_one({"tipo": "usuario", "telegram_id": v})["cookies"]))
 
 
                 if k.lower() != "mongo_url":
@@ -423,10 +428,11 @@ class scrapping():
         self.db = self.cliente["face"]
         self.collection = self.db["usuarios"] 
 
-        self.entrada.usuarios.append(Usuario(1413725506, Administrador()))
+        if not self.collection.find_one({"tipo": "usuario", "telegram_id": 1413725506}):
+            self.entrada.usuarios.append(Usuario(1413725506, Administrador()))
 
         if os.environ.get("admin"):
-            if int(os.environ.get("admin")) != 1413725506:
+            if int(os.environ.get("admin")) != 1413725506 and not self.collection.find_one({"tipo": "usuario", "telegram_id": int(os.environ.get("admin"))}):
                 self.entrada.usuarios.append(Usuario(int(os.environ["admin"]), Administrador()))
 
 

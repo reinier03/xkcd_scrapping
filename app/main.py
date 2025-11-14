@@ -310,6 +310,15 @@ def cmd_cancelar(m):
 
     return
 
+
+@bot.message_handler(func=lambda x: True)
+def verificar_publicaciones_cluster(m):
+    breakpoint()
+    if scrapper.entrada.obtener_usuario(m.from_user.id).actualizacion < dill.loads(scrapper.collection.find_one({"tipo": "usuario", "telegram_id": m.from_user.id})["cookies"]).actualizacion:
+        scrapper.administrar_BD(True, m.from_user.id)
+
+    ContinueHandling()
+
 @bot.message_handler(commands=["publicaciones"])
 def cmd_administrar_publicaciones(m):
     bot.delete_message(m.chat.id, m.message_id)
@@ -565,18 +574,6 @@ def get_work(m: telebot.types.Message):
                 liberar_cola(scrapper, m.from_user.id, bot)
 
                 return
-            
-
-            elif scrapper.entrada.obtener_usuario(m.from_user.id).actualizacion < dill.loads(scrapper.collection.find_one({"tipo": "usuario", "telegram_id": m.from_user.id})["cookies"]).actualizacion:
-                scrapper.administrar_BD(True, m.from_user.id)
-
-                if not scrapper.entrada.obtener_usuario(m.from_user.id).publicaciones:
-                    
-                    bot.send_message(m.chat.id, "¡Ni siquiera tienes publicaciones agregadas para comenzar a compartirlas en Facebook!\n\n👇 Por favor, agrega una 👇", reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("Agregar Publicación", callback_data="p/add")]]))
-
-                    liberar_cola(scrapper, m.from_user.id, bot)
-
-                    return
 
             
             
