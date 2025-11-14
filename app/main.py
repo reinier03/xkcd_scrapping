@@ -310,8 +310,8 @@ def cmd_cancelar(m):
 
     return
 
-
-@bot.message_handler(func=lambda x: True)
+#Para comprobar si la informacion de las publicaciones del usuario tanto local como en el cluster estan actualizadas
+@bot.message_handler(func=lambda m: scrapper.collection.find_one({"tipo": "usuario", "telegram_id": m.from_user.id}))
 def verificar_publicaciones_cluster(m):
 
     if scrapper.entrada.obtener_usuario(m.from_user.id).actualizacion < dill.loads(scrapper.collection.find_one({"tipo": "usuario", "telegram_id": m.from_user.id})["cookies"]).actualizacion:
