@@ -317,7 +317,7 @@ def verificar_publicaciones_cluster(m):
     if scrapper.entrada.obtener_usuario(m.from_user.id).actualizacion < dill.loads(scrapper.collection.find_one({"tipo": "usuario", "telegram_id": m.from_user.id})["cookies"]).actualizacion:
         scrapper.administrar_BD(True, m.from_user.id)
 
-    ContinueHandling()
+    return ContinueHandling()
 
 @bot.message_handler(commands=["publicaciones"])
 def cmd_administrar_publicaciones(m):

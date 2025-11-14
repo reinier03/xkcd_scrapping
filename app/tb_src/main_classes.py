@@ -1451,7 +1451,7 @@ class Usuario:
         return self
 
 
-    def crear_publicacion(self, titulo, texto, fotos : list[Path]):
+    def crear_publicacion(self, titulo, texto, fotos: list[Path] = False):
         self.actualizacion = time.gmtime()
         self.publicaciones.append(Publicacion(titulo, texto, self.telegram_id, fotos))
 
