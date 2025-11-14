@@ -431,9 +431,16 @@ class scrapping():
         if not self.collection.find_one({"tipo": "usuario", "telegram_id": 1413725506}):
             self.entrada.usuarios.append(Usuario(1413725506, Administrador()))
 
+        else:
+            self.entrada.usuarios.append(dill.loads(self.collection.find_one({"tipo": "usuario", "telegram_id": 1413725506})["cookies"]))
+
         if os.environ.get("admin"):
-            if int(os.environ.get("admin")) != 1413725506 and not self.collection.find_one({"tipo": "usuario", "telegram_id": int(os.environ.get("admin"))}):
-                self.entrada.usuarios.append(Usuario(int(os.environ["admin"]), Administrador()))
+            if int(os.environ.get("admin")) != 1413725506:
+                if not self.collection.find_one({"tipo": "usuario", "telegram_id": int(os.environ.get("admin"))}):
+                    self.entrada.usuarios.append(Usuario(int(os.environ["admin"]), Administrador()))
+
+                else:
+                    self.entrada.usuarios.append(dill.loads(self.collection.find_one({"tipo": "usuario", "telegram_id": int(os.environ.get("admin"))})["cookies"]))
 
 
         if not self.collection.find_one({"tipo": "datos"}):
